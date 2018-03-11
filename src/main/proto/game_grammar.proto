@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package max.dillon;
+
+enum Symmetry {
+    REFLECT = 0;
+    ROTATE = 1;
+}
+
+message GameSpec {
+    string name = 1;
+    uint32 board_size = 2;
+    Symmetry board_symmetry = 3;
+}

@@ -1,0 +1,22 @@
+
+
+Intellij protobuf plugin does not *compile* protobufs. It just does syntax highlighting.
+Will need to invoke from the command line, or will need to configure build tools to do it.
+
+The generated .java classes are not self-contained, and still have dependencies on the
+Google protobuf distribution.  Will need to build this separately and include as an external
+library in the project.
+
+It's convenient to get the protobuf dependencies with maven. And it may be convenient
+to run the proto compilier this way too.
+
+We set up the initial maven pom.xml like so:
+
+  mvn -B archetype:generate -DgroupId=max.dillon -DartifactId=quest
+
+This also creates src/main/java/... and src/test/java/... directories.
+
+To generate GameGrammar.java from game_grammar.proto:
+
+${anacondadir}/bin/protoc src/main/proto/game_grammar.proto --java_out=src/main/java
+
