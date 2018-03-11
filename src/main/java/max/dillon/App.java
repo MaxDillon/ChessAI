@@ -17,7 +17,7 @@ public class App {
         System.out.println(game.getName());
         System.out.println(game.getBoardSize());
         for (GameGrammar.Piece piece : game.getPieceList()) {
-            System.out.println(piece.getName());
+            System.out.println(piece.getName()+" "+piece.getPlacementList());
         }
     }
 }
