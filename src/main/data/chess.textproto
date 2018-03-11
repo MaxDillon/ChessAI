@@ -42,7 +42,7 @@ piece {
 
     move {
         template: "+cross_*"
-]        land {
+        land {
             none: ALLOWED
             own: DISALLOWED
             opponent: CAPTURE
