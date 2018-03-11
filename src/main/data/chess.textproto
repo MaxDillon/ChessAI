@@ -19,7 +19,8 @@ piece {
     count: 1
     placement: "x4y1"
     move {
-        template: "+square_*"
+        template: "+cross_*"
+        template: "+plus_*"
         land {
             none: ALLOWED
             own: DISALLOWED
@@ -31,6 +32,112 @@ piece {
             opponent: DISALLOWED
         }
     }
+}
+
+piece {
+    name: "bishop"
+    count: 2
+    placement: "x3y1"
+    placement: "x6y1"
+
+    move {
+        template: "+cross_*"
+]        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: CAPTURE
+        }
+        jump {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: DISALLOWED
+        }
+    }
+}
+
+piece {
+    name: "rook"
+    count: 2
+    placement: "x8y1"
+    placement: "x1y1"
+
+    move {
+        template: "+cross_*"
+        template: "+plus_*"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: CAPTURE
+        }
+        jump {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: DISALLOWED
+        }
+    }
+}
+
+
+
+piece {
+    name: "knight"
+    count: 2
+    placement: "x2y1"
+    placement: "x7y1"
+
+    move {
+        template: "+square_2"
+        template: "-cross_*"
+        template: "-plus_*"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: CAPTURE
+        }
+        jump {
+            none: ALLOWED
+            own: ALLOWED
+            opponent: ALLOWED
+        }
+    }
+}
+
+
+
+
+piece {
+    name: "pawn"
+    count: 8
+    placement: "x1y2"
+    placement: "x2y2"
+    placement: "x3y2"
+    placement: "x4y2"
+    placement: "x5y2"
+    placement: "x6y2"
+    placement: "x7y2"
+    placement: "x8y2"
+
+    move {
+        template: "+forward_1"
+        template: "-plus_1"
+        land {
+            none: DISALLOWED
+            own: DISALLOWED
+            opponent: CAPTURE
+         }
+     }
+
+    move {
+        template: "+forward_1"
+        template: "-cross_1"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: DISALLOWED
+         }
+     }
+
+
 }
 
 
