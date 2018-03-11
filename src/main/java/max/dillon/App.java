@@ -1,6 +1,7 @@
 package max.dillon;
 
 import com.google.protobuf.TextFormat;
+import jdk.nashorn.internal.ir.debug.ClassHistogramElement;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,6 +16,9 @@ public class App {
 
         System.out.println(game.getName());
         System.out.println(game.getBoardSize());
+        for (GameGrammar.Piece piece : game.getPieceList()) {
+            System.out.println(piece.getName());
+        }
     }
 }
 

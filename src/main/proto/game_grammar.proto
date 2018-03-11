@@ -7,8 +7,35 @@ enum Symmetry {
     ROTATE = 1;
 }
 
+enum Outcome {
+    ALLOWED = 0;
+    DISALLOWED = 1;
+    CAPTURE = 2;
+    SWAP = 3;
+}
+
+message MoveOptions {
+    Outcome none = 1;
+    Outcome own = 2;
+    Outcome opponent = 3;
+}
+
+message Move {
+    repeated string template = 1;
+    MoveOptions land = 2;
+    MoveOptions jump = 3;
+}
+
+message Piece {
+    string name = 1;
+    uint32 count = 2;
+    repeated string placement = 3;
+    repeated Move move = 4;
+}
+
 message GameSpec {
     string name = 1;
     uint32 board_size = 2;
     Symmetry board_symmetry = 3;
+    repeated Piece piece = 4;
 }

@@ -1,3 +1,37 @@
 name: "chess"
 board_size: 8
 board_symmetry: REFLECT
+piece {
+    name: "king"
+    count: 1
+    placement: "x5y1"
+    move {
+        template: "+square_1"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: CAPTURE
+        }
+    }
+}
+piece {
+    name: "queen"
+    count: 1
+    placement: "x4y1"
+    move {
+        template: "+square_*"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: CAPTURE
+        }
+        jump {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: DISALLOWED
+        }
+    }
+}
+
+
+
