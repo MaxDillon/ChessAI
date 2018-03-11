@@ -8,8 +8,8 @@ enum Symmetry {
 }
 
 enum Outcome {
-    ALLOWED = 0;
-    DISALLOWED = 1;
+    DISALLOWED = 0;
+    ALLOWED = 1;
     CAPTURE = 2;
     SWAP = 3;
 }
