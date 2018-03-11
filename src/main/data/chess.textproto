@@ -87,8 +87,8 @@ piece {
 
     move {
         template: "+square_2"
-        template: "-cross_*"
-        template: "-plus_*"
+        template: "-cross_2"
+        template: "-plus_2"
         land {
             none: ALLOWED
             own: DISALLOWED
