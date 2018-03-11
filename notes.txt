@@ -20,3 +20,23 @@ To generate GameGrammar.java from game_grammar.proto:
 
 ${anacondadir}/bin/protoc src/main/proto/game_grammar.proto --java_out=src/main/java
 
+
+
+Initialize board:
+  1. create a 2d array of given board size.
+  2. for each piece type, for each placement, initialize piece.
+  3. create opponent's pieces based on symmetry class.
+
+Find legal moves given board:
+  0. create empty list of moves
+  1. for each of player's pieces
+     1. apply templates in order to determine set of position independent moves
+     2. restrict to moves still on the board
+     3. restrict to moves satisfying jump and land restrictions.
+     4. add to set of moves
+
+question of representation of moves.
+  could be piece x moves to y
+  or could just be a new board state as an array.
+  (second might be easier since you do things in just one place)
+
