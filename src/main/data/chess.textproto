@@ -62,7 +62,6 @@ piece {
     placement: "x1y1"
 
     move {
-        template: "+cross_*"
         template: "+plus_*"
         land {
             none: ALLOWED
