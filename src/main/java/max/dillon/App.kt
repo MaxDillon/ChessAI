@@ -6,7 +6,6 @@ import com.google.protobuf.TextFormat
 import sun.plugin.dom.exception.InvalidStateException
 import java.nio.file.Files
 import java.nio.file.Paths
-import kotlin.math.absoluteValue
 
 
 fun printArray(anArray: Array<Array<Int>>) {
@@ -26,27 +25,25 @@ fun main(args: Array<String>) {
 
     println(game.name)
     println(game.boardSize)
-    for (piece in game.pieceList) {
-        for (move in piece.moveList) println(piece.name + " " + move.templateList)
-    }
-
 
     val gameBoard = Array( game.boardSize,{ Array(game.boardSize,{0}) } )
 
 
-    game.pieceList.forEach { piece ->
+    game.pieceList.forEachIndexed { index, piece ->
         piece.placementList.forEach { placement ->
             val coord = placement.substring(1).split("y").map { it.toInt() }
-            println("${piece.name} $coord ")
 
-            if (gameBoard[coord[0]-1][coord[1]-1]==0) {
+            if (gameBoard[coord[1]-1][coord[0]-1]==0) {
 
-                gameBoard[coord[0]-1][coord[1]-1] = piece.hashCode().absoluteValue%8
-                gameBoard[game.boardSize-coord[0]][game.boardSize-coord[1]] = piece.hashCode().absoluteValue%8
+                gameBoard[coord[1]-1][coord[0]-1] = index+1
+                gameBoard[game.boardSize-coord[1]][game.boardSize-coord[0]] = index+1
 
             } else throw InvalidStateException("there is already a piece at $coord")
         }
     }
+
+    println("board:")
+
     printArray(gameBoard)
 
 
