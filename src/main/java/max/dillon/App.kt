@@ -1,7 +1,7 @@
 package max.dillon
 
 
-import java.util.Arrays;
+import java.util.Arrays
 import com.google.protobuf.TextFormat
 import sun.plugin.dom.exception.InvalidStateException
 import java.nio.file.Files
