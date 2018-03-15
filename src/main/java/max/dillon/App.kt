@@ -1,7 +1,6 @@
 package max.dillon
 
 
-import java.util.Arrays
 import com.google.protobuf.TextFormat
 import sun.plugin.dom.exception.InvalidStateException
 import java.nio.file.Files
@@ -20,18 +19,39 @@ fun printArray(anArray: Array<Array<Int>>) {
     }
 }
 
-fun getPieceMoves(x: Int, y: Int): Int {
 
+fun plus(x: Int, y: Int, length: Int) {
 
-    return "".hashCode()
+}
+
+fun cross(x: Int, y: Int, length: Int) {
+
+}
+
+fun square(x: Int, y: Int, length: Int) {
+
 }
 
 
-fun getBoardStates(board: Array<Array<Int>>) {
+fun getPieceMoves(game: GameGrammar.GameSpec, x: Int, y: Int, num: Int): Array<Int> {
+    val piece = game.getPiece(num)
+    piece.moveList.forEach {
+        it.templateList.forEach {
+            val (a,b,c) = it.substring(1).split("_")
+
+
+        }
+    }
+    TODO("finish")
+
+}
+
+
+fun getBoardStates(game:GameGrammar.GameSpec, board: Array<Array<Int>>) {
     val possibleStates = arrayListOf<Int>()
     board.forEachIndexed { x, list->
         list.forEachIndexed { y, piece ->
-            if(piece != 0) possibleStates.add(getPieceMoves(x,y))
+            if(piece != 0) possibleStates.addAll(getPieceMoves(game,x,y,piece))
 
         }
     }
@@ -70,7 +90,7 @@ fun main(args: Array<String>) {
     println("\nboard:\n")
 
     printArray(gameBoard)
-    getBoardStates(gameBoard)
+    getBoardStates(game,gameBoard)
 
 }
 
