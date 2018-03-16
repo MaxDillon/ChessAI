@@ -34,6 +34,7 @@ fun square(x: Int, y: Int, length: Int) {
 
 
 fun getPieceMoves(game: GameGrammar.GameSpec, x: Int, y: Int, num: Int): Array<Int> {
+    val newBoard = Array( game.boardSize,{ Array(game.boardSize,{0}) } )
     val piece = game.getPiece(num)
     piece.moveList.forEach {
         it.templateList.forEach {
@@ -55,8 +56,6 @@ fun getBoardStates(game:GameGrammar.GameSpec, board: Array<Array<Int>>) {
 
         }
     }
-
-
 }
 
 
@@ -76,14 +75,13 @@ fun main(args: Array<String>) {
 
     game.pieceList.forEachIndexed { index, piece ->
         piece.placementList.forEach { placement ->
-            val coord = placement.substring(1).split("y").map { it.toInt() }
+            val coord = placement.substring(1).split("y").map { it.toInt()-1 }
+            println(coord)
+            if ((gameBoard[coord[1]][coord[0]] == 0 )) {
+                gameBoard[coord[1]][coord[0]]=1
 
-            if (gameBoard[coord[1]-1][coord[0]-1]==0) {
 
-                gameBoard[coord[1]-1][coord[0]-1] = index+1
-                gameBoard[game.boardSize-coord[1]][game.boardSize-coord[0]] = -index-1
-
-            } else throw InvalidStateException("there is already a piece at $coord")
+            } else throw InvalidStateException("you cant place a piece at $coord")
         }
     }
 
