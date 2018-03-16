@@ -1,8 +1,6 @@
 name: "chess"
 board_size: 8
 board_symmetry: REFLECT
-
-
 piece {
     name: "pawn"
     count: 8
@@ -14,7 +12,6 @@ piece {
     placement: "x6y2"
     placement: "x7y2"
     placement: "x8y2"
-
     move {
         template: "+forward_1"
         template: "-plus_1"
@@ -24,7 +21,6 @@ piece {
             opponent: CAPTURE
          }
      }
-
     move {
         template: "+forward_1"
         template: "-cross_1"
@@ -34,17 +30,12 @@ piece {
             opponent: DISALLOWED
          }
      }
-
-
 }
-
-
 piece {
     name: "knight"
     count: 2
     placement: "x2y1"
     placement: "x7y1"
-
     move {
         template: "+square_2"
         template: "-cross_2"
@@ -61,8 +52,6 @@ piece {
         }
     }
 }
-
-
 piece {
     name: "bishop"
     count: 2
@@ -70,7 +59,7 @@ piece {
     placement: "x6y1"
 
     move {
-        template: "+cross_*"
+        template: "+cross_0"
         land {
             none: ALLOWED
             own: DISALLOWED
@@ -83,7 +72,6 @@ piece {
         }
     }
 }
-
 piece {
     name: "rook"
     count: 2
@@ -91,7 +79,7 @@ piece {
     placement: "x1y1"
 
     move {
-        template: "+plus_*"
+        template: "+plus_0"
         land {
             none: ALLOWED
             own: DISALLOWED
@@ -104,19 +92,13 @@ piece {
         }
     }
 }
-
-
-
-
-
-
 piece {
     name: "queen"
     count: 1
     placement: "x4y1"
     move {
-        template: "+cross_*"
-        template: "+plus_*"
+        template: "+cross_0"
+        template: "+plus_0"
         land {
             none: ALLOWED
             own: DISALLOWED
@@ -129,8 +111,6 @@ piece {
         }
     }
 }
-
-
 piece {
     name: "king"
     count: 1
@@ -144,7 +124,3 @@ piece {
         }
     }
 }
-
-
-
-
