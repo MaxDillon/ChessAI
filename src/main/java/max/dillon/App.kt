@@ -4,9 +4,10 @@ import com.google.protobuf.TextFormat
 import java.nio.file.Files
 import java.nio.file.Paths
 
+
 class GameState(val gameSpec: GameGrammar.GameSpec) {
     var gameBoard: Array<Array<Int>>
-    var white: Boolean = true
+    var whiteMove: Boolean = true
 
     init {
         gameBoard = Array(gameSpec.boardSize, { Array(gameSpec.boardSize, { 0 }) })
@@ -27,11 +28,77 @@ class GameState(val gameSpec: GameGrammar.GameSpec) {
         }
     }
 
-    constructor(gameSpec: GameGrammar.GameSpec, gameBoard: Array<Array<Int>>, white: Boolean) : this(gameSpec) {
-        this.gameBoard = gameBoard
-        this.white = white
+
+    fun pieceAt(x: Int, y: Int): GameGrammar.Piece {
+        return gameSpec.getPiece(gameBoard[x][y])
     }
+
+
+    constructor(gameSpec: GameGrammar.GameSpec, gameBoard: Array<Array<Int>>, whiteMove: Boolean) : this(gameSpec) {
+        this.gameBoard = gameBoard
+        this.whiteMove = whiteMove
+    }
+
+
+    fun getPieceMoves( x: Int, y: Int ): ArrayList<GameState> {
+
+        val newStates = arrayListOf<GameState>()
+        val piece = pieceAt(x,y) // gets current piece in position x,y
+        piece.moveList.forEach {
+            val squares = arrayListOf<Pair<Int, Int>>()
+
+            it.templateList.forEach {
+                val sign = it.substring(0, 1)
+                val (pattern, size_str) = it.substring(1).split("_")
+                var size = size_str.toInt()
+                if (size == 0) size = gameSpec.boardSize
+
+                val newSquares = when (pattern) {
+                    "square" -> square(size)
+                    "plus" -> plus(size)
+                    "cross" -> cross(size)
+                    "forward" -> forward(size, whiteMove)
+                    else -> arrayListOf<Pair<Int, Int>>()
+                }
+
+                if (sign == "+") {
+                    squares.addAll(newSquares)
+                } else {
+                    squares.removeAll(newSquares)
+                }
+            }
+            // have valid move offsets ignoring board boundaries and jump and landing constraints.
+            var iterator = squares.listIterator()
+            while (iterator.hasNext()) {
+                var offset = iterator.next()
+                var cell = Pair(x + offset.first, y + offset.second)
+                if (cell.first < 0 || cell.first >= gameSpec.boardSize ||
+                        cell.second < 0 || cell.second >= gameSpec.boardSize) {
+                    iterator.remove()
+                } else {
+                    iterator.set(cell)
+                }
+
+            }
+            // have valid positions on the board
+
+            // apply jump and landing constraints.
+
+            // then create mutated board states (apply the move and any captures or exchanges)
+        }
+        TODO("finish")
+        return newStates
+    }
+
+
 }
+
+
+
+
+
+
+
 
 fun printArray(anArray: Array<Array<Int>>) {
     anArray.forEach {
@@ -68,57 +135,12 @@ fun forward(size: Int, white: Boolean): List<Pair<Int, Int>> {
     return square(size).filter { white && it.second > 0 || !white && it.second < 0 }
 }
 
-fun getPieceMoves(state: GameState, x: Int, y: Int, pieceType: Int): ArrayList<GameState> {
-    var newStates = arrayListOf<GameState>()
-    val piece = state.gameSpec.getPiece(pieceType)
-    piece.moveList.forEach {
-        var squares = arrayListOf<Pair<Int, Int>>()
-        it.templateList.forEach {
-            val sign = it.substring(0, 1)
-            val (pattern, size_str) = it.substring(1).split("_")
-            var size = size_str.toInt()
-            if (size == 0) size = state.gameSpec.boardSize
-            var newSquares = when (pattern) {
-                "square" -> square(size)
-                "plus" -> plus(size)
-                "cross" -> cross(size)
-                "forward" -> forward(size, state.white)
-                else -> arrayListOf<Pair<Int, Int>>()
-            }
-            if (sign == "+") {
-                squares.addAll(newSquares)
-            } else {
-                squares.removeAll(newSquares)
-            }
-        }
-        // have valid move offsets ignoring board boundaries and jump and landing constraints.
-        var iterator = squares.listIterator()
-        while (iterator.hasNext()) {
-            var offset = iterator.next()
-            var cell = Pair(x + offset.first, y + offset.second)
-            if (cell.first < 0 || cell.first >= state.gameSpec.boardSize ||
-                    cell.second < 0 || cell.second >= state.gameSpec.boardSize) {
-                iterator.remove()
-            } else {
-                iterator.set(cell)
-            }
-
-        }
-        // have valid positions on the board
-
-        // apply jump and landing constraints.
-
-        // then create mutated board states (apply the move and any captures or exchanges)
-    }
-    TODO("finish")
-    return newStates
-}
 
 fun getLegalNextStates(state: GameState): ArrayList<GameState> {
     val states = arrayListOf<GameState>()
     state.gameBoard.forEachIndexed { x, row ->
         row.forEachIndexed { y, piece ->
-            if (piece != 0) states.addAll(getPieceMoves(state, x, y, piece))
+            if (piece != 0) states.addAll(state.getPieceMoves( x, y))
         }
     }
     return states
