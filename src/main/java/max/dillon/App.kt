@@ -1,95 +1,145 @@
 package max.dillon
 
-
 import com.google.protobuf.TextFormat
-import sun.plugin.dom.exception.InvalidStateException
 import java.nio.file.Files
 import java.nio.file.Paths
 
+class GameState(val gameSpec: GameGrammar.GameSpec) {
+    var gameBoard: Array<Array<Int>>
+    var white: Boolean = true
+
+    init {
+        gameBoard = Array(gameSpec.boardSize, { Array(gameSpec.boardSize, { 0 }) })
+        gameSpec.pieceList.forEachIndexed { index, piece ->
+            val pieceType = index + 1
+            piece.placementList.forEach { placement ->
+                val (x, y) = placement.substring(1).split("y").map { it.toInt() - 1 }
+                println("$x,$y")
+                if ((gameBoard[y][x] == 0)) {
+                    gameBoard[y][x] = pieceType
+                    var oppositeX = x
+                    if (gameSpec.boardSymmetry == GameGrammar.Symmetry.ROTATE) {
+                        oppositeX = gameSpec.boardSize - 1 - x
+                    }
+                    gameBoard[gameSpec.boardSize - 1 - y][oppositeX] = -pieceType
+                } else throw RuntimeException("you cant place a piece at $x,$y")
+            }
+        }
+    }
+
+    constructor(gameSpec: GameGrammar.GameSpec, gameBoard: Array<Array<Int>>, white: Boolean) : this(gameSpec) {
+        this.gameBoard = gameBoard
+        this.white = white
+    }
+}
 
 fun printArray(anArray: Array<Array<Int>>) {
     anArray.forEach {
         it.forEach {
-            val c = it.toString()
-            if (it>=0) print(" ")
-            print(c)
-            print("  ")
+            if (it >= 0) print(" ")
+            print("$it  ")
         }
         println("\n")
     }
 }
 
-
-fun plus(x: Int, y: Int, length: Int) {
-
+fun square(size: Int): List<Pair<Int, Int>> {
+    var moves = arrayListOf<Pair<Int, Int>>()
+    for (i in 0..size) {
+        for (j in 1..size) {
+            moves.add(Pair(i, j))
+            moves.add(Pair(-j, i))
+            moves.add(Pair(-i, -j))
+            moves.add(Pair(j, -i))
+        }
+    }
+    return moves
 }
 
-fun cross(x: Int, y: Int, length: Int) {
-
+fun plus(size: Int): List<Pair<Int, Int>> {
+    return square(size).filter { it.first == 0 || it.second == 0 }
 }
 
-fun square(x: Int, y: Int, length: Int) {
-
+fun cross(size: Int): List<Pair<Int, Int>> {
+    return square(size).filter { Math.abs(it.first) == Math.abs(it.second) }
 }
 
+fun forward(size: Int, white: Boolean): List<Pair<Int, Int>> {
+    return square(size).filter { white && it.second > 0 || !white && it.second < 0 }
+}
 
-fun getPieceMoves(game: GameGrammar.GameSpec, x: Int, y: Int, num: Int): Array<Int> {
-    val newBoard = Array( game.boardSize,{ Array(game.boardSize,{0}) } )
-    val piece = game.getPiece(num)
+fun getPieceMoves(state: GameState, x: Int, y: Int, pieceType: Int): ArrayList<GameState> {
+    var newStates = arrayListOf<GameState>()
+    val piece = state.gameSpec.getPiece(pieceType)
     piece.moveList.forEach {
+        var squares = arrayListOf<Pair<Int, Int>>()
         it.templateList.forEach {
-            val (a,b,c) = it.substring(1).split("_")
-
+            val sign = it.substring(0, 1)
+            val (pattern, size_str) = it.substring(1).split("_")
+            var size = size_str.toInt()
+            if (size == 0) size = state.gameSpec.boardSize
+            var newSquares = when (pattern) {
+                "square" -> square(size)
+                "plus" -> plus(size)
+                "cross" -> cross(size)
+                "forward" -> forward(size, state.white)
+                else -> arrayListOf<Pair<Int, Int>>()
+            }
+            if (sign == "+") {
+                squares.addAll(newSquares)
+            } else {
+                squares.removeAll(newSquares)
+            }
+        }
+        // have valid move offsets ignoring board boundaries and jump and landing constraints.
+        var iterator = squares.listIterator()
+        while (iterator.hasNext()) {
+            var offset = iterator.next()
+            var cell = Pair(x + offset.first, y + offset.second)
+            if (cell.first < 0 || cell.first >= state.gameSpec.boardSize ||
+                    cell.second < 0 || cell.second >= state.gameSpec.boardSize) {
+                iterator.remove()
+            } else {
+                iterator.set(cell)
+            }
 
         }
+        // have valid positions on the board
+
+        // apply jump and landing constraints.
+
+        // then create mutated board states (apply the move and any captures or exchanges)
     }
     TODO("finish")
-
+    return newStates
 }
 
-
-fun getBoardStates(game:GameGrammar.GameSpec, board: Array<Array<Int>>) {
-    val possibleStates = arrayListOf<Int>()
-    board.forEachIndexed { x, list->
-        list.forEachIndexed { y, piece ->
-            if(piece != 0) possibleStates.addAll(getPieceMoves(game,x,y,piece))
-
+fun getLegalNextStates(state: GameState): ArrayList<GameState> {
+    val states = arrayListOf<GameState>()
+    state.gameBoard.forEachIndexed { x, row ->
+        row.forEachIndexed { y, piece ->
+            if (piece != 0) states.addAll(getPieceMoves(state, x, y, piece))
         }
     }
+    return states
 }
-
 
 fun main(args: Array<String>) {
     val str = String(Files.readAllBytes(Paths.get("src/main/data/chess.textproto")))
-
     val builder = GameGrammar.GameSpec.newBuilder()
     TextFormat.getParser().merge(str, builder)
-    val game = builder.build()
+    val gameSpec = builder.build()
 
+    println(gameSpec.name)
+    println(gameSpec.boardSize)
 
-    println(game.name)
-    println(game.boardSize)
-
-    val gameBoard = Array( game.boardSize,{ Array(game.boardSize,{0}) } )
-
-
-    game.pieceList.forEachIndexed { index, piece ->
-        piece.placementList.forEach { placement ->
-            val coord = placement.substring(1).split("y").map { it.toInt()-1 }
-            println(coord)
-            if ((gameBoard[coord[1]][coord[0]] == 0 )) {
-                gameBoard[coord[1]][coord[0]]=1
-
-
-            } else throw InvalidStateException("you cant place a piece at $coord")
-        }
-    }
+    val state = GameState(gameSpec)
+    // play game
 
     println("\nboard:\n")
 
-    printArray(gameBoard)
-    getBoardStates(game,gameBoard)
-
+    printArray(state.gameBoard)
+    //getBoardStates(game, gameBoard)
 }
 
 
