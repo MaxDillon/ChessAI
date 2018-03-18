@@ -5,19 +5,21 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.sign
 
-val DISALLOWED = GameGrammar.Outcome.DISALLOWED
-
+import max.dillon.GameGrammar.Symmetry.*
+import max.dillon.GameGrammar.Outcome.*
+import max.dillon.GameGrammar.*
 
 
 class GameState {
-    var gameBoard: Array<Array<Int>>
-    val gameSpec: GameGrammar.GameSpec
+    var gameBoard: Array<IntArray>
+    val gameSpec: GameSpec
     private var whiteMove: Boolean = true
 
-    constructor(gameSpec: GameGrammar.GameSpec) {
+    constructor(gameSpec: GameSpec) {
         this.gameSpec = gameSpec
-        gameBoard = Array(gameSpec.boardSize, { Array(gameSpec.boardSize, { 0 }) })
+        gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
         gameSpec.pieceList.forEachIndexed { index, piece ->
             val pieceType = index + 1
             piece.placementList.forEach { placement ->
@@ -25,11 +27,11 @@ class GameState {
                 println("$x,$y")
                 if ((gameBoard[y][x] == 0)) {
                     gameBoard[y][x] = pieceType
-                    var oppositeX = x
-                    if (gameSpec.boardSymmetry == GameGrammar.Symmetry.ROTATE) {
-                        oppositeX = gameSpec.boardSize - 1 - x
-                    }
-                    gameBoard[gameSpec.boardSize - 1 - y][oppositeX] = -pieceType
+                    val oppositeX =
+                            if (gameSpec.boardSymmetry == ROTATE)
+                                gameSpec.boardSize - 1 - x else x
+                    val oppositeY = gameSpec.boardSize - 1 - y
+                    gameBoard[oppositeY][oppositeX] = -pieceType
                 } else throw RuntimeException("you cant place a piece at $x,$y")
             }
         }
@@ -41,7 +43,7 @@ class GameState {
     }
 
 
-    constructor(gameSpec: GameGrammar.GameSpec, gameBoard: Array<Array<Int>>, whiteMove: Boolean) : this(gameSpec) {
+    constructor(gameSpec: GameSpec, gameBoard: Array<IntArray>, whiteMove: Boolean) : this(gameSpec) {
         this.gameBoard = gameBoard
         this.whiteMove = whiteMove
     }
@@ -66,26 +68,24 @@ class GameState {
 
         if (d1 == 0 || d2 == 0 || abs(d1) == abs(d2)) { // if we have a plus or cross
             val steps = max(abs(d1), abs(d2)) - 1
-            val signX = if (d1 == 0) 0 else d1 / abs(d1)
-            val SignY = if (d2 == 0) 0 else d2 / abs(d2)
 
             for (i in 0 until steps) {
-                val (otherX,otherY) = Pair(x1 + signX * i, y1 + SignY * i)
-                val otherPiece = at(otherX,otherY)
+                val (otherX, otherY) = Pair(x1 + d1.sign * i, y1 + d2.sign * i)
+                val otherPiece = at(otherX, otherY)
                 if (otherPiece == 0 && move.jump.none == DISALLOWED) return false
                 if (otherPiece > 0 && move.jump.own == DISALLOWED) return false
                 if (otherPiece < 0 && move.jump.opponent == DISALLOWED) return false
-                if (otherPiece < 0 && move.jump.opponent ==GameGrammar.Outcome.CAPTURE) setState(otherX, otherY, 0); return false
+                if (otherPiece < 0 && move.jump.opponent == CAPTURE) setState(otherX, otherY, 0); return false
 
             }
-            val destPiece = at(x2,y2)
-            if(destPiece == 0 && move.land.none == DISALLOWED) return false
-            if(destPiece > 0 && move.land.own == DISALLOWED) return false
-            if(destPiece < 0 && move.land.opponent == DISALLOWED) return false
+            val destPiece = at(x2, y2)
+            if (destPiece == 0 && move.land.none == DISALLOWED) return false
+            if (destPiece > 0 && move.land.own == DISALLOWED) return false
+            if (destPiece < 0 && move.land.opponent == DISALLOWED) return false
 
         }
-        setState(x2,y2,at(x1,y1))
-        setState(x1,y1,0)
+        setState(x2, y2, at(x1, y1))
+        setState(x1, y1, 0)
         return true
     }
 
@@ -142,7 +142,7 @@ class GameState {
 }
 
 
-fun printArray(anArray: Array<Array<Int>>) {
+fun printArray(anArray: Array<IntArray>) {
     anArray.forEach {
         it.forEach {
             if (it >= 0) print(" ")
@@ -190,7 +190,7 @@ fun getLegalNextStates(state: GameState): ArrayList<GameState> {
 
 fun main(args: Array<String>) {
     val str = String(Files.readAllBytes(Paths.get("src/main/data/chess.textproto")))
-    val builder = GameGrammar.GameSpec.newBuilder()
+    val builder = GameSpec.newBuilder()
     TextFormat.getParser().merge(str, builder)
     val gameSpec = builder.build()
 
