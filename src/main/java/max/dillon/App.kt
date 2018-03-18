@@ -14,7 +14,7 @@ import max.dillon.GameGrammar.*
 
 class GameState {
     var gameBoard: Array<IntArray>
-    val gameSpec: GameSpec
+    private val gameSpec: GameSpec
     private var whiteMove: Boolean = true
 
     constructor(gameSpec: GameSpec) {
@@ -38,10 +38,7 @@ class GameState {
     }
 
 
-    fun at(x: Int, y: Int): Int {
-        return gameBoard[x][y]
-    }
-
+    private fun at(x: Int, y: Int): Int = gameBoard[x][y]
 
     constructor(gameSpec: GameSpec, gameBoard: Array<IntArray>, whiteMove: Boolean) : this(gameSpec) {
         this.gameBoard = gameBoard
