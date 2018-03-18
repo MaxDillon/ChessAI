@@ -10,11 +10,13 @@ val DISALLOWED = GameGrammar.Outcome.DISALLOWED
 
 
 
-class GameState(val gameSpec: GameGrammar.GameSpec) {
+class GameState {
     var gameBoard: Array<Array<Int>>
-    var whiteMove: Boolean = true
+    val gameSpec: GameGrammar.GameSpec
+    private var whiteMove: Boolean = true
 
-    init {
+    constructor(gameSpec: GameGrammar.GameSpec) {
+        this.gameSpec = gameSpec
         gameBoard = Array(gameSpec.boardSize, { Array(gameSpec.boardSize, { 0 }) })
         gameSpec.pieceList.forEachIndexed { index, piece ->
             val pieceType = index + 1
