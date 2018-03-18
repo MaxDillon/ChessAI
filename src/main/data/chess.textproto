@@ -1,6 +1,8 @@
 name: "chess"
 board_size: 8
 board_symmetry: REFLECT
+
+
 piece {
     name: "pawn"
     count: 8
