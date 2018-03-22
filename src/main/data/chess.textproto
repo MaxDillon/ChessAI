@@ -2,6 +2,9 @@ name: "chess"
 board_size: 8
 board_symmetry: REFLECT
 
+piece {
+    name: "none"
+}
 
 piece {
     name: "pawn"

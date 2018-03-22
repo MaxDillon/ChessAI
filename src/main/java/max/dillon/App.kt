@@ -20,25 +20,33 @@ class GameState {
     constructor(gameSpec: GameSpec) {
         this.gameSpec = gameSpec
         gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
-        gameSpec.pieceList.forEachIndexed { index, piece ->
-            val pieceType = index + 1
+        gameSpec.pieceList.forEachIndexed { pieceType, piece ->
             piece.placementList.forEach { placement ->
                 val (x, y) = placement.substring(1).split("y").map { it.toInt() - 1 }
-                println("$x,$y")
                 if ((gameBoard[y][x] == 0)) {
                     gameBoard[y][x] = pieceType
                     val oppositeX =
                             if (gameSpec.boardSymmetry == ROTATE)
                                 gameSpec.boardSize - 1 - x else x
                     val oppositeY = gameSpec.boardSize - 1 - y
-                    gameBoard[oppositeY][oppositeX] = -pieceType
+                    gameBoard[oppositeY][oppositeX] = - pieceType
                 } else throw RuntimeException("you cant place a piece at $x,$y")
             }
         }
     }
 
 
-    private fun at(x: Int, y: Int): Int = gameBoard[x][y]
+
+
+
+
+
+    private fun at(x: Int, y: Int): Int {
+        printArray(gameBoard)
+        println(gameBoard[x][y])
+        println("$x, $y")
+        return gameBoard[x][y]
+    }
 
     constructor(gameSpec: GameSpec, gameBoard: Array<IntArray>, whiteMove: Boolean) : this(gameSpec) {
         this.gameBoard = gameBoard
@@ -87,7 +95,10 @@ class GameState {
     }
 
 
-    fun getPieceMoves(x: Int, y: Int): ArrayList<GameState> {
+    fun getPieceMoves(x: Int, y: Int): ArrayList<Pair<Int,Int>> {
+
+
+        val finalSquares = arrayListOf<Pair<Int, Int>>()
 
         val piece = getPiece(at(x, y)) // gets current piece in position x,y
         piece.moveList.forEach {
@@ -98,7 +109,7 @@ class GameState {
                 val (pattern, size_str) = it.substring(1).split("_")
                 var size = size_str.toInt()
                 if (size == 0) size = gameSpec.boardSize
-
+                println(pattern)
                 val newSquares = when (pattern) {
                     "square" -> square(size)
                     "plus" -> plus(size)
@@ -131,10 +142,11 @@ class GameState {
             // apply jump and landing constraints.
 
             // then create mutated board states (apply the move and any captures or exchanges)
+            finalSquares += squares
         }
-        TODO("finish")
-    }
+        return finalSquares
 
+    }
 
 }
 
@@ -175,8 +187,8 @@ fun forward(size: Int, white: Boolean): List<Pair<Int, Int>> {
 }
 
 
-fun getLegalNextStates(state: GameState): ArrayList<GameState> {
-    val states = arrayListOf<GameState>()
+fun getLegalNextStates(state: GameState): ArrayList<Pair<Int,Int>> {
+    val states = arrayListOf<Pair<Int,Int>>()
     state.gameBoard.forEachIndexed { x, row ->
         row.forEachIndexed { y, piece ->
             if (piece != 0) states.addAll(state.getPieceMoves(x, y))
@@ -191,16 +203,10 @@ fun main(args: Array<String>) {
     TextFormat.getParser().merge(str, builder)
     val gameSpec = builder.build()
 
-    println(gameSpec.name)
-    println(gameSpec.boardSize)
-
     val state = GameState(gameSpec)
-    // play game
 
-    println("\nboard:\n")
 
-    printArray(state.gameBoard)
-    //getBoardStates(game, gameBoard)
+    println(state.getPieceMoves(0,3))
 }
 
 
