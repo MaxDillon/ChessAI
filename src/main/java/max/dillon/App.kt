@@ -10,12 +10,12 @@ import kotlin.math.sign
 import max.dillon.GameGrammar.Symmetry.*
 import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.*
-
+import java.util.*
 
 class GameState {
     var gameBoard: Array<IntArray>
     private val gameSpec: GameSpec
-    private var whiteMove: Boolean = true
+    var whiteMove: Boolean = true
 
     constructor(gameSpec: GameSpec) {
         this.gameSpec = gameSpec
@@ -37,10 +37,7 @@ class GameState {
 
 
     private fun at(x: Int, y: Int): Int {
-        printArray(gameBoard)
-        println(gameBoard[x][y])
-        println("$x, $y")
-        return gameBoard[x][y]
+        return gameBoard[y][x]
     }
 
     constructor(gameSpec: GameSpec, gameBoard: Array<IntArray>, whiteMove: Boolean) : this(gameSpec) {
@@ -48,63 +45,89 @@ class GameState {
         this.whiteMove = whiteMove
     }
 
-    fun clone(): GameState {
-
+    fun initNext(): GameState {
         val array = Array(gameBoard.size) { gameBoard[it].clone() }
-        return GameState(gameSpec, array, whiteMove)
-
+        return GameState(gameSpec, array, !whiteMove)
     }
 
-    private fun getPiece(i: Int): GameGrammar.Piece = gameSpec.getPiece(i)
+    private fun getPiece(i: Int): GameGrammar.Piece = gameSpec.getPiece(abs(i))
 
     private fun setState(x: Int, y: Int, state: Int) {
-        gameBoard[x][y] = state
+        gameBoard[y][x] = state
     }
 
-    fun checkSquare(move: GameGrammar.Move, x1: Int, y1: Int, x2: Int, y2: Int): Boolean {
-
-        val d1 = x2 - x1
-        val d2 = y2 - y1
-
-        if (d1 == 0 || d2 == 0 || abs(d1) == abs(d2)) { // if we have a plus or cross
-            val steps = max(abs(d1), abs(d2)) - 1
-
-            for (i in 0 until steps) {
-                val (otherX, otherY) = Pair(x1 + d1.sign * i, y1 + d2.sign * i)
-                val otherPiece = at(otherX, otherY)
-                if (otherPiece == 0 && move.jump.none == DISALLOWED) return false
-                if (otherPiece > 0 && move.jump.own == DISALLOWED) return false
-                if (otherPiece < 0 && move.jump.opponent == DISALLOWED) return false
-                if (otherPiece < 0 && move.jump.opponent == CAPTURE) setState(otherX, otherY, 0); return false
-
-            }
-            val destPiece = at(x2, y2)
-            if (destPiece == 0 && move.land.none == DISALLOWED) return false
-            if (destPiece > 0 && move.land.own == DISALLOWED) return false
-            if (destPiece < 0 && move.land.opponent == DISALLOWED) return false
-
+    fun maybeAddMove(newStates: ArrayList<GameState>, move: GameGrammar.Move,
+                     x1: Int, y1: Int, x2: Int, y2: Int): Boolean {
+        val next = initNext()
+        val src = at(x1, y1)
+        val dst = at(x2, y2)
+        // check legality of landing constraints
+        if (dst == 0 && move.land.none == DISALLOWED) {
+            return false
+        } else if (dst.sign == src.sign && move.land.own == DISALLOWED) {
+            return false
+        } else if (dst.sign == -src.sign && move.land.opponent == DISALLOWED) {
+            return false
         }
-        setState(x2, y2, at(x1, y1))
-        setState(x1, y1, 0)
+        // check legality of jump constraints
+        val dx = x2 - x1
+        val dy = y2 - y1
+        if (dx == 0 || dy == 0 || abs(dx) == abs(dy)) {
+            for (i in 1 until max(abs(dx), abs(dy))) {
+                val x3 = x1 + dx.sign * i
+                val y3 = y1 + dy.sign * i
+                val jumped = at(x3, y3)
+                if (jumped == 0 && move.jump.none == DISALLOWED) {
+                    return false
+                } else if (jumped.sign == src.sign && move.jump.own == DISALLOWED) {
+                    return false
+                } else if (jumped.sign == -src.sign && move.jump.opponent == DISALLOWED) {
+                    return false
+                }
+
+                if (jumped.sign == src.sign && move.jump.own == CAPTURE) {
+                    next.setState(x3, y3, 0)
+                } else if (jumped.sign == -src.sign && move.jump.opponent == CAPTURE) {
+                    next.setState(x3, y3, 0)
+                }
+            }
+        }
+
+        if (dst.sign != 0) {
+            val action = if (dst.sign == src.sign) move.land.own else move.land.opponent
+            if (action == SWAP) {
+                next.setState(x1, y1, dst)
+                next.setState(x2, y2, src)
+            } else if (action == CAPTURE) {
+                next.setState(x2, y2, src)
+                next.setState(x1, y1, 0)
+            } else {
+                throw RuntimeException("grammar doesn't specify disposition of non-empty destination")
+            }
+        } else {
+            if (move.land.none == ALLOWED) {
+                next.setState(x2, y2, src)
+                next.setState(x1, y1, 0)
+            } else {
+                throw RuntimeException("grammar specifies swap or capture for empty cell")
+            }
+        }
+
+        newStates.add(next)
         return true
     }
 
-
-    fun getPieceMoves(x: Int, y: Int): ArrayList<Pair<Int, Int>> {
-
-
-        val finalSquares = arrayListOf<Pair<Int, Int>>()
+    fun getPieceMoves(x: Int, y: Int): ArrayList<GameState> {
+        val newStates = arrayListOf<GameState>()
 
         val piece = getPiece(at(x, y)) // gets current piece in position x,y
         piece.moveList.forEach {
             val squares = arrayListOf<Pair<Int, Int>>()
-
             it.templateList.forEach {
                 val sign = it.substring(0, 1)
                 val (pattern, size_str) = it.substring(1).split("_")
                 var size = size_str.toInt()
                 if (size == 0) size = gameSpec.boardSize
-                println(pattern)
                 val newSquares = when (pattern) {
                     "square" -> square(size)
                     "plus" -> plus(size)
@@ -119,28 +142,26 @@ class GameState {
                     squares.removeAll(newSquares)
                 }
             }
-            // have valid move offsets ignoring board boundaries and jump and landing constraints.
-            val iterator = squares.listIterator()
-            while (iterator.hasNext()) {
-                val offset = iterator.next()
-                val cell = Pair(x + offset.first, y + offset.second)
-                if (cell.first < 0 || cell.first >= gameSpec.boardSize ||
-                        cell.second < 0 || cell.second >= gameSpec.boardSize) {
-                    iterator.remove()
-                } else {
-                    iterator.set(cell)
+            for (square in squares) {
+                // have valid move offsets ignoring board boundaries and jump and landing constraints.
+                val x2 = x + square.first
+                val y2 = y + square.second
+                if (x2 >= 0 && x2 < gameSpec.boardSize && y2 >= 0 && y2 < gameSpec.boardSize) {
+                    maybeAddMove(newStates, it, x, y, x2, y2)
                 }
-
             }
-            // have valid positions on the board
-
-            // apply jump and landing constraints.
-
-            // then create mutated board states (apply the move and any captures or exchanges)
-            finalSquares += squares
         }
-        return finalSquares
+        return newStates
+    }
 
+    fun getLegalNextStates(): ArrayList<GameState> {
+        val states = arrayListOf<GameState>()
+        gameBoard.forEachIndexed { y, row ->
+            row.forEachIndexed { x, piece ->
+                if (piece.sign == if (whiteMove) 1 else -1) states.addAll(getPieceMoves(x, y))
+            }
+        }
+        return states
     }
 
 }
@@ -154,6 +175,7 @@ fun printArray(anArray: Array<IntArray>) {
         }
         println("\n")
     }
+    println("#########################################\n")
 }
 
 fun square(size: Int): List<Pair<Int, Int>> {
@@ -182,15 +204,6 @@ fun forward(size: Int, white: Boolean): List<Pair<Int, Int>> {
 }
 
 
-fun getLegalNextStates(state: GameState): ArrayList<Pair<Int, Int>> {
-    val states = arrayListOf<Pair<Int, Int>>()
-    state.gameBoard.forEachIndexed { x, row ->
-        row.forEachIndexed { y, piece ->
-            if (piece != 0) states.addAll(state.getPieceMoves(x, y))
-        }
-    }
-    return states
-}
 
 fun main(args: Array<String>) {
     val str = String(Files.readAllBytes(Paths.get("src/main/data/chess.textproto")))
@@ -201,10 +214,14 @@ fun main(args: Array<String>) {
         addPiece(0, builder.addPieceBuilder())
     }.build()
 
-    val state = GameState(gameSpec)
-
-
-    println(state.getPieceMoves(4, 4))
+    val rand = Random()
+    var state = GameState(gameSpec)
+    while (true) {
+        printArray(state.gameBoard)
+        val nextStates = state.getLegalNextStates()
+        if (nextStates.size == 0) return
+        state = nextStates[rand.nextInt(nextStates.size)]
+    }
 }
 
 
