@@ -168,14 +168,17 @@ class GameState {
 
 
 fun printArray(anArray: Array<IntArray>) {
+    println("# # # # # # # # # # # # # # # # # #")
+    println("# ------------------------------- #")
     anArray.forEach {
+        print("#|")
         it.forEach {
             if (it >= 0) print(" ")
-            print("$it  ")
+            print("${if (it == 0) " " else it.toString()} |")
         }
-        println("\n")
+        println("#\n# --- --- --- --- --- --- --- --- #")
     }
-    println("#########################################\n")
+    println("# # # # # # # # # # # # # # # # # #\n\n")
 }
 
 fun square(size: Int): List<Pair<Int, Int>> {
