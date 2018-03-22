@@ -29,16 +29,11 @@ class GameState {
                             if (gameSpec.boardSymmetry == ROTATE)
                                 gameSpec.boardSize - 1 - x else x
                     val oppositeY = gameSpec.boardSize - 1 - y
-                    gameBoard[oppositeY][oppositeX] = - pieceType
+                    gameBoard[oppositeY][oppositeX] = -pieceType
                 } else throw RuntimeException("you cant place a piece at $x,$y")
             }
         }
     }
-
-
-
-
-
 
 
     private fun at(x: Int, y: Int): Int {
@@ -95,7 +90,7 @@ class GameState {
     }
 
 
-    fun getPieceMoves(x: Int, y: Int): ArrayList<Pair<Int,Int>> {
+    fun getPieceMoves(x: Int, y: Int): ArrayList<Pair<Int, Int>> {
 
 
         val finalSquares = arrayListOf<Pair<Int, Int>>()
@@ -187,8 +182,8 @@ fun forward(size: Int, white: Boolean): List<Pair<Int, Int>> {
 }
 
 
-fun getLegalNextStates(state: GameState): ArrayList<Pair<Int,Int>> {
-    val states = arrayListOf<Pair<Int,Int>>()
+fun getLegalNextStates(state: GameState): ArrayList<Pair<Int, Int>> {
+    val states = arrayListOf<Pair<Int, Int>>()
     state.gameBoard.forEachIndexed { x, row ->
         row.forEachIndexed { y, piece ->
             if (piece != 0) states.addAll(state.getPieceMoves(x, y))
@@ -201,12 +196,15 @@ fun main(args: Array<String>) {
     val str = String(Files.readAllBytes(Paths.get("src/main/data/chess.textproto")))
     val builder = GameSpec.newBuilder()
     TextFormat.getParser().merge(str, builder)
-    val gameSpec = builder.build()
+
+    val gameSpec = builder.apply {
+        addPiece(0, builder.addPieceBuilder())
+    }.build()
 
     val state = GameState(gameSpec)
 
 
-    println(state.getPieceMoves(0,3))
+    println(state.getPieceMoves(4, 4))
 }
 
 
