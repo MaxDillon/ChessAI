@@ -234,17 +234,20 @@ class GameState {
 
     fun printBoard() {
         println("# # # # # # # # # # # # # # # # # #")
-        println("# ------------------------------- #")
-        gameBoard.forEach {
+        println("# --- --- --- --- --- --- --- --- #")
+        gameBoard.forEachIndexed { i, it ->
             print("#|")
             it.forEach {
-                print(if (it < 0) "<" else " ")
+                print(if (it < 0) ":" else if (it > 0) " " else " ")
                 print(if (it == 0) " " else gameSpec.pieceList[abs(it)].name)
-                print(if (it < 0) ">|" else " |")
+                print(if (it < 0) ":" else if (it > 0) " " else " ")
+                print("|")
             }
-            println("#\n# --- --- --- --- --- --- --- --- #")
+            println("# ${i+1}")
+            println("# --- --- --- --- --- --- --- --- #")
         }
-        println("# # # # # # # # # # # # # # # # # #\n\n")
+        println("# # # # # # # # # # # # # # # # # #")
+        println("   h   g   f   e   d   c   b   a\n\n")
     }
 }
 
