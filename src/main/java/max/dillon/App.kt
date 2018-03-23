@@ -13,9 +13,6 @@ import java.util.*
 import max.dillon.GameGrammar.Symmetry.*
 import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.*
-import max.dillon.GameGrammar.Boolean
-
-
 
 const val alphabet = "abcdefghijklmnopqrstuvwxyz"
 
@@ -214,7 +211,7 @@ class GameState {
             for (square in squares) {
                 val (x2, y2) = square
                 if (x2 >= 0 && x2 < gameSpec.boardSize && y2 >= 0 && y2 < gameSpec.boardSize) {
-                    if(piece.relative.on == TRUE) {
+                    if(piece.relative.allowed == true) {
 
                     } else {
                         maybeAddMove(newStates, move, x, y, x2, y2)

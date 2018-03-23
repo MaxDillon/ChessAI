@@ -26,12 +26,6 @@ message MoveOptions {
     Outcome opponent = 3;
 }
 
-enum Boolean {
-    FALSE = 0;
-    TRUE = 1;
-}
-
-
 message Move {
     repeated string template = 1;
 
@@ -44,11 +38,10 @@ message Move {
 }
 
 message RelativePose {
-    Boolean allowed = 1;
+    bool allowed = 1;
     MoveOptions ignoreColor = 2;
     repeated string type = 3;
 }
-
 
 message Piece {
     string name = 1;
@@ -56,6 +49,7 @@ message Piece {
     uint32 min = 3;
     repeated string placement = 4;
     repeated Move move = 5;
+    RelativePose relative = 6;
 }
 
 message GameSpec {
