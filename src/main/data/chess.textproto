@@ -3,7 +3,7 @@ board_size: 8
 board_symmetry: REFLECT
 
 piece {
-    name: "P"
+    name: "p"
     count: 8
     min: 0
     placement: "x1y2"
