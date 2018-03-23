@@ -42,6 +42,9 @@ piece {
         template: "=forward_2"
         template: "-forward_1"
         template: "=rank_3"
+        jump {
+            none: ALLOWED
+        }
         land {
             none: ALLOWED
             own: DISALLOWED
@@ -58,22 +61,22 @@ piece {
             own: DISALLOWED
             opponent: CAPTURE
          }
-         promote: "queen"
-         promote: "knight"
+         promote: "Q"
+         promote: "N"
      }
     # pawn advance and promote
     move {
-        template: "+forward_1"
-        template: "-cross_1"
-        template: "=rank_7"
-        land {
-            none: ALLOWED
-            own: DISALLOWED
-            opponent: DISALLOWED
-         }
-         promote: "queen"
-         promote: "knight"
-     }
+      template: "+forward_1"
+      template: "-cross_1"
+      template: "=rank_7"
+       land {
+           none: ALLOWED
+           own: DISALLOWED
+           opponent: DISALLOWED
+        }
+        promote: "Q"
+        promote: "N"
+    }
 }
 piece {
     name: "N"

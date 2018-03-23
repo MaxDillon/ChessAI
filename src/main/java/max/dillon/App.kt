@@ -154,10 +154,10 @@ class GameState {
     }
 
     fun rank(row: Int): List<Pair<Int, Int>> {
-        val adjRow = if (whiteMove) row else gameSpec.boardSize - 1 - row
+        val adjY = if (whiteMove) row else gameSpec.boardSize - 1 - row
         val moves = arrayListOf<Pair<Int, Int>>()
-        for (col in 0 until gameSpec.boardSize) {
-            moves.add(Pair(adjRow, col))
+        for (x in 0 until gameSpec.boardSize) {
+            moves.add(Pair(x, adjY))
         }
         return moves
     }
@@ -166,7 +166,7 @@ class GameState {
         val newStates = arrayListOf<GameState>()
         val piece = getPiece(at(x, y)) // gets current piece in position x,y
         for (move in piece.moveList) {
-            var squares = arrayListOf<Pair<Int, Int>>()
+            val squares = arrayListOf<Pair<Int, Int>>()
             for (template in move.templateList) {
                 val action = template.substring(0, 1)
                 val (pattern, size_str) = template.substring(1).split("_")
@@ -238,13 +238,22 @@ class GameState {
         gameBoard.forEach {
             print("#|")
             it.forEach {
-                if (it >= 0) print(" ")
-                print("${if (it == 0) " " else it.toString()} |")
+                print(if (it < 0) "<" else " ")
+                print(if (it == 0) " " else gameSpec.pieceList[abs(it)].name)
+                print(if (it < 0) ">|" else " |")
             }
             println("#\n# --- --- --- --- --- --- --- --- #")
         }
         println("# # # # # # # # # # # # # # # # # #\n\n")
     }
+}
+
+fun testStuff(gameSpec: GameSpec) {
+    val s1 = GameState(gameSpec)
+    s1.gameBoard.forEach { for (i in it.indices) it[i] = 0 }
+    s1.gameBoard[1][3] = 1
+    s1.printBoard()
+    for (s in s1.getLegalNextStates()) s.printBoard()
 }
 
 fun main(args: Array<String>) {

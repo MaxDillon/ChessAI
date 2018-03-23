@@ -40,3 +40,12 @@ question of representation of moves.
   or could just be a new board state as an array.
   (second might be easier since you do things in just one place)
 
+
+
+Grammar considerations
+  -- representation of pieces off the board and moves for such pieces
+  -- representation of adjacency for where you're allowed to land (e.g., connect 4)
+  -- representation of winning conditions
+  -- representation of move chaining (to help with pawn moves, or queening, or checkers)
+  -- representation of special rows
+
