@@ -10,7 +10,10 @@ import kotlin.math.sign
 import max.dillon.GameGrammar.Symmetry.*
 import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.*
+import java.nio.file.NoSuchFileException
 import java.util.*
+
+const val alphabet = "abcdefghijklmnopqrstuvwxyz"
 
 class GameState {
     var gameBoard: Array<IntArray>
@@ -233,8 +236,16 @@ class GameState {
     }
 
     fun printBoard() {
-        println("# # # # # # # # # # # # # # # # # #")
-        println("# --- --- --- --- --- --- --- --- #")
+        val size = gameSpec.boardSize
+        print("# ")
+        for (index in 0 until size) print("# # ")
+        println("#")
+
+        print("# ")
+        for (index in 0 until size) print("--- ")
+        println("#")
+
+
         gameBoard.forEachIndexed { i, row ->
             print("#|")
             row.forEachIndexed { j, piece ->
@@ -248,10 +259,16 @@ class GameState {
 
             }
             println("# ${i+1}")
-            println("# --- --- --- --- --- --- --- --- #")
+            print("# ")
+            for (index in 0 until size) print("--- ")
+            println("#")
         }
-        println("# # # # # # # # # # # # # # # # # #")
-        println("   h   g   f   e   d   c   b   a\n\n")
+        print("# ")
+        for (index in 0 until size) print("# # ")
+        println("#")
+
+        for (index in 0 until size) print("   "+alphabet[index])
+        println("\n\n")
     }
 }
 
@@ -264,7 +281,19 @@ fun testStuff(gameSpec: GameSpec) {
 }
 
 fun main(args: Array<String>) {
-    val str = String(Files.readAllBytes(Paths.get("src/main/data/chess.textproto")))
+    var game: String
+    var str: String
+    while (true) {
+        try {
+            game = readLine()?:""
+            str = String(Files.readAllBytes(Paths.get("src/main/data/$game.textproto")))
+            break
+        } catch (e: NoSuchFileException) {
+            println("there is no such file. try again")
+        }
+
+    }
+
     val builder = GameSpec.newBuilder()
     TextFormat.getParser().merge(str, builder)
 
@@ -274,14 +303,17 @@ fun main(args: Array<String>) {
 
     val rand = Random()
     var state = GameState(gameSpec)
-    
+    var count = 0
     while (true) {
+        count++
+        println(if(state.whiteMove) "white move\n" else "black move\n")
         state.printBoard()
         if (state.gameOver()) break
         val nextStates = state.getLegalNextStates()
         if (nextStates.size == 0) return
         state = nextStates[rand.nextInt(nextStates.size)]
     }
+    println(count)
 }
 
 
