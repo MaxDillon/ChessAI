@@ -16,7 +16,7 @@ import java.util.*
 const val alphabet = "abcdefghijklmnopqrstuvwxyz"
 
 class GameState {
-    var gameBoard: Array<IntArray>
+    private var gameBoard: Array<IntArray>
     private val gameSpec: GameSpec
     var whiteMove: Boolean = true
 
@@ -38,6 +38,7 @@ class GameState {
         }
     }
 
+
     private fun at(x: Int, y: Int): Int {
         return gameBoard[y][x]
     }
@@ -47,7 +48,7 @@ class GameState {
         this.whiteMove = whiteMove
     }
 
-    fun initNext(): GameState {
+    private fun initNext(): GameState {
         val array = Array(gameBoard.size) { gameBoard[it].clone() }
         return GameState(gameSpec, array, !whiteMove)
     }
@@ -58,8 +59,9 @@ class GameState {
         gameBoard[y][x] = state
     }
 
-    fun maybeAddMove(newStates: ArrayList<GameState>, move: GameGrammar.Move,
-                     x1: Int, y1: Int, x2: Int, y2: Int): Boolean {
+
+    private fun maybeAddMove(newStates: ArrayList<GameState>, move: GameGrammar.Move,
+                             x1: Int, y1: Int, x2: Int, y2: Int): Boolean {
         val next = initNext()
         val src = at(x1, y1)
         val dst = at(x2, y2)
@@ -97,14 +99,16 @@ class GameState {
 
         if (dst.sign != 0) {
             val action = if (dst.sign == src.sign) move.land.own else move.land.opponent
-            if (action == SWAP) {
-                next.setState(x1, y1, dst)
-                next.setState(x2, y2, src)
-            } else if (action == CAPTURE) {
-                next.setState(x2, y2, src)
-                next.setState(x1, y1, 0)
-            } else {
-                throw RuntimeException("grammar doesn't specify disposition of non-empty destination")
+            when (action) {
+                SWAP -> {
+                    next.setState(x1, y1, dst)
+                    next.setState(x2, y2, src)
+                }
+                CAPTURE -> {
+                    next.setState(x2, y2, src)
+                    next.setState(x1, y1, 0)
+                }
+                else -> throw RuntimeException("grammar doesn't specify disposition of non-empty destination")
             }
         } else {
             if (move.land.none == ALLOWED) {
@@ -131,7 +135,7 @@ class GameState {
         return true
     }
 
-    fun square(size: Int): List<Pair<Int, Int>> {
+    private fun square(size: Int): List<Pair<Int, Int>> {
         val moves = arrayListOf<Pair<Int, Int>>()
         for (i in 0..size) {
             for (j in 1..size) {
@@ -144,19 +148,19 @@ class GameState {
         return moves
     }
 
-    fun plus(size: Int): List<Pair<Int, Int>> {
+    private fun plus(size: Int): List<Pair<Int, Int>> {
         return square(size).filter { it.first == 0 || it.second == 0 }
     }
 
-    fun cross(size: Int): List<Pair<Int, Int>> {
+    private fun cross(size: Int): List<Pair<Int, Int>> {
         return square(size).filter { Math.abs(it.first) == Math.abs(it.second) }
     }
 
-    fun forward(size: Int): List<Pair<Int, Int>> {
+    private fun forward(size: Int): List<Pair<Int, Int>> {
         return square(size).filter { whiteMove && it.second > 0 || !whiteMove && it.second < 0 }
     }
 
-    fun rank(row: Int): List<Pair<Int, Int>> {
+    private fun rank(row: Int): List<Pair<Int, Int>> {
         val adjY = if (whiteMove) row else gameSpec.boardSize - 1 - row
         val moves = arrayListOf<Pair<Int, Int>>()
         for (x in 0 until gameSpec.boardSize) {
@@ -165,11 +169,16 @@ class GameState {
         return moves
     }
 
-    fun getPieceMoves(x: Int, y: Int): ArrayList<GameState> {
+
+    private fun getPieceMoves(x: Int, y: Int): ArrayList<GameState> {
         val newStates = arrayListOf<GameState>()
-        val piece = getPiece(at(x, y)) // gets current piece in position x,y
+
+        val piece = if(y==-1) getPiece(x) else getPiece(at(x, y)) // gets current piece in position x,y
+
         for (move in piece.moveList) {
             val squares = arrayListOf<Pair<Int, Int>>()
+
+
             for (template in move.templateList) {
                 val action = template.substring(0, 1)
                 val (pattern, size_str) = template.substring(1).split("_")
@@ -184,14 +193,14 @@ class GameState {
                     "rank" -> rank(size)
                     else -> arrayListOf()
                 }
-                if (action == "+") {
-                    squares.addAll(newSquares)
-                } else if (action == "=") {
-                    val intersection = squares.intersect(newSquares)
-                    squares.clear()
-                    squares.addAll(intersection)
-                } else {
-                    squares.removeAll(newSquares)
+                when (action) {
+                    "+" -> squares.addAll(newSquares)
+                    "=" -> {
+                        val intersection = squares.intersect(newSquares)
+                        squares.clear()
+                        squares.addAll(intersection)
+                    }
+                    else -> squares.removeAll(newSquares)
                 }
             }
             for (square in squares) {
@@ -249,7 +258,7 @@ class GameState {
         gameBoard.forEachIndexed { i, row ->
             print("#|")
             row.forEachIndexed { j, piece ->
-                if ((i+j)%2==0) print("\u001B[47m\u001B[30m")
+                if ((i + j) % 2 == 0) print("\u001B[47m\u001B[30m")
                 print("\u001B[1m")
                 print(if (piece < 0) ":" else if (piece > 0) " " else " ")
                 print(if (piece == 0) " " else gameSpec.pieceList[abs(piece)].name)
@@ -258,7 +267,7 @@ class GameState {
                 print("|")
 
             }
-            println("# ${i+1}")
+            println("# ${i + 1}")
             print("# ")
             for (index in 0 until size) print("--- ")
             println("#")
@@ -267,25 +276,28 @@ class GameState {
         for (index in 0 until size) print("# # ")
         println("#")
 
-        for (index in 0 until size) print("   "+alphabet[index])
+        for (index in 0 until size) print("   " + alphabet[index])
         println("\n\n")
     }
 }
 
-fun testStuff(gameSpec: GameSpec) {
-    val s1 = GameState(gameSpec)
-    s1.gameBoard.forEach { for (i in it.indices) it[i] = 0 }
-    s1.gameBoard[1][3] = 1
-    s1.printBoard()
-    for (s in s1.getLegalNextStates()) s.printBoard()
-}
+
+//fun testStuff(gameSpec: GameSpec) {
+//    val s1 = GameState(gameSpec)
+//    s1.gameBoard.forEach { for (i in it.indices) it[i] = 0 }
+//    s1.gameBoard[1][3] = 1
+//    s1.printBoard()
+//    for (s in s1.getLegalNextStates()) s.printBoard()
+//}
+//
+
 
 fun main(args: Array<String>) {
     var game: String
     var str: String
     while (true) {
         try {
-            game = readLine()?:""
+            game = readLine() ?: ""
             str = String(Files.readAllBytes(Paths.get("src/main/data/$game.textproto")))
             break
         } catch (e: NoSuchFileException) {
@@ -306,7 +318,7 @@ fun main(args: Array<String>) {
     var count = 0
     while (true) {
         count++
-        println(if(state.whiteMove) "white move\n" else "black move\n")
+        println(if (state.whiteMove) "white move\n" else "black move\n")
         state.printBoard()
         if (state.gameOver()) break
         val nextStates = state.getLegalNextStates()

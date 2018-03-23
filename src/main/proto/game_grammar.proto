@@ -5,6 +5,7 @@ package max.dillon;
 enum Symmetry {
     REFLECT = 0;
     ROTATE = 1;
+    NONE = 2;
 }
 
 enum Outcome {
@@ -14,18 +15,40 @@ enum Outcome {
     SWAP = 3;
 }
 
+enum FromWhere {
+    ONBOARD = 0;
+    OFFBOARD = 1;
+}
+
 message MoveOptions {
     Outcome none = 1;
     Outcome own = 2;
     Outcome opponent = 3;
 }
 
+enum Boolean {
+    FALSE = 0;
+    TRUE = 1;
+}
+
+
 message Move {
     repeated string template = 1;
-    MoveOptions land = 2;
-    MoveOptions jump = 3;
-    repeated string promote = 4;
+
+    FromWhere fromWhere = 2;
+    RelativePose relative = 3;
+
+    MoveOptions land = 4;
+    MoveOptions jump = 5;
+    repeated string promote = 6;
 }
+
+message RelativePose {
+    Boolean allowed = 1;
+    MoveOptions ignoreColor = 2;
+    repeated string type = 3;
+}
+
 
 message Piece {
     string name = 1;

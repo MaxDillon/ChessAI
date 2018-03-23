@@ -1,0 +1,27 @@
+
+
+
+name: "connect 4"
+board_size: 7
+board_symmetry: NONE
+
+
+piece {
+    name: "O"
+    count: 25
+
+    move {
+        fromWhere: OFFBOARD
+        relative {
+            on: TRUE
+            color {
+                own: ALLOWED
+                opponent: ALLOWED
+            }
+        }
+        template: "+forward1"
+        template: "-cross1"
+
+    }
+
+}
