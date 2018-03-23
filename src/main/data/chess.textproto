@@ -3,7 +3,7 @@ board_size: 8
 board_symmetry: REFLECT
 
 piece {
-    name: "pawn"
+    name: "P"
     count: 8
     min: 0
     placement: "x1y2"
@@ -76,7 +76,7 @@ piece {
      }
 }
 piece {
-    name: "knight"
+    name: "N"
     count: 2
     min: 0
     placement: "x2y1"
@@ -98,7 +98,7 @@ piece {
     }
 }
 piece {
-    name: "bishop"
+    name: "B"
     count: 2
     min: 0
     placement: "x3y1"
@@ -119,7 +119,7 @@ piece {
     }
 }
 piece {
-    name: "rook"
+    name: "R"
     count: 2
     min: 0
     placement: "x8y1"
@@ -140,7 +140,7 @@ piece {
     }
 }
 piece {
-    name: "queen"
+    name: "Q"
     count: 1
     min: 0
     placement: "x4y1"
@@ -160,7 +160,7 @@ piece {
     }
 }
 piece {
-    name: "king"
+    name: "K"
     count: 1
     min: 1
     placement: "x5y1"
