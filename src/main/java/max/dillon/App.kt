@@ -1,17 +1,21 @@
 package max.dillon
 
+import com.google.protobuf.BoolValue
 import com.google.protobuf.TextFormat
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.sign
+import java.nio.file.NoSuchFileException
+import java.util.*
 
 import max.dillon.GameGrammar.Symmetry.*
 import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.*
-import java.nio.file.NoSuchFileException
-import java.util.*
+import max.dillon.GameGrammar.Boolean
+
+
 
 const val alphabet = "abcdefghijklmnopqrstuvwxyz"
 
@@ -170,10 +174,9 @@ class GameState {
     }
 
 
-    private fun getPieceMoves(x: Int, y: Int): ArrayList<GameState> {
+    private fun getPieceMoves(x: Int, y: Int, p: Int = at(x,y)): ArrayList<GameState> {
         val newStates = arrayListOf<GameState>()
-
-        val piece = if(y==-1) getPiece(x) else getPiece(at(x, y)) // gets current piece in position x,y
+        val piece = getPiece(p) // gets current piece in position x,y
 
         for (move in piece.moveList) {
             val squares = arrayListOf<Pair<Int, Int>>()
@@ -184,7 +187,10 @@ class GameState {
                 val (pattern, size_str) = template.substring(1).split("_")
                 var size = size_str.toInt()
                 if (size == 0) size = gameSpec.boardSize
+
+
                 fun toBoard(offset: Pair<Int, Int>) = Pair(x + offset.first, y + offset.second)
+
                 val newSquares = when (pattern) {
                     "square" -> square(size).map(::toBoard)
                     "plus" -> plus(size).map(::toBoard)
@@ -193,6 +199,8 @@ class GameState {
                     "rank" -> rank(size)
                     else -> arrayListOf()
                 }
+
+
                 when (action) {
                     "+" -> squares.addAll(newSquares)
                     "=" -> {
@@ -206,7 +214,12 @@ class GameState {
             for (square in squares) {
                 val (x2, y2) = square
                 if (x2 >= 0 && x2 < gameSpec.boardSize && y2 >= 0 && y2 < gameSpec.boardSize) {
-                    maybeAddMove(newStates, move, x, y, x2, y2)
+                    if(piece.relative.on == TRUE) {
+
+                    } else {
+                        maybeAddMove(newStates, move, x, y, x2, y2)
+                    }
+
                 }
             }
         }
