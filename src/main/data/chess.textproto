@@ -5,6 +5,7 @@ board_symmetry: REFLECT
 piece {
     name: "pawn"
     count: 8
+    min: 0
     placement: "x1y2"
     placement: "x2y2"
     placement: "x3y2"
@@ -13,28 +14,71 @@ piece {
     placement: "x6y2"
     placement: "x7y2"
     placement: "x8y2"
+    # pawn capture
     move {
         template: "+forward_1"
         template: "-plus_1"
+        template: "-rank_7"
         land {
             none: DISALLOWED
             own: DISALLOWED
             opponent: CAPTURE
          }
      }
+    # pawn advance one
     move {
         template: "+forward_1"
         template: "-cross_1"
+        template: "-rank_7"
         land {
             none: ALLOWED
             own: DISALLOWED
             opponent: DISALLOWED
          }
      }
+    # pawn advance two
+    move {
+        template: "+plus_2"
+        template: "=forward_2"
+        template: "-forward_1"
+        template: "=rank_3"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: DISALLOWED
+         }
+     }
+    # pawn capture and promote
+    move {
+        template: "+forward_1"
+        template: "-plus_1"
+        template: "=rank_7"
+        land {
+            none: DISALLOWED
+            own: DISALLOWED
+            opponent: CAPTURE
+         }
+         promote: "queen"
+         promote: "knight"
+     }
+    # pawn advance and promote
+    move {
+        template: "+forward_1"
+        template: "-cross_1"
+        template: "=rank_7"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: DISALLOWED
+         }
+         promote: "queen"
+         promote: "knight"
+     }
 }
 piece {
     name: "knight"
     count: 2
+    min: 0
     placement: "x2y1"
     placement: "x7y1"
     move {
@@ -56,6 +100,7 @@ piece {
 piece {
     name: "bishop"
     count: 2
+    min: 0
     placement: "x3y1"
     placement: "x6y1"
 
@@ -76,6 +121,7 @@ piece {
 piece {
     name: "rook"
     count: 2
+    min: 0
     placement: "x8y1"
     placement: "x1y1"
 
@@ -96,6 +142,7 @@ piece {
 piece {
     name: "queen"
     count: 1
+    min: 0
     placement: "x4y1"
     move {
         template: "+cross_0"
@@ -115,6 +162,7 @@ piece {
 piece {
     name: "king"
     count: 1
+    min: 1
     placement: "x5y1"
     move {
         template: "+square_1"

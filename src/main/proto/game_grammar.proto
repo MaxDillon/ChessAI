@@ -24,13 +24,15 @@ message Move {
     repeated string template = 1;
     MoveOptions land = 2;
     MoveOptions jump = 3;
+    repeated string promote = 4;
 }
 
 message Piece {
     string name = 1;
     uint32 count = 2;
-    repeated string placement = 3;
-    repeated Move move = 4;
+    uint32 min = 3;
+    repeated string placement = 4;
+    repeated Move move = 5;
 }
 
 message GameSpec {

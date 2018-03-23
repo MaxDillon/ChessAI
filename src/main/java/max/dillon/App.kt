@@ -35,7 +35,6 @@ class GameState {
         }
     }
 
-
     private fun at(x: Int, y: Int): Int {
         return gameBoard[y][x]
     }
@@ -112,42 +111,90 @@ class GameState {
                 throw RuntimeException("grammar specifies swap or capture for empty cell")
             }
         }
-
-        newStates.add(next)
+        if (move.promoteCount == 0) {
+            newStates.add(next)
+        } else {
+            for (name in move.promoteList) {
+                val promo = next.initNext()
+                promo.whiteMove = next.whiteMove
+                for (i in gameSpec.pieceList.indices) {
+                    if (gameSpec.pieceList[i].name == name) {
+                        promo.setState(x2, y2, if (whiteMove) i else -1)
+                    }
+                }
+                newStates.add(promo)
+            }
+        }
         return true
+    }
+
+    fun square(size: Int): List<Pair<Int, Int>> {
+        val moves = arrayListOf<Pair<Int, Int>>()
+        for (i in 0..size) {
+            for (j in 1..size) {
+                moves.add(Pair(i, j))
+                moves.add(Pair(-j, i))
+                moves.add(Pair(-i, -j))
+                moves.add(Pair(j, -i))
+            }
+        }
+        return moves
+    }
+
+    fun plus(size: Int): List<Pair<Int, Int>> {
+        return square(size).filter { it.first == 0 || it.second == 0 }
+    }
+
+    fun cross(size: Int): List<Pair<Int, Int>> {
+        return square(size).filter { Math.abs(it.first) == Math.abs(it.second) }
+    }
+
+    fun forward(size: Int): List<Pair<Int, Int>> {
+        return square(size).filter { whiteMove && it.second > 0 || !whiteMove && it.second < 0 }
+    }
+
+    fun rank(row: Int): List<Pair<Int, Int>> {
+        val adjRow = if (whiteMove) row else gameSpec.boardSize - 1 - row
+        val moves = arrayListOf<Pair<Int, Int>>()
+        for (col in 0 until gameSpec.boardSize) {
+            moves.add(Pair(adjRow, col))
+        }
+        return moves
     }
 
     fun getPieceMoves(x: Int, y: Int): ArrayList<GameState> {
         val newStates = arrayListOf<GameState>()
-
         val piece = getPiece(at(x, y)) // gets current piece in position x,y
-        piece.moveList.forEach {
-            val squares = arrayListOf<Pair<Int, Int>>()
-            it.templateList.forEach {
-                val sign = it.substring(0, 1)
-                val (pattern, size_str) = it.substring(1).split("_")
+        for (move in piece.moveList) {
+            var squares = arrayListOf<Pair<Int, Int>>()
+            for (template in move.templateList) {
+                val action = template.substring(0, 1)
+                val (pattern, size_str) = template.substring(1).split("_")
                 var size = size_str.toInt()
                 if (size == 0) size = gameSpec.boardSize
+                fun toBoard(offset: Pair<Int, Int>) = Pair(x + offset.first, y + offset.second)
                 val newSquares = when (pattern) {
-                    "square" -> square(size)
-                    "plus" -> plus(size)
-                    "cross" -> cross(size)
-                    "forward" -> forward(size, whiteMove)
+                    "square" -> square(size).map(::toBoard)
+                    "plus" -> plus(size).map(::toBoard)
+                    "cross" -> cross(size).map(::toBoard)
+                    "forward" -> forward(size).map(::toBoard)
+                    "rank" -> rank(size)
                     else -> arrayListOf()
                 }
-
-                if (sign == "+") {
+                if (action == "+") {
                     squares.addAll(newSquares)
+                } else if (action == "=") {
+                    val intersection = squares.intersect(newSquares)
+                    squares.clear()
+                    squares.addAll(intersection)
                 } else {
                     squares.removeAll(newSquares)
                 }
             }
             for (square in squares) {
-                // have valid move offsets ignoring board boundaries and jump and landing constraints.
-                val x2 = x + square.first
-                val y2 = y + square.second
+                val (x2, y2) = square
                 if (x2 >= 0 && x2 < gameSpec.boardSize && y2 >= 0 && y2 < gameSpec.boardSize) {
-                    maybeAddMove(newStates, it, x, y, x2, y2)
+                    maybeAddMove(newStates, move, x, y, x2, y2)
                 }
             }
         }
@@ -164,49 +211,41 @@ class GameState {
         return states
     }
 
-}
-
-
-fun printArray(anArray: Array<IntArray>) {
-    println("# # # # # # # # # # # # # # # # # #")
-    println("# ------------------------------- #")
-    anArray.forEach {
-        print("#|")
-        it.forEach {
-            if (it >= 0) print(" ")
-            print("${if (it == 0) " " else it.toString()} |")
+    fun gameOver(): Boolean {
+        val p1Counts = IntArray(gameSpec.pieceList.size, { 0 })
+        val p2Counts = IntArray(gameSpec.pieceList.size, { 0 })
+        for (row in gameBoard) {
+            for (piece in row) {
+                if (piece > 0) p1Counts[piece] += 1
+                if (piece < 0) p2Counts[-piece] += 1
+            }
         }
-        println("#\n# --- --- --- --- --- --- --- --- #")
-    }
-    println("# # # # # # # # # # # # # # # # # #\n\n")
-}
-
-fun square(size: Int): List<Pair<Int, Int>> {
-    val moves = arrayListOf<Pair<Int, Int>>()
-    for (i in 0..size) {
-        for (j in 1..size) {
-            moves.add(Pair(i, j))
-            moves.add(Pair(-j, i))
-            moves.add(Pair(-i, -j))
-            moves.add(Pair(j, -i))
+        for (i in gameSpec.pieceList.indices) {
+            if (p1Counts[i] < gameSpec.pieceList[i].min ||
+                    p2Counts[i] < gameSpec.pieceList[i].min) {
+                p1Counts.forEach { print(" $it") }.also { println() }
+                p2Counts.forEach { print(" $it") }.also { println() }
+                println()
+                return true
+            }
         }
+        return false
     }
-    return moves
+
+    fun printBoard() {
+        println("# # # # # # # # # # # # # # # # # #")
+        println("# ------------------------------- #")
+        gameBoard.forEach {
+            print("#|")
+            it.forEach {
+                if (it >= 0) print(" ")
+                print("${if (it == 0) " " else it.toString()} |")
+            }
+            println("#\n# --- --- --- --- --- --- --- --- #")
+        }
+        println("# # # # # # # # # # # # # # # # # #\n\n")
+    }
 }
-
-fun plus(size: Int): List<Pair<Int, Int>> {
-    return square(size).filter { it.first == 0 || it.second == 0 }
-}
-
-fun cross(size: Int): List<Pair<Int, Int>> {
-    return square(size).filter { Math.abs(it.first) == Math.abs(it.second) }
-}
-
-fun forward(size: Int, white: Boolean): List<Pair<Int, Int>> {
-    return square(size).filter { white && it.second > 0 || !white && it.second < 0 }
-}
-
-
 
 fun main(args: Array<String>) {
     val str = String(Files.readAllBytes(Paths.get("src/main/data/chess.textproto")))
@@ -219,8 +258,10 @@ fun main(args: Array<String>) {
 
     val rand = Random()
     var state = GameState(gameSpec)
+    
     while (true) {
-        printArray(state.gameBoard)
+        state.printBoard()
+        if (state.gameOver()) break
         val nextStates = state.getLegalNextStates()
         if (nextStates.size == 0) return
         state = nextStates[rand.nextInt(nextStates.size)]
