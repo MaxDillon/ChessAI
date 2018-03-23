@@ -167,14 +167,20 @@ class GameState {
 }
 
 
-fun printArray(anArray: Array<IntArray>) {
+fun printArray(array: Array<IntArray>, grammar: GameSpec) {
     println("# # # # # # # # # # # # # # # # # #")
-    println("# ------------------------------- #")
-    anArray.forEach {
+    println("# --- --- --- --- --- --- --- --- #")
+    array.forEach {
         print("#|")
         it.forEach {
-            if (it >= 0) print(" ")
-            print("${if (it == 0) " " else it.toString()} |")
+            val sign1 = if (it<1) "[" else " "
+            val sign2 = if (it<1) "]" else " "
+
+            val name = sign1+grammar.getPiece( abs(it) ).name+sign2
+
+
+//            if (it >= 0) print(" ")
+            print("${if (it == 0) "   " else name}|")
         }
         println("#\n# --- --- --- --- --- --- --- --- #")
     }
@@ -220,7 +226,7 @@ fun main(args: Array<String>) {
     val rand = Random()
     var state = GameState(gameSpec)
     while (true) {
-        printArray(state.gameBoard)
+        printArray(state.gameBoard, gameSpec)
         val nextStates = state.getLegalNextStates()
         if (nextStates.size == 0) return
         state = nextStates[rand.nextInt(nextStates.size)]
