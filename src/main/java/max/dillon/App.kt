@@ -128,7 +128,7 @@ class GameState {
                         promo.setState(x2, y2, if (whiteMove) i else -1)
                     }
                 }
-                promo.description += "_${name}"
+                promo.description = "${'a' + x1}${y1 + 1}=>${'a' + x2}${y2 + 1}_${name}"
                 newStates.add(promo)
             }
         }
