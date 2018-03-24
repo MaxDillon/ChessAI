@@ -14,12 +14,11 @@ import max.dillon.GameGrammar.Symmetry.*
 import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.*
 
-const val alphabet = "abcdefghijklmnopqrstuvwxyz"
-
 class GameState {
     var gameBoard: Array<IntArray>
     val gameSpec: GameSpec
-    var whiteMove: Boolean = true
+    var whiteMove = true
+    var description = ""
 
     constructor(gameSpec: GameSpec) {
         this.gameSpec = gameSpec
@@ -38,7 +37,6 @@ class GameState {
             }
         }
     }
-
 
     private fun at(x: Int, y: Int): Int {
         return gameBoard[y][x]
@@ -60,10 +58,10 @@ class GameState {
         gameBoard[y][x] = state
     }
 
-
     private fun maybeAddMove(newStates: ArrayList<GameState>, move: GameGrammar.Move,
                              x1: Int, y1: Int, x2: Int, y2: Int): Boolean {
         val next = initNext()
+        next.description = "${'a' + x1}${y1 + 1}=>${'a' + x2}${y2 + 1}"
         val src = at(x1, y1)
         val dst = at(x2, y2)
         // check legality of landing constraints
@@ -130,6 +128,7 @@ class GameState {
                         promo.setState(x2, y2, if (whiteMove) i else -1)
                     }
                 }
+                promo.description += "_${name}"
                 newStates.add(promo)
             }
         }
@@ -170,8 +169,7 @@ class GameState {
         return moves
     }
 
-
-    private fun getPieceMoves(x: Int, y: Int, p: Int = at(x,y)): ArrayList<GameState> {
+    private fun getPieceMoves(x: Int, y: Int, p: Int = at(x, y)): ArrayList<GameState> {
         val newStates = arrayListOf<GameState>()
         val piece = getPiece(p) // gets current piece in position x,y
 
@@ -197,7 +195,6 @@ class GameState {
                     else -> arrayListOf()
                 }
 
-
                 when (action) {
                     "+" -> squares.addAll(newSquares)
                     "=" -> {
@@ -211,7 +208,7 @@ class GameState {
             for (square in squares) {
                 val (x2, y2) = square
                 if (x2 >= 0 && x2 < gameSpec.boardSize && y2 >= 0 && y2 < gameSpec.boardSize) {
-                    if(piece.relative.allowed == true) {
+                    if (piece.relative.allowed == true) {
 
                     } else {
                         maybeAddMove(newStates, move, x, y, x2, y2)
@@ -245,9 +242,6 @@ class GameState {
         for (i in gameSpec.pieceList.indices) {
             if (p1Counts[i] < gameSpec.pieceList[i].min ||
                     p2Counts[i] < gameSpec.pieceList[i].min) {
-                p1Counts.forEach { print(" $it") }.also { println() }
-                p2Counts.forEach { print(" $it") }.also { println() }
-                println()
                 return true
             }
         }
@@ -286,7 +280,7 @@ class GameState {
         for (index in 0 until size) print("# # ")
         println("#")
 
-        for (index in 0 until size) print("   " + alphabet[index])
+        for (index in 0 until size) print("   " + ('a' + index))
         println("\n\n")
     }
 }
@@ -328,14 +322,17 @@ fun main(args: Array<String>) {
     var count = 0
     while (true) {
         count++
-        println(if (state.whiteMove) "white move\n" else "black move\n")
+        var gameOver = state.gameOver()
+        val color = if (state.whiteMove) "white" else "black"
+        var msg = if (gameOver) "Game Over" else "now ${color}'s move"
+        println("${state.description}, ${msg}\n")
         state.printBoard()
-        if (state.gameOver()) break
+        if (gameOver) break
         val nextStates = state.getLegalNextStates()
         if (nextStates.size == 0) return
         state = nextStates[rand.nextInt(nextStates.size)]
     }
-    println(count)
+    println("${count} moves")
 }
 
 
