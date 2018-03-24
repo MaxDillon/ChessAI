@@ -1,6 +1,5 @@
 package max.dillon
 
-import com.google.protobuf.BoolValue
 import com.google.protobuf.TextFormat
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -13,12 +12,14 @@ import java.util.*
 import max.dillon.GameGrammar.Symmetry.*
 import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.*
+import kotlin.collections.ArrayList
 
 class GameState {
     var gameBoard: Array<IntArray>
-    val gameSpec: GameSpec
+    private val gameSpec: GameSpec
     var whiteMove = true
     var description = ""
+    var pieceName = ""
 
     constructor(gameSpec: GameSpec) {
         this.gameSpec = gameSpec
@@ -58,28 +59,52 @@ class GameState {
         gameBoard[y][x] = state
     }
 
-    private fun maybeAddMove(newStates: ArrayList<GameState>, move: GameGrammar.Move,
-                             x1: Int, y1: Int, x2: Int, y2: Int): Boolean {
+    private fun maybeAddPlaced(newStates: ArrayList<GameState>, move: GameGrammar.Move,
+                               x: Int, y: Int, p: Int): Boolean {
+
         val next = initNext()
-        next.description = "${'a' + x1}${y1 + 1}=>${'a' + x2}${y2 + 1}"
-        val src = at(x1, y1)
-        val dst = at(x2, y2)
-        // check legality of landing constraints
+        val dst = at(x,y)
+
         if (dst == 0 && move.land.none == DISALLOWED) {
             return false
-        } else if (dst.sign == src.sign && move.land.own == DISALLOWED) {
+        } else if (dst.sign == p.sign && move.land.own == DISALLOWED) {
             return false
-        } else if (dst.sign == -src.sign && move.land.opponent == DISALLOWED) {
+        } else if (dst.sign == p.sign && move.land.opponent == DISALLOWED) {
             return false
         }
-        // check legality of jump constraints
-        val dx = x2 - x1
-        val dy = y2 - y1
+        next.setState(x,y,p)
+        newStates.add(next)
+        return true
+    }
+
+
+    fun checkLandingConstraints(dest: Int, piece: Int, move: Move): Boolean {
+        if (dest == 0 && move.land.none == DISALLOWED) {
+            return false
+        } else if (dest.sign == piece.sign && move.land.own == DISALLOWED) {
+            return false
+        } else if (dest.sign == -piece.sign && move.land.opponent == DISALLOWED) {
+            return false
+        }
+        return true
+    }
+
+
+    fun checkJumpConstraints(next: GameState,x1: Int,x2: Int,y1: Int,y2: Int, move: Move): Boolean{
+        if (move.fromWhere == FromWhere.OFFBOARD) throw RuntimeException("jump constraint on offboard piece move")
+        val dx = x2-x1
+        val dy = y2-y1
+        val src = at(x1,y1)
         if (dx == 0 || dy == 0 || abs(dx) == abs(dy)) {
+
+            // loops over squares in between location and destination
             for (i in 1 until max(abs(dx), abs(dy))) {
+
+                // gets square you are inspecting
                 val x3 = x1 + dx.sign * i
                 val y3 = y1 + dy.sign * i
                 val jumped = at(x3, y3)
+
                 if (jumped == 0 && move.jump.none == DISALLOWED) {
                     return false
                 } else if (jumped.sign == src.sign && move.jump.own == DISALLOWED) {
@@ -95,6 +120,23 @@ class GameState {
                 }
             }
         }
+        return true
+    }
+
+
+    private fun maybeAddMove(newStates: ArrayList<GameState>, move: GameGrammar.Move,
+                             x1: Int, y1: Int, x2: Int, y2: Int): Boolean {
+        val next = initNext()
+        next.description = "${'a' + x1}${y1 + 1}=>${'a' + x2}${y2 + 1}"
+        next.pieceName = getPiece(at(x1,y1)).name
+        val src = at(x1, y1)
+        val dst = at(x2, y2)
+
+        if (!checkLandingConstraints(dst,src,move)) return false
+
+        if (!checkJumpConstraints(next, x1, x2, y1, y2, move)) return false
+
+
 
         if (dst.sign != 0) {
             val action = if (dst.sign == src.sign) move.land.own else move.land.opponent
@@ -128,7 +170,7 @@ class GameState {
                         promo.setState(x2, y2, if (whiteMove) i else -1)
                     }
                 }
-                promo.description = "${'a' + x1}${y1 + 1}=>${'a' + x2}${y2 + 1}_${name}"
+                promo.description = "${'a' + x1}${y1 + 1}=>${'a' + x2}${y2 + 1}_$name"
                 newStates.add(promo)
             }
         }
@@ -208,8 +250,8 @@ class GameState {
             for (square in squares) {
                 val (x2, y2) = square
                 if (x2 >= 0 && x2 < gameSpec.boardSize && y2 >= 0 && y2 < gameSpec.boardSize) {
-                    if (piece.relative.allowed == true) {
-
+                    if (piece.relative.allowed) {
+                        maybeAddPlaced(newStates, move, x2, y2, p)
                     } else {
                         maybeAddMove(newStates, move, x, y, x2, y2)
                     }
@@ -225,6 +267,14 @@ class GameState {
         gameBoard.forEachIndexed { y, row ->
             row.forEachIndexed { x, piece ->
                 if (piece.sign == if (whiteMove) 1 else -1) states.addAll(getPieceMoves(x, y))
+
+                gameSpec.pieceList.forEach {
+                    it.moveList.forEach {
+                        if(it.fromWhere == FromWhere.OFFBOARD) {
+
+                        }
+                    }
+                }
             }
         }
         return states
@@ -286,14 +336,14 @@ class GameState {
 }
 
 
-//fun testStuff(gameSpec: GameSpec) {
-//    val s1 = GameState(gameSpec)
-//    s1.gameBoard.forEach { for (i in it.indices) it[i] = 0 }
-//    s1.gameBoard[1][3] = 1
-//    s1.printBoard()
-//    for (s in s1.getLegalNextStates()) s.printBoard()
-//}
-//
+fun testStuff(gameSpec: GameSpec) {
+    val s1 = GameState(gameSpec)
+    s1.gameBoard.forEach { for (i in it.indices) it[i] = 0 }
+    s1.gameBoard[1][3] = 1
+    s1.printBoard()
+    for (s in s1.getLegalNextStates()) s.printBoard()
+}
+
 
 
 fun main(args: Array<String>) {
@@ -322,17 +372,18 @@ fun main(args: Array<String>) {
     var count = 0
     while (true) {
         count++
-        var gameOver = state.gameOver()
+        val gameOver = state.gameOver()
         val color = if (state.whiteMove) "white" else "black"
-        var msg = if (gameOver) "Game Over" else "now ${color}'s move"
-        println("${state.description}, ${msg}\n")
+        val msg = if (gameOver) "Game Over" else "now $color's move"
+
+        println("${state.pieceName} ${state.description}, $msg\n")
         state.printBoard()
         if (gameOver) break
         val nextStates = state.getLegalNextStates()
         if (nextStates.size == 0) return
         state = nextStates[rand.nextInt(nextStates.size)]
     }
-    println("${count} moves")
+    println("$count moves")
 }
 
 

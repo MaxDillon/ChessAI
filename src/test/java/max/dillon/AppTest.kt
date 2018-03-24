@@ -29,9 +29,9 @@ fun initBoard(white: Placement, black: Placement, whiteMove: Boolean = true): Ga
         val (p, n, b, r, q, k) = placement
         arrayListOf<String>(p, n, b, r, q, k).forEachIndexed { i, pstr ->
             if (pstr.length > 0) {
-                for (p in pstr.split(",")) {
-                    val x = p.first() - 'a'
-                    val y = p.substring(1).toInt() - 1
+                for (j in pstr.split(",")) {
+                    val x = j.first() - 'a'
+                    val y = j.substring(1).toInt() - 1
                     state.gameBoard[y][x] = sign * (i + 1)
                 }
             }

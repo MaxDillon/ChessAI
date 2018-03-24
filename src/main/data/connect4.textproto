@@ -13,7 +13,7 @@ piece {
     move {
         fromWhere: OFFBOARD
         relative {
-            on: TRUE
+            allowed: true
             color {
                 own: ALLOWED
                 opponent: ALLOWED
@@ -21,6 +21,12 @@ piece {
         }
         template: "+forward1"
         template: "-cross1"
+
+        land {
+            own: DISALLOWED
+            opponent: DISALLOWED
+            empty: ALLOWED
+        }
 
     }
 
