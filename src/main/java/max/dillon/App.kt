@@ -17,8 +17,8 @@ import max.dillon.GameGrammar.*
 const val alphabet = "abcdefghijklmnopqrstuvwxyz"
 
 class GameState {
-    private var gameBoard: Array<IntArray>
-    private val gameSpec: GameSpec
+    var gameBoard: Array<IntArray>
+    val gameSpec: GameSpec
     var whiteMove: Boolean = true
 
     constructor(gameSpec: GameSpec) {
