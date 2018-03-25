@@ -1,0 +1,60 @@
+
+name: "othello"
+board_size: 8
+board_symmetry: REFLECT
+
+piece {
+    name: "O"
+    count: 64
+    placement: "x4y4"
+    placement: "x5y5"
+
+    move {
+        template: "+cross_0"
+        template: "+plus_0"
+        template: "-square_1"
+        land {
+            none: DEPLOY
+            own: DISALLOWED
+            opponent: DISALLOWED
+        }
+        jump {
+            none: DISALLOWED
+            own: DISALLOWED
+            opponent: IMPRESS
+        }
+        exchange: "*"
+        continue: true
+    }
+}
+piece {
+    name: "*"
+    count: 0
+    move {
+        template: "+cross_0"
+        template: "+plus_0"
+        template: "-square_1"
+        land {
+            none: DISALLOWED
+            own: STAY
+            opponent: DISALLOWED
+        }
+        jump {
+            none: DISALLOWED
+            own: DISALLOWED
+            opponent: IMPRESS
+        }
+        continue: true
+        priority: 2
+    }
+    move {
+        template: "+pass_0"
+        land {
+            none: DISALLOWED
+            own: STAY
+            opponent: DISALLOWED
+        }
+        exchange: "O"
+        priority: 1
+    }
+}

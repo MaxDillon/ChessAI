@@ -18,7 +18,7 @@ piece {
     move {
         template: "+forward_1"
         template: "-plus_1"
-        template: "-rank_7"
+        template: "-rank_8"
         land {
             none: DISALLOWED
             own: DISALLOWED
@@ -29,7 +29,7 @@ piece {
     move {
         template: "+forward_1"
         template: "-cross_1"
-        template: "-rank_7"
+        template: "-rank_8"
         land {
             none: ALLOWED
             own: DISALLOWED
@@ -41,7 +41,7 @@ piece {
         template: "+plus_2"
         template: "=forward_2"
         template: "-forward_1"
-        template: "=rank_3"
+        template: "=rank_4"
         jump {
             none: ALLOWED
         }
@@ -55,7 +55,7 @@ piece {
     move {
         template: "+forward_1"
         template: "-plus_1"
-        template: "=rank_7"
+        template: "=rank_8"
         land {
             none: DISALLOWED
             own: DISALLOWED
@@ -67,7 +67,7 @@ piece {
     move {
       template: "+forward_1"
       template: "-cross_1"
-      template: "=rank_7"
+      template: "=rank_8"
        land {
            none: ALLOWED
            own: DISALLOWED

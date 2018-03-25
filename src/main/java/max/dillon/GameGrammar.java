@@ -15,18 +15,125 @@ public final class GameGrammar {
         (com.google.protobuf.ExtensionRegistryLite) registry);
   }
   /**
+   * Protobuf enum {@code max.dillon.Topology}
+   */
+  public enum Topology
+      implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <code>SQUARE = 0;</code>
+     */
+    SQUARE(0),
+    /**
+     * <code>CYLINDER = 1;</code>
+     */
+    CYLINDER(1),
+    /**
+     * <code>TORUS = 2;</code>
+     */
+    TORUS(2),
+    UNRECOGNIZED(-1),
+    ;
+
+    /**
+     * <code>SQUARE = 0;</code>
+     */
+    public static final int SQUARE_VALUE = 0;
+    /**
+     * <code>CYLINDER = 1;</code>
+     */
+    public static final int CYLINDER_VALUE = 1;
+    /**
+     * <code>TORUS = 2;</code>
+     */
+    public static final int TORUS_VALUE = 2;
+
+
+    public final int getNumber() {
+      if (this == UNRECOGNIZED) {
+        throw new java.lang.IllegalArgumentException(
+            "Can't get the number of an unknown enum value.");
+      }
+      return value;
+    }
+
+    /**
+     * @deprecated Use {@link #forNumber(int)} instead.
+     */
+    @java.lang.Deprecated
+    public static Topology valueOf(int value) {
+      return forNumber(value);
+    }
+
+    public static Topology forNumber(int value) {
+      switch (value) {
+        case 0: return SQUARE;
+        case 1: return CYLINDER;
+        case 2: return TORUS;
+        default: return null;
+      }
+    }
+
+    public static com.google.protobuf.Internal.EnumLiteMap<Topology>
+        internalGetValueMap() {
+      return internalValueMap;
+    }
+    private static final com.google.protobuf.Internal.EnumLiteMap<
+        Topology> internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<Topology>() {
+            public Topology findValueByNumber(int number) {
+              return Topology.forNumber(number);
+            }
+          };
+
+    public final com.google.protobuf.Descriptors.EnumValueDescriptor
+        getValueDescriptor() {
+      return getDescriptor().getValues().get(ordinal());
+    }
+    public final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptorForType() {
+      return getDescriptor();
+    }
+    public static final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptor() {
+      return max.dillon.GameGrammar.getDescriptor().getEnumTypes().get(0);
+    }
+
+    private static final Topology[] VALUES = values();
+
+    public static Topology valueOf(
+        com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+      if (desc.getType() != getDescriptor()) {
+        throw new java.lang.IllegalArgumentException(
+          "EnumValueDescriptor is not for this type.");
+      }
+      if (desc.getIndex() == -1) {
+        return UNRECOGNIZED;
+      }
+      return VALUES[desc.getIndex()];
+    }
+
+    private final int value;
+
+    private Topology(int value) {
+      this.value = value;
+    }
+
+    // @@protoc_insertion_point(enum_scope:max.dillon.Topology)
+  }
+
+  /**
    * Protobuf enum {@code max.dillon.Symmetry}
    */
   public enum Symmetry
       implements com.google.protobuf.ProtocolMessageEnum {
     /**
-     * <code>REFLECT = 0;</code>
+     * <code>ROTATE = 0;</code>
      */
-    REFLECT(0),
+    ROTATE(0),
     /**
-     * <code>ROTATE = 1;</code>
+     * <code>REFLECT = 1;</code>
      */
-    ROTATE(1),
+    REFLECT(1),
     /**
      * <code>NONE = 2;</code>
      */
@@ -35,13 +142,13 @@ public final class GameGrammar {
     ;
 
     /**
-     * <code>REFLECT = 0;</code>
+     * <code>ROTATE = 0;</code>
      */
-    public static final int REFLECT_VALUE = 0;
+    public static final int ROTATE_VALUE = 0;
     /**
-     * <code>ROTATE = 1;</code>
+     * <code>REFLECT = 1;</code>
      */
-    public static final int ROTATE_VALUE = 1;
+    public static final int REFLECT_VALUE = 1;
     /**
      * <code>NONE = 2;</code>
      */
@@ -66,8 +173,8 @@ public final class GameGrammar {
 
     public static Symmetry forNumber(int value) {
       switch (value) {
-        case 0: return REFLECT;
-        case 1: return ROTATE;
+        case 0: return ROTATE;
+        case 1: return REFLECT;
         case 2: return NONE;
         default: return null;
       }
@@ -95,7 +202,7 @@ public final class GameGrammar {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return max.dillon.GameGrammar.getDescriptor().getEnumTypes().get(0);
+      return max.dillon.GameGrammar.getDescriptor().getEnumTypes().get(1);
     }
 
     private static final Symmetry[] VALUES = values();
@@ -122,6 +229,104 @@ public final class GameGrammar {
   }
 
   /**
+   * Protobuf enum {@code max.dillon.MoveSource}
+   */
+  public enum MoveSource
+      implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <code>PIECES_ON_BOARD = 0;</code>
+     */
+    PIECES_ON_BOARD(0),
+    /**
+     * <code>ENDS = 1;</code>
+     */
+    ENDS(1),
+    UNRECOGNIZED(-1),
+    ;
+
+    /**
+     * <code>PIECES_ON_BOARD = 0;</code>
+     */
+    public static final int PIECES_ON_BOARD_VALUE = 0;
+    /**
+     * <code>ENDS = 1;</code>
+     */
+    public static final int ENDS_VALUE = 1;
+
+
+    public final int getNumber() {
+      if (this == UNRECOGNIZED) {
+        throw new java.lang.IllegalArgumentException(
+            "Can't get the number of an unknown enum value.");
+      }
+      return value;
+    }
+
+    /**
+     * @deprecated Use {@link #forNumber(int)} instead.
+     */
+    @java.lang.Deprecated
+    public static MoveSource valueOf(int value) {
+      return forNumber(value);
+    }
+
+    public static MoveSource forNumber(int value) {
+      switch (value) {
+        case 0: return PIECES_ON_BOARD;
+        case 1: return ENDS;
+        default: return null;
+      }
+    }
+
+    public static com.google.protobuf.Internal.EnumLiteMap<MoveSource>
+        internalGetValueMap() {
+      return internalValueMap;
+    }
+    private static final com.google.protobuf.Internal.EnumLiteMap<
+        MoveSource> internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<MoveSource>() {
+            public MoveSource findValueByNumber(int number) {
+              return MoveSource.forNumber(number);
+            }
+          };
+
+    public final com.google.protobuf.Descriptors.EnumValueDescriptor
+        getValueDescriptor() {
+      return getDescriptor().getValues().get(ordinal());
+    }
+    public final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptorForType() {
+      return getDescriptor();
+    }
+    public static final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptor() {
+      return max.dillon.GameGrammar.getDescriptor().getEnumTypes().get(2);
+    }
+
+    private static final MoveSource[] VALUES = values();
+
+    public static MoveSource valueOf(
+        com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+      if (desc.getType() != getDescriptor()) {
+        throw new java.lang.IllegalArgumentException(
+          "EnumValueDescriptor is not for this type.");
+      }
+      if (desc.getIndex() == -1) {
+        return UNRECOGNIZED;
+      }
+      return VALUES[desc.getIndex()];
+    }
+
+    private final int value;
+
+    private MoveSource(int value) {
+      this.value = value;
+    }
+
+    // @@protoc_insertion_point(enum_scope:max.dillon.MoveSource)
+  }
+
+  /**
    * Protobuf enum {@code max.dillon.Outcome}
    */
   public enum Outcome
@@ -142,6 +347,18 @@ public final class GameGrammar {
      * <code>SWAP = 3;</code>
      */
     SWAP(3),
+    /**
+     * <code>STAY = 4;</code>
+     */
+    STAY(4),
+    /**
+     * <code>DEPLOY = 5;</code>
+     */
+    DEPLOY(5),
+    /**
+     * <code>IMPRESS = 6;</code>
+     */
+    IMPRESS(6),
     UNRECOGNIZED(-1),
     ;
 
@@ -161,6 +378,18 @@ public final class GameGrammar {
      * <code>SWAP = 3;</code>
      */
     public static final int SWAP_VALUE = 3;
+    /**
+     * <code>STAY = 4;</code>
+     */
+    public static final int STAY_VALUE = 4;
+    /**
+     * <code>DEPLOY = 5;</code>
+     */
+    public static final int DEPLOY_VALUE = 5;
+    /**
+     * <code>IMPRESS = 6;</code>
+     */
+    public static final int IMPRESS_VALUE = 6;
 
 
     public final int getNumber() {
@@ -185,6 +414,9 @@ public final class GameGrammar {
         case 1: return ALLOWED;
         case 2: return CAPTURE;
         case 3: return SWAP;
+        case 4: return STAY;
+        case 5: return DEPLOY;
+        case 6: return IMPRESS;
         default: return null;
       }
     }
@@ -211,7 +443,7 @@ public final class GameGrammar {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return max.dillon.GameGrammar.getDescriptor().getEnumTypes().get(1);
+      return max.dillon.GameGrammar.getDescriptor().getEnumTypes().get(3);
     }
 
     private static final Outcome[] VALUES = values();
@@ -235,104 +467,6 @@ public final class GameGrammar {
     }
 
     // @@protoc_insertion_point(enum_scope:max.dillon.Outcome)
-  }
-
-  /**
-   * Protobuf enum {@code max.dillon.FromWhere}
-   */
-  public enum FromWhere
-      implements com.google.protobuf.ProtocolMessageEnum {
-    /**
-     * <code>ONBOARD = 0;</code>
-     */
-    ONBOARD(0),
-    /**
-     * <code>OFFBOARD = 1;</code>
-     */
-    OFFBOARD(1),
-    UNRECOGNIZED(-1),
-    ;
-
-    /**
-     * <code>ONBOARD = 0;</code>
-     */
-    public static final int ONBOARD_VALUE = 0;
-    /**
-     * <code>OFFBOARD = 1;</code>
-     */
-    public static final int OFFBOARD_VALUE = 1;
-
-
-    public final int getNumber() {
-      if (this == UNRECOGNIZED) {
-        throw new java.lang.IllegalArgumentException(
-            "Can't get the number of an unknown enum value.");
-      }
-      return value;
-    }
-
-    /**
-     * @deprecated Use {@link #forNumber(int)} instead.
-     */
-    @java.lang.Deprecated
-    public static FromWhere valueOf(int value) {
-      return forNumber(value);
-    }
-
-    public static FromWhere forNumber(int value) {
-      switch (value) {
-        case 0: return ONBOARD;
-        case 1: return OFFBOARD;
-        default: return null;
-      }
-    }
-
-    public static com.google.protobuf.Internal.EnumLiteMap<FromWhere>
-        internalGetValueMap() {
-      return internalValueMap;
-    }
-    private static final com.google.protobuf.Internal.EnumLiteMap<
-        FromWhere> internalValueMap =
-          new com.google.protobuf.Internal.EnumLiteMap<FromWhere>() {
-            public FromWhere findValueByNumber(int number) {
-              return FromWhere.forNumber(number);
-            }
-          };
-
-    public final com.google.protobuf.Descriptors.EnumValueDescriptor
-        getValueDescriptor() {
-      return getDescriptor().getValues().get(ordinal());
-    }
-    public final com.google.protobuf.Descriptors.EnumDescriptor
-        getDescriptorForType() {
-      return getDescriptor();
-    }
-    public static final com.google.protobuf.Descriptors.EnumDescriptor
-        getDescriptor() {
-      return max.dillon.GameGrammar.getDescriptor().getEnumTypes().get(2);
-    }
-
-    private static final FromWhere[] VALUES = values();
-
-    public static FromWhere valueOf(
-        com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
-      if (desc.getType() != getDescriptor()) {
-        throw new java.lang.IllegalArgumentException(
-          "EnumValueDescriptor is not for this type.");
-      }
-      if (desc.getIndex() == -1) {
-        return UNRECOGNIZED;
-      }
-      return VALUES[desc.getIndex()];
-    }
-
-    private final int value;
-
-    private FromWhere(int value) {
-      this.value = value;
-    }
-
-    // @@protoc_insertion_point(enum_scope:max.dillon.FromWhere)
   }
 
   public interface MoveOptionsOrBuilder extends
@@ -1012,28 +1146,6 @@ public final class GameGrammar {
         getTemplateBytes(int index);
 
     /**
-     * <code>.max.dillon.FromWhere fromWhere = 2;</code>
-     */
-    int getFromWhereValue();
-    /**
-     * <code>.max.dillon.FromWhere fromWhere = 2;</code>
-     */
-    max.dillon.GameGrammar.FromWhere getFromWhere();
-
-    /**
-     * <code>.max.dillon.RelativePose relative = 3;</code>
-     */
-    boolean hasRelative();
-    /**
-     * <code>.max.dillon.RelativePose relative = 3;</code>
-     */
-    max.dillon.GameGrammar.RelativePose getRelative();
-    /**
-     * <code>.max.dillon.RelativePose relative = 3;</code>
-     */
-    max.dillon.GameGrammar.RelativePoseOrBuilder getRelativeOrBuilder();
-
-    /**
      * <code>.max.dillon.MoveOptions land = 4;</code>
      */
     boolean hasLand();
@@ -1092,7 +1204,6 @@ public final class GameGrammar {
     }
     private Move() {
       template_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-      fromWhere_ = 0;
       exchange_ = "";
       priority_ = 0;
       continue_ = false;
@@ -1130,25 +1241,6 @@ public final class GameGrammar {
                 mutable_bitField0_ |= 0x00000001;
               }
               template_.add(s);
-              break;
-            }
-            case 16: {
-              int rawValue = input.readEnum();
-
-              fromWhere_ = rawValue;
-              break;
-            }
-            case 26: {
-              max.dillon.GameGrammar.RelativePose.Builder subBuilder = null;
-              if (relative_ != null) {
-                subBuilder = relative_.toBuilder();
-              }
-              relative_ = input.readMessage(max.dillon.GameGrammar.RelativePose.parser(), extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom(relative_);
-                relative_ = subBuilder.buildPartial();
-              }
-
               break;
             }
             case 34: {
@@ -1247,43 +1339,6 @@ public final class GameGrammar {
     public com.google.protobuf.ByteString
         getTemplateBytes(int index) {
       return template_.getByteString(index);
-    }
-
-    public static final int FROMWHERE_FIELD_NUMBER = 2;
-    private int fromWhere_;
-    /**
-     * <code>.max.dillon.FromWhere fromWhere = 2;</code>
-     */
-    public int getFromWhereValue() {
-      return fromWhere_;
-    }
-    /**
-     * <code>.max.dillon.FromWhere fromWhere = 2;</code>
-     */
-    public max.dillon.GameGrammar.FromWhere getFromWhere() {
-      max.dillon.GameGrammar.FromWhere result = max.dillon.GameGrammar.FromWhere.valueOf(fromWhere_);
-      return result == null ? max.dillon.GameGrammar.FromWhere.UNRECOGNIZED : result;
-    }
-
-    public static final int RELATIVE_FIELD_NUMBER = 3;
-    private max.dillon.GameGrammar.RelativePose relative_;
-    /**
-     * <code>.max.dillon.RelativePose relative = 3;</code>
-     */
-    public boolean hasRelative() {
-      return relative_ != null;
-    }
-    /**
-     * <code>.max.dillon.RelativePose relative = 3;</code>
-     */
-    public max.dillon.GameGrammar.RelativePose getRelative() {
-      return relative_ == null ? max.dillon.GameGrammar.RelativePose.getDefaultInstance() : relative_;
-    }
-    /**
-     * <code>.max.dillon.RelativePose relative = 3;</code>
-     */
-    public max.dillon.GameGrammar.RelativePoseOrBuilder getRelativeOrBuilder() {
-      return getRelative();
     }
 
     public static final int LAND_FIELD_NUMBER = 4;
@@ -1395,12 +1450,6 @@ public final class GameGrammar {
       for (int i = 0; i < template_.size(); i++) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, template_.getRaw(i));
       }
-      if (fromWhere_ != max.dillon.GameGrammar.FromWhere.ONBOARD.getNumber()) {
-        output.writeEnum(2, fromWhere_);
-      }
-      if (relative_ != null) {
-        output.writeMessage(3, getRelative());
-      }
       if (land_ != null) {
         output.writeMessage(4, getLand());
       }
@@ -1430,14 +1479,6 @@ public final class GameGrammar {
         }
         size += dataSize;
         size += 1 * getTemplateList().size();
-      }
-      if (fromWhere_ != max.dillon.GameGrammar.FromWhere.ONBOARD.getNumber()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeEnumSize(2, fromWhere_);
-      }
-      if (relative_ != null) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, getRelative());
       }
       if (land_ != null) {
         size += com.google.protobuf.CodedOutputStream
@@ -1476,12 +1517,6 @@ public final class GameGrammar {
       boolean result = true;
       result = result && getTemplateList()
           .equals(other.getTemplateList());
-      result = result && fromWhere_ == other.fromWhere_;
-      result = result && (hasRelative() == other.hasRelative());
-      if (hasRelative()) {
-        result = result && getRelative()
-            .equals(other.getRelative());
-      }
       result = result && (hasLand() == other.hasLand());
       if (hasLand()) {
         result = result && getLand()
@@ -1511,12 +1546,6 @@ public final class GameGrammar {
       if (getTemplateCount() > 0) {
         hash = (37 * hash) + TEMPLATE_FIELD_NUMBER;
         hash = (53 * hash) + getTemplateList().hashCode();
-      }
-      hash = (37 * hash) + FROMWHERE_FIELD_NUMBER;
-      hash = (53 * hash) + fromWhere_;
-      if (hasRelative()) {
-        hash = (37 * hash) + RELATIVE_FIELD_NUMBER;
-        hash = (53 * hash) + getRelative().hashCode();
       }
       if (hasLand()) {
         hash = (37 * hash) + LAND_FIELD_NUMBER;
@@ -1664,14 +1693,6 @@ public final class GameGrammar {
         super.clear();
         template_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000001);
-        fromWhere_ = 0;
-
-        if (relativeBuilder_ == null) {
-          relative_ = null;
-        } else {
-          relative_ = null;
-          relativeBuilder_ = null;
-        }
         if (landBuilder_ == null) {
           land_ = null;
         } else {
@@ -1719,12 +1740,6 @@ public final class GameGrammar {
           bitField0_ = (bitField0_ & ~0x00000001);
         }
         result.template_ = template_;
-        result.fromWhere_ = fromWhere_;
-        if (relativeBuilder_ == null) {
-          result.relative_ = relative_;
-        } else {
-          result.relative_ = relativeBuilder_.build();
-        }
         if (landBuilder_ == null) {
           result.land_ = land_;
         } else {
@@ -1789,12 +1804,6 @@ public final class GameGrammar {
             template_.addAll(other.template_);
           }
           onChanged();
-        }
-        if (other.fromWhere_ != 0) {
-          setFromWhereValue(other.getFromWhereValue());
-        }
-        if (other.hasRelative()) {
-          mergeRelative(other.getRelative());
         }
         if (other.hasLand()) {
           mergeLand(other.getLand());
@@ -1931,167 +1940,6 @@ public final class GameGrammar {
         template_.add(value);
         onChanged();
         return this;
-      }
-
-      private int fromWhere_ = 0;
-      /**
-       * <code>.max.dillon.FromWhere fromWhere = 2;</code>
-       */
-      public int getFromWhereValue() {
-        return fromWhere_;
-      }
-      /**
-       * <code>.max.dillon.FromWhere fromWhere = 2;</code>
-       */
-      public Builder setFromWhereValue(int value) {
-        fromWhere_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>.max.dillon.FromWhere fromWhere = 2;</code>
-       */
-      public max.dillon.GameGrammar.FromWhere getFromWhere() {
-        max.dillon.GameGrammar.FromWhere result = max.dillon.GameGrammar.FromWhere.valueOf(fromWhere_);
-        return result == null ? max.dillon.GameGrammar.FromWhere.UNRECOGNIZED : result;
-      }
-      /**
-       * <code>.max.dillon.FromWhere fromWhere = 2;</code>
-       */
-      public Builder setFromWhere(max.dillon.GameGrammar.FromWhere value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        
-        fromWhere_ = value.getNumber();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>.max.dillon.FromWhere fromWhere = 2;</code>
-       */
-      public Builder clearFromWhere() {
-        
-        fromWhere_ = 0;
-        onChanged();
-        return this;
-      }
-
-      private max.dillon.GameGrammar.RelativePose relative_ = null;
-      private com.google.protobuf.SingleFieldBuilderV3<
-          max.dillon.GameGrammar.RelativePose, max.dillon.GameGrammar.RelativePose.Builder, max.dillon.GameGrammar.RelativePoseOrBuilder> relativeBuilder_;
-      /**
-       * <code>.max.dillon.RelativePose relative = 3;</code>
-       */
-      public boolean hasRelative() {
-        return relativeBuilder_ != null || relative_ != null;
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 3;</code>
-       */
-      public max.dillon.GameGrammar.RelativePose getRelative() {
-        if (relativeBuilder_ == null) {
-          return relative_ == null ? max.dillon.GameGrammar.RelativePose.getDefaultInstance() : relative_;
-        } else {
-          return relativeBuilder_.getMessage();
-        }
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 3;</code>
-       */
-      public Builder setRelative(max.dillon.GameGrammar.RelativePose value) {
-        if (relativeBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          relative_ = value;
-          onChanged();
-        } else {
-          relativeBuilder_.setMessage(value);
-        }
-
-        return this;
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 3;</code>
-       */
-      public Builder setRelative(
-          max.dillon.GameGrammar.RelativePose.Builder builderForValue) {
-        if (relativeBuilder_ == null) {
-          relative_ = builderForValue.build();
-          onChanged();
-        } else {
-          relativeBuilder_.setMessage(builderForValue.build());
-        }
-
-        return this;
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 3;</code>
-       */
-      public Builder mergeRelative(max.dillon.GameGrammar.RelativePose value) {
-        if (relativeBuilder_ == null) {
-          if (relative_ != null) {
-            relative_ =
-              max.dillon.GameGrammar.RelativePose.newBuilder(relative_).mergeFrom(value).buildPartial();
-          } else {
-            relative_ = value;
-          }
-          onChanged();
-        } else {
-          relativeBuilder_.mergeFrom(value);
-        }
-
-        return this;
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 3;</code>
-       */
-      public Builder clearRelative() {
-        if (relativeBuilder_ == null) {
-          relative_ = null;
-          onChanged();
-        } else {
-          relative_ = null;
-          relativeBuilder_ = null;
-        }
-
-        return this;
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 3;</code>
-       */
-      public max.dillon.GameGrammar.RelativePose.Builder getRelativeBuilder() {
-        
-        onChanged();
-        return getRelativeFieldBuilder().getBuilder();
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 3;</code>
-       */
-      public max.dillon.GameGrammar.RelativePoseOrBuilder getRelativeOrBuilder() {
-        if (relativeBuilder_ != null) {
-          return relativeBuilder_.getMessageOrBuilder();
-        } else {
-          return relative_ == null ?
-              max.dillon.GameGrammar.RelativePose.getDefaultInstance() : relative_;
-        }
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 3;</code>
-       */
-      private com.google.protobuf.SingleFieldBuilderV3<
-          max.dillon.GameGrammar.RelativePose, max.dillon.GameGrammar.RelativePose.Builder, max.dillon.GameGrammar.RelativePoseOrBuilder> 
-          getRelativeFieldBuilder() {
-        if (relativeBuilder_ == null) {
-          relativeBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-              max.dillon.GameGrammar.RelativePose, max.dillon.GameGrammar.RelativePose.Builder, max.dillon.GameGrammar.RelativePoseOrBuilder>(
-                  getRelative(),
-                  getParentForChildren(),
-                  isClean());
-          relative_ = null;
-        }
-        return relativeBuilder_;
       }
 
       private max.dillon.GameGrammar.MoveOptions land_ = null;
@@ -2497,835 +2345,6 @@ public final class GameGrammar {
 
   }
 
-  public interface RelativePoseOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:max.dillon.RelativePose)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <code>bool allowed = 1;</code>
-     */
-    boolean getAllowed();
-
-    /**
-     * <code>.max.dillon.MoveOptions color = 2;</code>
-     */
-    boolean hasColor();
-    /**
-     * <code>.max.dillon.MoveOptions color = 2;</code>
-     */
-    max.dillon.GameGrammar.MoveOptions getColor();
-    /**
-     * <code>.max.dillon.MoveOptions color = 2;</code>
-     */
-    max.dillon.GameGrammar.MoveOptionsOrBuilder getColorOrBuilder();
-
-    /**
-     * <code>repeated string type = 3;</code>
-     */
-    java.util.List<java.lang.String>
-        getTypeList();
-    /**
-     * <code>repeated string type = 3;</code>
-     */
-    int getTypeCount();
-    /**
-     * <code>repeated string type = 3;</code>
-     */
-    java.lang.String getType(int index);
-    /**
-     * <code>repeated string type = 3;</code>
-     */
-    com.google.protobuf.ByteString
-        getTypeBytes(int index);
-  }
-  /**
-   * Protobuf type {@code max.dillon.RelativePose}
-   */
-  public  static final class RelativePose extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:max.dillon.RelativePose)
-      RelativePoseOrBuilder {
-    // Use RelativePose.newBuilder() to construct.
-    private RelativePose(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private RelativePose() {
-      allowed_ = false;
-      type_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
-    }
-    private RelativePose(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      int mutable_bitField0_ = 0;
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            default: {
-              if (!input.skipField(tag)) {
-                done = true;
-              }
-              break;
-            }
-            case 8: {
-
-              allowed_ = input.readBool();
-              break;
-            }
-            case 18: {
-              max.dillon.GameGrammar.MoveOptions.Builder subBuilder = null;
-              if (color_ != null) {
-                subBuilder = color_.toBuilder();
-              }
-              color_ = input.readMessage(max.dillon.GameGrammar.MoveOptions.parser(), extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom(color_);
-                color_ = subBuilder.buildPartial();
-              }
-
-              break;
-            }
-            case 26: {
-              java.lang.String s = input.readStringRequireUtf8();
-              if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-                type_ = new com.google.protobuf.LazyStringArrayList();
-                mutable_bitField0_ |= 0x00000004;
-              }
-              type_.add(s);
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e).setUnfinishedMessage(this);
-      } finally {
-        if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-          type_ = type_.getUnmodifiableView();
-        }
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return max.dillon.GameGrammar.internal_static_max_dillon_RelativePose_descriptor;
-    }
-
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return max.dillon.GameGrammar.internal_static_max_dillon_RelativePose_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              max.dillon.GameGrammar.RelativePose.class, max.dillon.GameGrammar.RelativePose.Builder.class);
-    }
-
-    private int bitField0_;
-    public static final int ALLOWED_FIELD_NUMBER = 1;
-    private boolean allowed_;
-    /**
-     * <code>bool allowed = 1;</code>
-     */
-    public boolean getAllowed() {
-      return allowed_;
-    }
-
-    public static final int COLOR_FIELD_NUMBER = 2;
-    private max.dillon.GameGrammar.MoveOptions color_;
-    /**
-     * <code>.max.dillon.MoveOptions color = 2;</code>
-     */
-    public boolean hasColor() {
-      return color_ != null;
-    }
-    /**
-     * <code>.max.dillon.MoveOptions color = 2;</code>
-     */
-    public max.dillon.GameGrammar.MoveOptions getColor() {
-      return color_ == null ? max.dillon.GameGrammar.MoveOptions.getDefaultInstance() : color_;
-    }
-    /**
-     * <code>.max.dillon.MoveOptions color = 2;</code>
-     */
-    public max.dillon.GameGrammar.MoveOptionsOrBuilder getColorOrBuilder() {
-      return getColor();
-    }
-
-    public static final int TYPE_FIELD_NUMBER = 3;
-    private com.google.protobuf.LazyStringList type_;
-    /**
-     * <code>repeated string type = 3;</code>
-     */
-    public com.google.protobuf.ProtocolStringList
-        getTypeList() {
-      return type_;
-    }
-    /**
-     * <code>repeated string type = 3;</code>
-     */
-    public int getTypeCount() {
-      return type_.size();
-    }
-    /**
-     * <code>repeated string type = 3;</code>
-     */
-    public java.lang.String getType(int index) {
-      return type_.get(index);
-    }
-    /**
-     * <code>repeated string type = 3;</code>
-     */
-    public com.google.protobuf.ByteString
-        getTypeBytes(int index) {
-      return type_.getByteString(index);
-    }
-
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (allowed_ != false) {
-        output.writeBool(1, allowed_);
-      }
-      if (color_ != null) {
-        output.writeMessage(2, getColor());
-      }
-      for (int i = 0; i < type_.size(); i++) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, type_.getRaw(i));
-      }
-    }
-
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (allowed_ != false) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(1, allowed_);
-      }
-      if (color_ != null) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, getColor());
-      }
-      {
-        int dataSize = 0;
-        for (int i = 0; i < type_.size(); i++) {
-          dataSize += computeStringSizeNoTag(type_.getRaw(i));
-        }
-        size += dataSize;
-        size += 1 * getTypeList().size();
-      }
-      memoizedSize = size;
-      return size;
-    }
-
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof max.dillon.GameGrammar.RelativePose)) {
-        return super.equals(obj);
-      }
-      max.dillon.GameGrammar.RelativePose other = (max.dillon.GameGrammar.RelativePose) obj;
-
-      boolean result = true;
-      result = result && (getAllowed()
-          == other.getAllowed());
-      result = result && (hasColor() == other.hasColor());
-      if (hasColor()) {
-        result = result && getColor()
-            .equals(other.getColor());
-      }
-      result = result && getTypeList()
-          .equals(other.getTypeList());
-      return result;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + ALLOWED_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-          getAllowed());
-      if (hasColor()) {
-        hash = (37 * hash) + COLOR_FIELD_NUMBER;
-        hash = (53 * hash) + getColor().hashCode();
-      }
-      if (getTypeCount() > 0) {
-        hash = (37 * hash) + TYPE_FIELD_NUMBER;
-        hash = (53 * hash) + getTypeList().hashCode();
-      }
-      hash = (29 * hash) + unknownFields.hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static max.dillon.GameGrammar.RelativePose parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static max.dillon.GameGrammar.RelativePose parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static max.dillon.GameGrammar.RelativePose parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static max.dillon.GameGrammar.RelativePose parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static max.dillon.GameGrammar.RelativePose parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static max.dillon.GameGrammar.RelativePose parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static max.dillon.GameGrammar.RelativePose parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static max.dillon.GameGrammar.RelativePose parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static max.dillon.GameGrammar.RelativePose parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static max.dillon.GameGrammar.RelativePose parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static max.dillon.GameGrammar.RelativePose parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static max.dillon.GameGrammar.RelativePose parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(max.dillon.GameGrammar.RelativePose prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * Protobuf type {@code max.dillon.RelativePose}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:max.dillon.RelativePose)
-        max.dillon.GameGrammar.RelativePoseOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return max.dillon.GameGrammar.internal_static_max_dillon_RelativePose_descriptor;
-      }
-
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return max.dillon.GameGrammar.internal_static_max_dillon_RelativePose_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                max.dillon.GameGrammar.RelativePose.class, max.dillon.GameGrammar.RelativePose.Builder.class);
-      }
-
-      // Construct using max.dillon.GameGrammar.RelativePose.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
-        }
-      }
-      public Builder clear() {
-        super.clear();
-        allowed_ = false;
-
-        if (colorBuilder_ == null) {
-          color_ = null;
-        } else {
-          color_ = null;
-          colorBuilder_ = null;
-        }
-        type_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000004);
-        return this;
-      }
-
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return max.dillon.GameGrammar.internal_static_max_dillon_RelativePose_descriptor;
-      }
-
-      public max.dillon.GameGrammar.RelativePose getDefaultInstanceForType() {
-        return max.dillon.GameGrammar.RelativePose.getDefaultInstance();
-      }
-
-      public max.dillon.GameGrammar.RelativePose build() {
-        max.dillon.GameGrammar.RelativePose result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      public max.dillon.GameGrammar.RelativePose buildPartial() {
-        max.dillon.GameGrammar.RelativePose result = new max.dillon.GameGrammar.RelativePose(this);
-        int from_bitField0_ = bitField0_;
-        int to_bitField0_ = 0;
-        result.allowed_ = allowed_;
-        if (colorBuilder_ == null) {
-          result.color_ = color_;
-        } else {
-          result.color_ = colorBuilder_.build();
-        }
-        if (((bitField0_ & 0x00000004) == 0x00000004)) {
-          type_ = type_.getUnmodifiableView();
-          bitField0_ = (bitField0_ & ~0x00000004);
-        }
-        result.type_ = type_;
-        result.bitField0_ = to_bitField0_;
-        onBuilt();
-        return result;
-      }
-
-      public Builder clone() {
-        return (Builder) super.clone();
-      }
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
-        return (Builder) super.setField(field, value);
-      }
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return (Builder) super.clearField(field);
-      }
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return (Builder) super.clearOneof(oneof);
-      }
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
-        return (Builder) super.setRepeatedField(field, index, value);
-      }
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
-        return (Builder) super.addRepeatedField(field, value);
-      }
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof max.dillon.GameGrammar.RelativePose) {
-          return mergeFrom((max.dillon.GameGrammar.RelativePose)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(max.dillon.GameGrammar.RelativePose other) {
-        if (other == max.dillon.GameGrammar.RelativePose.getDefaultInstance()) return this;
-        if (other.getAllowed() != false) {
-          setAllowed(other.getAllowed());
-        }
-        if (other.hasColor()) {
-          mergeColor(other.getColor());
-        }
-        if (!other.type_.isEmpty()) {
-          if (type_.isEmpty()) {
-            type_ = other.type_;
-            bitField0_ = (bitField0_ & ~0x00000004);
-          } else {
-            ensureTypeIsMutable();
-            type_.addAll(other.type_);
-          }
-          onChanged();
-        }
-        onChanged();
-        return this;
-      }
-
-      public final boolean isInitialized() {
-        return true;
-      }
-
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        max.dillon.GameGrammar.RelativePose parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (max.dillon.GameGrammar.RelativePose) e.getUnfinishedMessage();
-          throw e.unwrapIOException();
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-      private int bitField0_;
-
-      private boolean allowed_ ;
-      /**
-       * <code>bool allowed = 1;</code>
-       */
-      public boolean getAllowed() {
-        return allowed_;
-      }
-      /**
-       * <code>bool allowed = 1;</code>
-       */
-      public Builder setAllowed(boolean value) {
-        
-        allowed_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>bool allowed = 1;</code>
-       */
-      public Builder clearAllowed() {
-        
-        allowed_ = false;
-        onChanged();
-        return this;
-      }
-
-      private max.dillon.GameGrammar.MoveOptions color_ = null;
-      private com.google.protobuf.SingleFieldBuilderV3<
-          max.dillon.GameGrammar.MoveOptions, max.dillon.GameGrammar.MoveOptions.Builder, max.dillon.GameGrammar.MoveOptionsOrBuilder> colorBuilder_;
-      /**
-       * <code>.max.dillon.MoveOptions color = 2;</code>
-       */
-      public boolean hasColor() {
-        return colorBuilder_ != null || color_ != null;
-      }
-      /**
-       * <code>.max.dillon.MoveOptions color = 2;</code>
-       */
-      public max.dillon.GameGrammar.MoveOptions getColor() {
-        if (colorBuilder_ == null) {
-          return color_ == null ? max.dillon.GameGrammar.MoveOptions.getDefaultInstance() : color_;
-        } else {
-          return colorBuilder_.getMessage();
-        }
-      }
-      /**
-       * <code>.max.dillon.MoveOptions color = 2;</code>
-       */
-      public Builder setColor(max.dillon.GameGrammar.MoveOptions value) {
-        if (colorBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          color_ = value;
-          onChanged();
-        } else {
-          colorBuilder_.setMessage(value);
-        }
-
-        return this;
-      }
-      /**
-       * <code>.max.dillon.MoveOptions color = 2;</code>
-       */
-      public Builder setColor(
-          max.dillon.GameGrammar.MoveOptions.Builder builderForValue) {
-        if (colorBuilder_ == null) {
-          color_ = builderForValue.build();
-          onChanged();
-        } else {
-          colorBuilder_.setMessage(builderForValue.build());
-        }
-
-        return this;
-      }
-      /**
-       * <code>.max.dillon.MoveOptions color = 2;</code>
-       */
-      public Builder mergeColor(max.dillon.GameGrammar.MoveOptions value) {
-        if (colorBuilder_ == null) {
-          if (color_ != null) {
-            color_ =
-              max.dillon.GameGrammar.MoveOptions.newBuilder(color_).mergeFrom(value).buildPartial();
-          } else {
-            color_ = value;
-          }
-          onChanged();
-        } else {
-          colorBuilder_.mergeFrom(value);
-        }
-
-        return this;
-      }
-      /**
-       * <code>.max.dillon.MoveOptions color = 2;</code>
-       */
-      public Builder clearColor() {
-        if (colorBuilder_ == null) {
-          color_ = null;
-          onChanged();
-        } else {
-          color_ = null;
-          colorBuilder_ = null;
-        }
-
-        return this;
-      }
-      /**
-       * <code>.max.dillon.MoveOptions color = 2;</code>
-       */
-      public max.dillon.GameGrammar.MoveOptions.Builder getColorBuilder() {
-        
-        onChanged();
-        return getColorFieldBuilder().getBuilder();
-      }
-      /**
-       * <code>.max.dillon.MoveOptions color = 2;</code>
-       */
-      public max.dillon.GameGrammar.MoveOptionsOrBuilder getColorOrBuilder() {
-        if (colorBuilder_ != null) {
-          return colorBuilder_.getMessageOrBuilder();
-        } else {
-          return color_ == null ?
-              max.dillon.GameGrammar.MoveOptions.getDefaultInstance() : color_;
-        }
-      }
-      /**
-       * <code>.max.dillon.MoveOptions color = 2;</code>
-       */
-      private com.google.protobuf.SingleFieldBuilderV3<
-          max.dillon.GameGrammar.MoveOptions, max.dillon.GameGrammar.MoveOptions.Builder, max.dillon.GameGrammar.MoveOptionsOrBuilder> 
-          getColorFieldBuilder() {
-        if (colorBuilder_ == null) {
-          colorBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-              max.dillon.GameGrammar.MoveOptions, max.dillon.GameGrammar.MoveOptions.Builder, max.dillon.GameGrammar.MoveOptionsOrBuilder>(
-                  getColor(),
-                  getParentForChildren(),
-                  isClean());
-          color_ = null;
-        }
-        return colorBuilder_;
-      }
-
-      private com.google.protobuf.LazyStringList type_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-      private void ensureTypeIsMutable() {
-        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
-          type_ = new com.google.protobuf.LazyStringArrayList(type_);
-          bitField0_ |= 0x00000004;
-         }
-      }
-      /**
-       * <code>repeated string type = 3;</code>
-       */
-      public com.google.protobuf.ProtocolStringList
-          getTypeList() {
-        return type_.getUnmodifiableView();
-      }
-      /**
-       * <code>repeated string type = 3;</code>
-       */
-      public int getTypeCount() {
-        return type_.size();
-      }
-      /**
-       * <code>repeated string type = 3;</code>
-       */
-      public java.lang.String getType(int index) {
-        return type_.get(index);
-      }
-      /**
-       * <code>repeated string type = 3;</code>
-       */
-      public com.google.protobuf.ByteString
-          getTypeBytes(int index) {
-        return type_.getByteString(index);
-      }
-      /**
-       * <code>repeated string type = 3;</code>
-       */
-      public Builder setType(
-          int index, java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  ensureTypeIsMutable();
-        type_.set(index, value);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string type = 3;</code>
-       */
-      public Builder addType(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  ensureTypeIsMutable();
-        type_.add(value);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string type = 3;</code>
-       */
-      public Builder addAllType(
-          java.lang.Iterable<java.lang.String> values) {
-        ensureTypeIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, type_);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string type = 3;</code>
-       */
-      public Builder clearType() {
-        type_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000004);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string type = 3;</code>
-       */
-      public Builder addTypeBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        ensureTypeIsMutable();
-        type_.add(value);
-        onChanged();
-        return this;
-      }
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
-      }
-
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:max.dillon.RelativePose)
-    }
-
-    // @@protoc_insertion_point(class_scope:max.dillon.RelativePose)
-    private static final max.dillon.GameGrammar.RelativePose DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new max.dillon.GameGrammar.RelativePose();
-    }
-
-    public static max.dillon.GameGrammar.RelativePose getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<RelativePose>
-        PARSER = new com.google.protobuf.AbstractParser<RelativePose>() {
-      public RelativePose parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-          return new RelativePose(input, extensionRegistry);
-      }
-    };
-
-    public static com.google.protobuf.Parser<RelativePose> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<RelativePose> getParserForType() {
-      return PARSER;
-    }
-
-    public max.dillon.GameGrammar.RelativePose getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
   public interface PieceOrBuilder extends
       // @@protoc_insertion_point(interface_extends:max.dillon.Piece)
       com.google.protobuf.MessageOrBuilder {
@@ -3392,19 +2411,6 @@ public final class GameGrammar {
      */
     max.dillon.GameGrammar.MoveOrBuilder getMoveOrBuilder(
         int index);
-
-    /**
-     * <code>.max.dillon.RelativePose relative = 6;</code>
-     */
-    boolean hasRelative();
-    /**
-     * <code>.max.dillon.RelativePose relative = 6;</code>
-     */
-    max.dillon.GameGrammar.RelativePose getRelative();
-    /**
-     * <code>.max.dillon.RelativePose relative = 6;</code>
-     */
-    max.dillon.GameGrammar.RelativePoseOrBuilder getRelativeOrBuilder();
   }
   /**
    * Protobuf type {@code max.dillon.Piece}
@@ -3482,19 +2488,6 @@ public final class GameGrammar {
               }
               move_.add(
                   input.readMessage(max.dillon.GameGrammar.Move.parser(), extensionRegistry));
-              break;
-            }
-            case 50: {
-              max.dillon.GameGrammar.RelativePose.Builder subBuilder = null;
-              if (relative_ != null) {
-                subBuilder = relative_.toBuilder();
-              }
-              relative_ = input.readMessage(max.dillon.GameGrammar.RelativePose.parser(), extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom(relative_);
-                relative_ = subBuilder.buildPartial();
-              }
-
               break;
             }
           }
@@ -3643,27 +2636,6 @@ public final class GameGrammar {
       return move_.get(index);
     }
 
-    public static final int RELATIVE_FIELD_NUMBER = 6;
-    private max.dillon.GameGrammar.RelativePose relative_;
-    /**
-     * <code>.max.dillon.RelativePose relative = 6;</code>
-     */
-    public boolean hasRelative() {
-      return relative_ != null;
-    }
-    /**
-     * <code>.max.dillon.RelativePose relative = 6;</code>
-     */
-    public max.dillon.GameGrammar.RelativePose getRelative() {
-      return relative_ == null ? max.dillon.GameGrammar.RelativePose.getDefaultInstance() : relative_;
-    }
-    /**
-     * <code>.max.dillon.RelativePose relative = 6;</code>
-     */
-    public max.dillon.GameGrammar.RelativePoseOrBuilder getRelativeOrBuilder() {
-      return getRelative();
-    }
-
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -3690,9 +2662,6 @@ public final class GameGrammar {
       }
       for (int i = 0; i < move_.size(); i++) {
         output.writeMessage(5, move_.get(i));
-      }
-      if (relative_ != null) {
-        output.writeMessage(6, getRelative());
       }
     }
 
@@ -3724,10 +2693,6 @@ public final class GameGrammar {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(5, move_.get(i));
       }
-      if (relative_ != null) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(6, getRelative());
-      }
       memoizedSize = size;
       return size;
     }
@@ -3754,11 +2719,6 @@ public final class GameGrammar {
           .equals(other.getPlacementList());
       result = result && getMoveList()
           .equals(other.getMoveList());
-      result = result && (hasRelative() == other.hasRelative());
-      if (hasRelative()) {
-        result = result && getRelative()
-            .equals(other.getRelative());
-      }
       return result;
     }
 
@@ -3782,10 +2742,6 @@ public final class GameGrammar {
       if (getMoveCount() > 0) {
         hash = (37 * hash) + MOVE_FIELD_NUMBER;
         hash = (53 * hash) + getMoveList().hashCode();
-      }
-      if (hasRelative()) {
-        hash = (37 * hash) + RELATIVE_FIELD_NUMBER;
-        hash = (53 * hash) + getRelative().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -3931,12 +2887,6 @@ public final class GameGrammar {
         } else {
           moveBuilder_.clear();
         }
-        if (relativeBuilder_ == null) {
-          relative_ = null;
-        } else {
-          relative_ = null;
-          relativeBuilder_ = null;
-        }
         return this;
       }
 
@@ -3977,11 +2927,6 @@ public final class GameGrammar {
           result.move_ = move_;
         } else {
           result.move_ = moveBuilder_.build();
-        }
-        if (relativeBuilder_ == null) {
-          result.relative_ = relative_;
-        } else {
-          result.relative_ = relativeBuilder_.build();
         }
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -4070,9 +3015,6 @@ public final class GameGrammar {
               moveBuilder_.addAllMessages(other.move_);
             }
           }
-        }
-        if (other.hasRelative()) {
-          mergeRelative(other.getRelative());
         }
         onChanged();
         return this;
@@ -4555,123 +3497,6 @@ public final class GameGrammar {
         }
         return moveBuilder_;
       }
-
-      private max.dillon.GameGrammar.RelativePose relative_ = null;
-      private com.google.protobuf.SingleFieldBuilderV3<
-          max.dillon.GameGrammar.RelativePose, max.dillon.GameGrammar.RelativePose.Builder, max.dillon.GameGrammar.RelativePoseOrBuilder> relativeBuilder_;
-      /**
-       * <code>.max.dillon.RelativePose relative = 6;</code>
-       */
-      public boolean hasRelative() {
-        return relativeBuilder_ != null || relative_ != null;
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 6;</code>
-       */
-      public max.dillon.GameGrammar.RelativePose getRelative() {
-        if (relativeBuilder_ == null) {
-          return relative_ == null ? max.dillon.GameGrammar.RelativePose.getDefaultInstance() : relative_;
-        } else {
-          return relativeBuilder_.getMessage();
-        }
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 6;</code>
-       */
-      public Builder setRelative(max.dillon.GameGrammar.RelativePose value) {
-        if (relativeBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          relative_ = value;
-          onChanged();
-        } else {
-          relativeBuilder_.setMessage(value);
-        }
-
-        return this;
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 6;</code>
-       */
-      public Builder setRelative(
-          max.dillon.GameGrammar.RelativePose.Builder builderForValue) {
-        if (relativeBuilder_ == null) {
-          relative_ = builderForValue.build();
-          onChanged();
-        } else {
-          relativeBuilder_.setMessage(builderForValue.build());
-        }
-
-        return this;
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 6;</code>
-       */
-      public Builder mergeRelative(max.dillon.GameGrammar.RelativePose value) {
-        if (relativeBuilder_ == null) {
-          if (relative_ != null) {
-            relative_ =
-              max.dillon.GameGrammar.RelativePose.newBuilder(relative_).mergeFrom(value).buildPartial();
-          } else {
-            relative_ = value;
-          }
-          onChanged();
-        } else {
-          relativeBuilder_.mergeFrom(value);
-        }
-
-        return this;
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 6;</code>
-       */
-      public Builder clearRelative() {
-        if (relativeBuilder_ == null) {
-          relative_ = null;
-          onChanged();
-        } else {
-          relative_ = null;
-          relativeBuilder_ = null;
-        }
-
-        return this;
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 6;</code>
-       */
-      public max.dillon.GameGrammar.RelativePose.Builder getRelativeBuilder() {
-        
-        onChanged();
-        return getRelativeFieldBuilder().getBuilder();
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 6;</code>
-       */
-      public max.dillon.GameGrammar.RelativePoseOrBuilder getRelativeOrBuilder() {
-        if (relativeBuilder_ != null) {
-          return relativeBuilder_.getMessageOrBuilder();
-        } else {
-          return relative_ == null ?
-              max.dillon.GameGrammar.RelativePose.getDefaultInstance() : relative_;
-        }
-      }
-      /**
-       * <code>.max.dillon.RelativePose relative = 6;</code>
-       */
-      private com.google.protobuf.SingleFieldBuilderV3<
-          max.dillon.GameGrammar.RelativePose, max.dillon.GameGrammar.RelativePose.Builder, max.dillon.GameGrammar.RelativePoseOrBuilder> 
-          getRelativeFieldBuilder() {
-        if (relativeBuilder_ == null) {
-          relativeBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-              max.dillon.GameGrammar.RelativePose, max.dillon.GameGrammar.RelativePose.Builder, max.dillon.GameGrammar.RelativePoseOrBuilder>(
-                  getRelative(),
-                  getParentForChildren(),
-                  isClean());
-          relative_ = null;
-        }
-        return relativeBuilder_;
-      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return this;
@@ -4741,34 +3566,52 @@ public final class GameGrammar {
     int getBoardSize();
 
     /**
-     * <code>.max.dillon.Symmetry board_symmetry = 3;</code>
+     * <code>.max.dillon.Topology board_topology = 3;</code>
+     */
+    int getBoardTopologyValue();
+    /**
+     * <code>.max.dillon.Topology board_topology = 3;</code>
+     */
+    max.dillon.GameGrammar.Topology getBoardTopology();
+
+    /**
+     * <code>.max.dillon.Symmetry board_symmetry = 4;</code>
      */
     int getBoardSymmetryValue();
     /**
-     * <code>.max.dillon.Symmetry board_symmetry = 3;</code>
+     * <code>.max.dillon.Symmetry board_symmetry = 4;</code>
      */
     max.dillon.GameGrammar.Symmetry getBoardSymmetry();
 
     /**
-     * <code>repeated .max.dillon.Piece piece = 4;</code>
+     * <code>.max.dillon.MoveSource move_source = 5;</code>
+     */
+    int getMoveSourceValue();
+    /**
+     * <code>.max.dillon.MoveSource move_source = 5;</code>
+     */
+    max.dillon.GameGrammar.MoveSource getMoveSource();
+
+    /**
+     * <code>repeated .max.dillon.Piece piece = 6;</code>
      */
     java.util.List<max.dillon.GameGrammar.Piece> 
         getPieceList();
     /**
-     * <code>repeated .max.dillon.Piece piece = 4;</code>
+     * <code>repeated .max.dillon.Piece piece = 6;</code>
      */
     max.dillon.GameGrammar.Piece getPiece(int index);
     /**
-     * <code>repeated .max.dillon.Piece piece = 4;</code>
+     * <code>repeated .max.dillon.Piece piece = 6;</code>
      */
     int getPieceCount();
     /**
-     * <code>repeated .max.dillon.Piece piece = 4;</code>
+     * <code>repeated .max.dillon.Piece piece = 6;</code>
      */
     java.util.List<? extends max.dillon.GameGrammar.PieceOrBuilder> 
         getPieceOrBuilderList();
     /**
-     * <code>repeated .max.dillon.Piece piece = 4;</code>
+     * <code>repeated .max.dillon.Piece piece = 6;</code>
      */
     max.dillon.GameGrammar.PieceOrBuilder getPieceOrBuilder(
         int index);
@@ -4787,7 +3630,9 @@ public final class GameGrammar {
     private GameSpec() {
       name_ = "";
       boardSize_ = 0;
+      boardTopology_ = 0;
       boardSymmetry_ = 0;
+      moveSource_ = 0;
       piece_ = java.util.Collections.emptyList();
     }
 
@@ -4830,13 +3675,25 @@ public final class GameGrammar {
             case 24: {
               int rawValue = input.readEnum();
 
+              boardTopology_ = rawValue;
+              break;
+            }
+            case 32: {
+              int rawValue = input.readEnum();
+
               boardSymmetry_ = rawValue;
               break;
             }
-            case 34: {
-              if (!((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
+            case 40: {
+              int rawValue = input.readEnum();
+
+              moveSource_ = rawValue;
+              break;
+            }
+            case 50: {
+              if (!((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
                 piece_ = new java.util.ArrayList<max.dillon.GameGrammar.Piece>();
-                mutable_bitField0_ |= 0x00000008;
+                mutable_bitField0_ |= 0x00000020;
               }
               piece_.add(
                   input.readMessage(max.dillon.GameGrammar.Piece.parser(), extensionRegistry));
@@ -4850,7 +3707,7 @@ public final class GameGrammar {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
+        if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
           piece_ = java.util.Collections.unmodifiableList(piece_);
         }
         makeExtensionsImmutable();
@@ -4912,51 +3769,83 @@ public final class GameGrammar {
       return boardSize_;
     }
 
-    public static final int BOARD_SYMMETRY_FIELD_NUMBER = 3;
+    public static final int BOARD_TOPOLOGY_FIELD_NUMBER = 3;
+    private int boardTopology_;
+    /**
+     * <code>.max.dillon.Topology board_topology = 3;</code>
+     */
+    public int getBoardTopologyValue() {
+      return boardTopology_;
+    }
+    /**
+     * <code>.max.dillon.Topology board_topology = 3;</code>
+     */
+    public max.dillon.GameGrammar.Topology getBoardTopology() {
+      max.dillon.GameGrammar.Topology result = max.dillon.GameGrammar.Topology.valueOf(boardTopology_);
+      return result == null ? max.dillon.GameGrammar.Topology.UNRECOGNIZED : result;
+    }
+
+    public static final int BOARD_SYMMETRY_FIELD_NUMBER = 4;
     private int boardSymmetry_;
     /**
-     * <code>.max.dillon.Symmetry board_symmetry = 3;</code>
+     * <code>.max.dillon.Symmetry board_symmetry = 4;</code>
      */
     public int getBoardSymmetryValue() {
       return boardSymmetry_;
     }
     /**
-     * <code>.max.dillon.Symmetry board_symmetry = 3;</code>
+     * <code>.max.dillon.Symmetry board_symmetry = 4;</code>
      */
     public max.dillon.GameGrammar.Symmetry getBoardSymmetry() {
       max.dillon.GameGrammar.Symmetry result = max.dillon.GameGrammar.Symmetry.valueOf(boardSymmetry_);
       return result == null ? max.dillon.GameGrammar.Symmetry.UNRECOGNIZED : result;
     }
 
-    public static final int PIECE_FIELD_NUMBER = 4;
+    public static final int MOVE_SOURCE_FIELD_NUMBER = 5;
+    private int moveSource_;
+    /**
+     * <code>.max.dillon.MoveSource move_source = 5;</code>
+     */
+    public int getMoveSourceValue() {
+      return moveSource_;
+    }
+    /**
+     * <code>.max.dillon.MoveSource move_source = 5;</code>
+     */
+    public max.dillon.GameGrammar.MoveSource getMoveSource() {
+      max.dillon.GameGrammar.MoveSource result = max.dillon.GameGrammar.MoveSource.valueOf(moveSource_);
+      return result == null ? max.dillon.GameGrammar.MoveSource.UNRECOGNIZED : result;
+    }
+
+    public static final int PIECE_FIELD_NUMBER = 6;
     private java.util.List<max.dillon.GameGrammar.Piece> piece_;
     /**
-     * <code>repeated .max.dillon.Piece piece = 4;</code>
+     * <code>repeated .max.dillon.Piece piece = 6;</code>
      */
     public java.util.List<max.dillon.GameGrammar.Piece> getPieceList() {
       return piece_;
     }
     /**
-     * <code>repeated .max.dillon.Piece piece = 4;</code>
+     * <code>repeated .max.dillon.Piece piece = 6;</code>
      */
     public java.util.List<? extends max.dillon.GameGrammar.PieceOrBuilder> 
         getPieceOrBuilderList() {
       return piece_;
     }
     /**
-     * <code>repeated .max.dillon.Piece piece = 4;</code>
+     * <code>repeated .max.dillon.Piece piece = 6;</code>
      */
     public int getPieceCount() {
       return piece_.size();
     }
     /**
-     * <code>repeated .max.dillon.Piece piece = 4;</code>
+     * <code>repeated .max.dillon.Piece piece = 6;</code>
      */
     public max.dillon.GameGrammar.Piece getPiece(int index) {
       return piece_.get(index);
     }
     /**
-     * <code>repeated .max.dillon.Piece piece = 4;</code>
+     * <code>repeated .max.dillon.Piece piece = 6;</code>
      */
     public max.dillon.GameGrammar.PieceOrBuilder getPieceOrBuilder(
         int index) {
@@ -4981,11 +3870,17 @@ public final class GameGrammar {
       if (boardSize_ != 0) {
         output.writeUInt32(2, boardSize_);
       }
-      if (boardSymmetry_ != max.dillon.GameGrammar.Symmetry.REFLECT.getNumber()) {
-        output.writeEnum(3, boardSymmetry_);
+      if (boardTopology_ != max.dillon.GameGrammar.Topology.SQUARE.getNumber()) {
+        output.writeEnum(3, boardTopology_);
+      }
+      if (boardSymmetry_ != max.dillon.GameGrammar.Symmetry.ROTATE.getNumber()) {
+        output.writeEnum(4, boardSymmetry_);
+      }
+      if (moveSource_ != max.dillon.GameGrammar.MoveSource.PIECES_ON_BOARD.getNumber()) {
+        output.writeEnum(5, moveSource_);
       }
       for (int i = 0; i < piece_.size(); i++) {
-        output.writeMessage(4, piece_.get(i));
+        output.writeMessage(6, piece_.get(i));
       }
     }
 
@@ -5001,13 +3896,21 @@ public final class GameGrammar {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(2, boardSize_);
       }
-      if (boardSymmetry_ != max.dillon.GameGrammar.Symmetry.REFLECT.getNumber()) {
+      if (boardTopology_ != max.dillon.GameGrammar.Topology.SQUARE.getNumber()) {
         size += com.google.protobuf.CodedOutputStream
-          .computeEnumSize(3, boardSymmetry_);
+          .computeEnumSize(3, boardTopology_);
+      }
+      if (boardSymmetry_ != max.dillon.GameGrammar.Symmetry.ROTATE.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(4, boardSymmetry_);
+      }
+      if (moveSource_ != max.dillon.GameGrammar.MoveSource.PIECES_ON_BOARD.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(5, moveSource_);
       }
       for (int i = 0; i < piece_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(4, piece_.get(i));
+          .computeMessageSize(6, piece_.get(i));
       }
       memoizedSize = size;
       return size;
@@ -5029,7 +3932,9 @@ public final class GameGrammar {
           .equals(other.getName());
       result = result && (getBoardSize()
           == other.getBoardSize());
+      result = result && boardTopology_ == other.boardTopology_;
       result = result && boardSymmetry_ == other.boardSymmetry_;
+      result = result && moveSource_ == other.moveSource_;
       result = result && getPieceList()
           .equals(other.getPieceList());
       return result;
@@ -5046,8 +3951,12 @@ public final class GameGrammar {
       hash = (53 * hash) + getName().hashCode();
       hash = (37 * hash) + BOARD_SIZE_FIELD_NUMBER;
       hash = (53 * hash) + getBoardSize();
+      hash = (37 * hash) + BOARD_TOPOLOGY_FIELD_NUMBER;
+      hash = (53 * hash) + boardTopology_;
       hash = (37 * hash) + BOARD_SYMMETRY_FIELD_NUMBER;
       hash = (53 * hash) + boardSymmetry_;
+      hash = (37 * hash) + MOVE_SOURCE_FIELD_NUMBER;
+      hash = (53 * hash) + moveSource_;
       if (getPieceCount() > 0) {
         hash = (37 * hash) + PIECE_FIELD_NUMBER;
         hash = (53 * hash) + getPieceList().hashCode();
@@ -5186,11 +4095,15 @@ public final class GameGrammar {
 
         boardSize_ = 0;
 
+        boardTopology_ = 0;
+
         boardSymmetry_ = 0;
+
+        moveSource_ = 0;
 
         if (pieceBuilder_ == null) {
           piece_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000008);
+          bitField0_ = (bitField0_ & ~0x00000020);
         } else {
           pieceBuilder_.clear();
         }
@@ -5220,11 +4133,13 @@ public final class GameGrammar {
         int to_bitField0_ = 0;
         result.name_ = name_;
         result.boardSize_ = boardSize_;
+        result.boardTopology_ = boardTopology_;
         result.boardSymmetry_ = boardSymmetry_;
+        result.moveSource_ = moveSource_;
         if (pieceBuilder_ == null) {
-          if (((bitField0_ & 0x00000008) == 0x00000008)) {
+          if (((bitField0_ & 0x00000020) == 0x00000020)) {
             piece_ = java.util.Collections.unmodifiableList(piece_);
-            bitField0_ = (bitField0_ & ~0x00000008);
+            bitField0_ = (bitField0_ & ~0x00000020);
           }
           result.piece_ = piece_;
         } else {
@@ -5279,14 +4194,20 @@ public final class GameGrammar {
         if (other.getBoardSize() != 0) {
           setBoardSize(other.getBoardSize());
         }
+        if (other.boardTopology_ != 0) {
+          setBoardTopologyValue(other.getBoardTopologyValue());
+        }
         if (other.boardSymmetry_ != 0) {
           setBoardSymmetryValue(other.getBoardSymmetryValue());
+        }
+        if (other.moveSource_ != 0) {
+          setMoveSourceValue(other.getMoveSourceValue());
         }
         if (pieceBuilder_ == null) {
           if (!other.piece_.isEmpty()) {
             if (piece_.isEmpty()) {
               piece_ = other.piece_;
-              bitField0_ = (bitField0_ & ~0x00000008);
+              bitField0_ = (bitField0_ & ~0x00000020);
             } else {
               ensurePieceIsMutable();
               piece_.addAll(other.piece_);
@@ -5299,7 +4220,7 @@ public final class GameGrammar {
               pieceBuilder_.dispose();
               pieceBuilder_ = null;
               piece_ = other.piece_;
-              bitField0_ = (bitField0_ & ~0x00000008);
+              bitField0_ = (bitField0_ & ~0x00000020);
               pieceBuilder_ = 
                 com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
                    getPieceFieldBuilder() : null;
@@ -5430,15 +4351,59 @@ public final class GameGrammar {
         return this;
       }
 
+      private int boardTopology_ = 0;
+      /**
+       * <code>.max.dillon.Topology board_topology = 3;</code>
+       */
+      public int getBoardTopologyValue() {
+        return boardTopology_;
+      }
+      /**
+       * <code>.max.dillon.Topology board_topology = 3;</code>
+       */
+      public Builder setBoardTopologyValue(int value) {
+        boardTopology_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.max.dillon.Topology board_topology = 3;</code>
+       */
+      public max.dillon.GameGrammar.Topology getBoardTopology() {
+        max.dillon.GameGrammar.Topology result = max.dillon.GameGrammar.Topology.valueOf(boardTopology_);
+        return result == null ? max.dillon.GameGrammar.Topology.UNRECOGNIZED : result;
+      }
+      /**
+       * <code>.max.dillon.Topology board_topology = 3;</code>
+       */
+      public Builder setBoardTopology(max.dillon.GameGrammar.Topology value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        
+        boardTopology_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.max.dillon.Topology board_topology = 3;</code>
+       */
+      public Builder clearBoardTopology() {
+        
+        boardTopology_ = 0;
+        onChanged();
+        return this;
+      }
+
       private int boardSymmetry_ = 0;
       /**
-       * <code>.max.dillon.Symmetry board_symmetry = 3;</code>
+       * <code>.max.dillon.Symmetry board_symmetry = 4;</code>
        */
       public int getBoardSymmetryValue() {
         return boardSymmetry_;
       }
       /**
-       * <code>.max.dillon.Symmetry board_symmetry = 3;</code>
+       * <code>.max.dillon.Symmetry board_symmetry = 4;</code>
        */
       public Builder setBoardSymmetryValue(int value) {
         boardSymmetry_ = value;
@@ -5446,14 +4411,14 @@ public final class GameGrammar {
         return this;
       }
       /**
-       * <code>.max.dillon.Symmetry board_symmetry = 3;</code>
+       * <code>.max.dillon.Symmetry board_symmetry = 4;</code>
        */
       public max.dillon.GameGrammar.Symmetry getBoardSymmetry() {
         max.dillon.GameGrammar.Symmetry result = max.dillon.GameGrammar.Symmetry.valueOf(boardSymmetry_);
         return result == null ? max.dillon.GameGrammar.Symmetry.UNRECOGNIZED : result;
       }
       /**
-       * <code>.max.dillon.Symmetry board_symmetry = 3;</code>
+       * <code>.max.dillon.Symmetry board_symmetry = 4;</code>
        */
       public Builder setBoardSymmetry(max.dillon.GameGrammar.Symmetry value) {
         if (value == null) {
@@ -5465,7 +4430,7 @@ public final class GameGrammar {
         return this;
       }
       /**
-       * <code>.max.dillon.Symmetry board_symmetry = 3;</code>
+       * <code>.max.dillon.Symmetry board_symmetry = 4;</code>
        */
       public Builder clearBoardSymmetry() {
         
@@ -5474,12 +4439,56 @@ public final class GameGrammar {
         return this;
       }
 
+      private int moveSource_ = 0;
+      /**
+       * <code>.max.dillon.MoveSource move_source = 5;</code>
+       */
+      public int getMoveSourceValue() {
+        return moveSource_;
+      }
+      /**
+       * <code>.max.dillon.MoveSource move_source = 5;</code>
+       */
+      public Builder setMoveSourceValue(int value) {
+        moveSource_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.max.dillon.MoveSource move_source = 5;</code>
+       */
+      public max.dillon.GameGrammar.MoveSource getMoveSource() {
+        max.dillon.GameGrammar.MoveSource result = max.dillon.GameGrammar.MoveSource.valueOf(moveSource_);
+        return result == null ? max.dillon.GameGrammar.MoveSource.UNRECOGNIZED : result;
+      }
+      /**
+       * <code>.max.dillon.MoveSource move_source = 5;</code>
+       */
+      public Builder setMoveSource(max.dillon.GameGrammar.MoveSource value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        
+        moveSource_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.max.dillon.MoveSource move_source = 5;</code>
+       */
+      public Builder clearMoveSource() {
+        
+        moveSource_ = 0;
+        onChanged();
+        return this;
+      }
+
       private java.util.List<max.dillon.GameGrammar.Piece> piece_ =
         java.util.Collections.emptyList();
       private void ensurePieceIsMutable() {
-        if (!((bitField0_ & 0x00000008) == 0x00000008)) {
+        if (!((bitField0_ & 0x00000020) == 0x00000020)) {
           piece_ = new java.util.ArrayList<max.dillon.GameGrammar.Piece>(piece_);
-          bitField0_ |= 0x00000008;
+          bitField0_ |= 0x00000020;
          }
       }
 
@@ -5487,7 +4496,7 @@ public final class GameGrammar {
           max.dillon.GameGrammar.Piece, max.dillon.GameGrammar.Piece.Builder, max.dillon.GameGrammar.PieceOrBuilder> pieceBuilder_;
 
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public java.util.List<max.dillon.GameGrammar.Piece> getPieceList() {
         if (pieceBuilder_ == null) {
@@ -5497,7 +4506,7 @@ public final class GameGrammar {
         }
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public int getPieceCount() {
         if (pieceBuilder_ == null) {
@@ -5507,7 +4516,7 @@ public final class GameGrammar {
         }
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public max.dillon.GameGrammar.Piece getPiece(int index) {
         if (pieceBuilder_ == null) {
@@ -5517,7 +4526,7 @@ public final class GameGrammar {
         }
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public Builder setPiece(
           int index, max.dillon.GameGrammar.Piece value) {
@@ -5534,7 +4543,7 @@ public final class GameGrammar {
         return this;
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public Builder setPiece(
           int index, max.dillon.GameGrammar.Piece.Builder builderForValue) {
@@ -5548,7 +4557,7 @@ public final class GameGrammar {
         return this;
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public Builder addPiece(max.dillon.GameGrammar.Piece value) {
         if (pieceBuilder_ == null) {
@@ -5564,7 +4573,7 @@ public final class GameGrammar {
         return this;
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public Builder addPiece(
           int index, max.dillon.GameGrammar.Piece value) {
@@ -5581,7 +4590,7 @@ public final class GameGrammar {
         return this;
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public Builder addPiece(
           max.dillon.GameGrammar.Piece.Builder builderForValue) {
@@ -5595,7 +4604,7 @@ public final class GameGrammar {
         return this;
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public Builder addPiece(
           int index, max.dillon.GameGrammar.Piece.Builder builderForValue) {
@@ -5609,7 +4618,7 @@ public final class GameGrammar {
         return this;
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public Builder addAllPiece(
           java.lang.Iterable<? extends max.dillon.GameGrammar.Piece> values) {
@@ -5624,12 +4633,12 @@ public final class GameGrammar {
         return this;
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public Builder clearPiece() {
         if (pieceBuilder_ == null) {
           piece_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000008);
+          bitField0_ = (bitField0_ & ~0x00000020);
           onChanged();
         } else {
           pieceBuilder_.clear();
@@ -5637,7 +4646,7 @@ public final class GameGrammar {
         return this;
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public Builder removePiece(int index) {
         if (pieceBuilder_ == null) {
@@ -5650,14 +4659,14 @@ public final class GameGrammar {
         return this;
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public max.dillon.GameGrammar.Piece.Builder getPieceBuilder(
           int index) {
         return getPieceFieldBuilder().getBuilder(index);
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public max.dillon.GameGrammar.PieceOrBuilder getPieceOrBuilder(
           int index) {
@@ -5667,7 +4676,7 @@ public final class GameGrammar {
         }
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public java.util.List<? extends max.dillon.GameGrammar.PieceOrBuilder> 
            getPieceOrBuilderList() {
@@ -5678,14 +4687,14 @@ public final class GameGrammar {
         }
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public max.dillon.GameGrammar.Piece.Builder addPieceBuilder() {
         return getPieceFieldBuilder().addBuilder(
             max.dillon.GameGrammar.Piece.getDefaultInstance());
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public max.dillon.GameGrammar.Piece.Builder addPieceBuilder(
           int index) {
@@ -5693,7 +4702,7 @@ public final class GameGrammar {
             index, max.dillon.GameGrammar.Piece.getDefaultInstance());
       }
       /**
-       * <code>repeated .max.dillon.Piece piece = 4;</code>
+       * <code>repeated .max.dillon.Piece piece = 6;</code>
        */
       public java.util.List<max.dillon.GameGrammar.Piece.Builder> 
            getPieceBuilderList() {
@@ -5706,7 +4715,7 @@ public final class GameGrammar {
           pieceBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
               max.dillon.GameGrammar.Piece, max.dillon.GameGrammar.Piece.Builder, max.dillon.GameGrammar.PieceOrBuilder>(
                   piece_,
-                  ((bitField0_ & 0x00000008) == 0x00000008),
+                  ((bitField0_ & 0x00000020) == 0x00000020),
                   getParentForChildren(),
                   isClean());
           piece_ = null;
@@ -5773,11 +4782,6 @@ public final class GameGrammar {
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_max_dillon_Move_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_max_dillon_RelativePose_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_max_dillon_RelativePose_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_max_dillon_Piece_descriptor;
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
@@ -5800,26 +4804,25 @@ public final class GameGrammar {
       ".dillon\"y\n\013MoveOptions\022!\n\004none\030\001 \001(\0162\023.m" +
       "ax.dillon.Outcome\022 \n\003own\030\002 \001(\0162\023.max.dil" +
       "lon.Outcome\022%\n\010opponent\030\003 \001(\0162\023.max.dill" +
-      "on.Outcome\"\362\001\n\004Move\022\020\n\010template\030\001 \003(\t\022(\n" +
-      "\tfromWhere\030\002 \001(\0162\025.max.dillon.FromWhere\022" +
-      "*\n\010relative\030\003 \001(\0132\030.max.dillon.RelativeP" +
-      "ose\022%\n\004land\030\004 \001(\0132\027.max.dillon.MoveOptio" +
-      "ns\022%\n\004jump\030\005 \001(\0132\027.max.dillon.MoveOption" +
-      "s\022\020\n\010exchange\030\006 \001(\t\022\020\n\010priority\030\007 \001(\r\022\020\n",
-      "\010continue\030\010 \001(\010\"U\n\014RelativePose\022\017\n\007allow" +
-      "ed\030\001 \001(\010\022&\n\005color\030\002 \001(\0132\027.max.dillon.Mov" +
-      "eOptions\022\014\n\004type\030\003 \003(\t\"\220\001\n\005Piece\022\014\n\004name" +
-      "\030\001 \001(\t\022\r\n\005count\030\002 \001(\r\022\013\n\003min\030\003 \001(\r\022\021\n\tpl" +
-      "acement\030\004 \003(\t\022\036\n\004move\030\005 \003(\0132\020.max.dillon" +
-      ".Move\022*\n\010relative\030\006 \001(\0132\030.max.dillon.Rel" +
-      "ativePose\"|\n\010GameSpec\022\014\n\004name\030\001 \001(\t\022\022\n\nb" +
-      "oard_size\030\002 \001(\r\022,\n\016board_symmetry\030\003 \001(\0162" +
-      "\024.max.dillon.Symmetry\022 \n\005piece\030\004 \003(\0132\021.m" +
-      "ax.dillon.Piece*-\n\010Symmetry\022\013\n\007REFLECT\020\000",
-      "\022\n\n\006ROTATE\020\001\022\010\n\004NONE\020\002*=\n\007Outcome\022\016\n\nDIS" +
-      "ALLOWED\020\000\022\013\n\007ALLOWED\020\001\022\013\n\007CAPTURE\020\002\022\010\n\004S" +
-      "WAP\020\003*&\n\tFromWhere\022\013\n\007ONBOARD\020\000\022\014\n\010OFFBO" +
-      "ARD\020\001b\006proto3"
+      "on.Outcome\"\234\001\n\004Move\022\020\n\010template\030\001 \003(\t\022%\n" +
+      "\004land\030\004 \001(\0132\027.max.dillon.MoveOptions\022%\n\004" +
+      "jump\030\005 \001(\0132\027.max.dillon.MoveOptions\022\020\n\010e" +
+      "xchange\030\006 \001(\t\022\020\n\010priority\030\007 \001(\r\022\020\n\010conti" +
+      "nue\030\010 \001(\010\"d\n\005Piece\022\014\n\004name\030\001 \001(\t\022\r\n\005coun" +
+      "t\030\002 \001(\r\022\013\n\003min\030\003 \001(\r\022\021\n\tplacement\030\004 \003(\t\022",
+      "\036\n\004move\030\005 \003(\0132\020.max.dillon.Move\"\327\001\n\010Game" +
+      "Spec\022\014\n\004name\030\001 \001(\t\022\022\n\nboard_size\030\002 \001(\r\022," +
+      "\n\016board_topology\030\003 \001(\0162\024.max.dillon.Topo" +
+      "logy\022,\n\016board_symmetry\030\004 \001(\0162\024.max.dillo" +
+      "n.Symmetry\022+\n\013move_source\030\005 \001(\0162\026.max.di" +
+      "llon.MoveSource\022 \n\005piece\030\006 \003(\0132\021.max.dil" +
+      "lon.Piece*/\n\010Topology\022\n\n\006SQUARE\020\000\022\014\n\010CYL" +
+      "INDER\020\001\022\t\n\005TORUS\020\002*-\n\010Symmetry\022\n\n\006ROTATE" +
+      "\020\000\022\013\n\007REFLECT\020\001\022\010\n\004NONE\020\002*+\n\nMoveSource\022" +
+      "\023\n\017PIECES_ON_BOARD\020\000\022\010\n\004ENDS\020\001*`\n\007Outcom",
+      "e\022\016\n\nDISALLOWED\020\000\022\013\n\007ALLOWED\020\001\022\013\n\007CAPTUR" +
+      "E\020\002\022\010\n\004SWAP\020\003\022\010\n\004STAY\020\004\022\n\n\006DEPLOY\020\005\022\013\n\007I" +
+      "MPRESS\020\006b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -5844,25 +4847,19 @@ public final class GameGrammar {
     internal_static_max_dillon_Move_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_max_dillon_Move_descriptor,
-        new java.lang.String[] { "Template", "FromWhere", "Relative", "Land", "Jump", "Exchange", "Priority", "Continue", });
-    internal_static_max_dillon_RelativePose_descriptor =
-      getDescriptor().getMessageTypes().get(2);
-    internal_static_max_dillon_RelativePose_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_max_dillon_RelativePose_descriptor,
-        new java.lang.String[] { "Allowed", "Color", "Type", });
+        new java.lang.String[] { "Template", "Land", "Jump", "Exchange", "Priority", "Continue", });
     internal_static_max_dillon_Piece_descriptor =
-      getDescriptor().getMessageTypes().get(3);
+      getDescriptor().getMessageTypes().get(2);
     internal_static_max_dillon_Piece_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_max_dillon_Piece_descriptor,
-        new java.lang.String[] { "Name", "Count", "Min", "Placement", "Move", "Relative", });
+        new java.lang.String[] { "Name", "Count", "Min", "Placement", "Move", });
     internal_static_max_dillon_GameSpec_descriptor =
-      getDescriptor().getMessageTypes().get(4);
+      getDescriptor().getMessageTypes().get(3);
     internal_static_max_dillon_GameSpec_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_max_dillon_GameSpec_descriptor,
-        new java.lang.String[] { "Name", "BoardSize", "BoardSymmetry", "Piece", });
+        new java.lang.String[] { "Name", "BoardSize", "BoardTopology", "BoardSymmetry", "MoveSource", "Piece", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

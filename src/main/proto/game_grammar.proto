@@ -2,10 +2,21 @@ syntax = "proto3";
 
 package max.dillon;
 
+enum Topology {
+    SQUARE = 0;
+    CYLINDER = 1;
+    TORUS = 2;
+}
+
 enum Symmetry {
-    REFLECT = 0;
-    ROTATE = 1;
+    ROTATE = 0;
+    REFLECT = 1;
     NONE = 2;
+}
+
+enum MoveSource {
+    PIECES_ON_BOARD = 0;
+    ENDS = 1;
 }
 
 enum Outcome {
@@ -13,11 +24,9 @@ enum Outcome {
     ALLOWED = 1;
     CAPTURE = 2;
     SWAP = 3;
-}
-
-enum FromWhere {
-    ONBOARD = 0;
-    OFFBOARD = 1;
+    STAY = 4;
+    DEPLOY = 5;
+    IMPRESS = 6;
 }
 
 message MoveOptions {
@@ -28,21 +37,11 @@ message MoveOptions {
 
 message Move {
     repeated string template = 1;
-
-    FromWhere fromWhere = 2;
-    RelativePose relative = 3;
-
     MoveOptions land = 4;
     MoveOptions jump = 5;
     string exchange = 6;
     uint32 priority = 7;
     bool continue = 8;
-}
-
-message RelativePose {
-    bool allowed = 1;
-    MoveOptions color = 2;
-    repeated string type = 3;
 }
 
 message Piece {
@@ -51,12 +50,13 @@ message Piece {
     uint32 min = 3;
     repeated string placement = 4;
     repeated Move move = 5;
-    RelativePose relative = 6;
 }
 
 message GameSpec {
     string name = 1;
     uint32 board_size = 2;
-    Symmetry board_symmetry = 3;
-    repeated Piece piece = 4;
+    Topology board_topology = 3;
+    Symmetry board_symmetry = 4;
+    MoveSource move_source = 5;
+    repeated Piece piece = 6;
 }

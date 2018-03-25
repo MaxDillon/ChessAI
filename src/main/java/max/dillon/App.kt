@@ -14,13 +14,13 @@ import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.*
 import kotlin.collections.ArrayList
 
-typealias MoveCandidates = Map<Int,ArrayList<GameState>>
+typealias MoveCandidates = Map<Int, ArrayList<GameState>>
 
 class GameState {
     var gameBoard: Array<IntArray>
     private val gameSpec: GameSpec
     var whiteMove = true
-    var description = ""
+    var description = "Start"
     var pieceName = ""
 
     constructor(gameSpec: GameSpec) {
@@ -63,20 +63,27 @@ class GameState {
 
     private fun maybeAddPlaced(moves: MutableMap<Int, ArrayList<GameState>>,
                                move: GameGrammar.Move,
-                               x: Int, y: Int, p: Int): Boolean {
+                               x: Int, y: Int, piece: Int): Boolean {
 
         val next = initNext()
-        val dst = at(x,y)
+        next.description = "${'a' + x}${y + 1}"
+        val dst = at(x, y)
 
         if (dst == 0 && move.land.none == DISALLOWED) {
             return false
-        } else if (dst.sign == p.sign && move.land.own == DISALLOWED) {
+        } else if (dst.sign == piece.sign && move.land.own == DISALLOWED) {
             return false
-        } else if (dst.sign == p.sign && move.land.opponent == DISALLOWED) {
+        } else if (dst.sign == -piece.sign && move.land.opponent == DISALLOWED) {
             return false
         }
-        next.setState(x,y,p)
-        //newStates.add(next)
+        next.setState(x, y, piece)
+
+        val list = moves[move.priority]
+        if (list == null) {
+            moves[move.priority] = arrayListOf(next)
+        } else {
+            list.add(next)
+        }
         return true
     }
 
@@ -92,14 +99,17 @@ class GameState {
         return true
     }
 
+    fun offBoard(x: Int, y: Int): Boolean {
+        return x < 0 || y < 0 || x >= gameSpec.boardSize || y >= gameSpec.boardSize
+    }
 
-    fun checkJumpConstraints(next: GameState,x1: Int,x2: Int,y1: Int,y2: Int, move: Move): Boolean{
-        if (move.fromWhere == FromWhere.OFFBOARD) throw RuntimeException("jump constraint on offboard piece move")
-        val dx = x2-x1
-        val dy = y2-y1
-        val src = at(x1,y1)
+    fun checkJumpConstraints(next: GameState,
+                             x1: Int, x2: Int, y1: Int, y2: Int,
+                             src: Int = at(x1, y1),
+                             move: Move): Boolean {
+        val dx = x2 - x1
+        val dy = y2 - y1
         if (dx == 0 || dy == 0 || abs(dx) == abs(dy)) {
-
             // loops over squares in between location and destination
             for (i in 1 until max(abs(dx), abs(dy))) {
 
@@ -120,6 +130,8 @@ class GameState {
                     next.setState(x3, y3, 0)
                 } else if (jumped.sign == -src.sign && move.jump.opponent == CAPTURE) {
                     next.setState(x3, y3, 0)
+                } else if (jumped.sign == -src.sign && move.jump.opponent == IMPRESS) {
+                    next.setState(x3, y3, -jumped)
                 }
             }
         }
@@ -129,34 +141,45 @@ class GameState {
 
     private fun maybeAddMove(moves: MutableMap<Int, ArrayList<GameState>>,
                              move: GameGrammar.Move,
-                             x1: Int, y1: Int, x2: Int, y2: Int): Boolean {
+                             x1: Int, y1: Int, x2: Int, y2: Int,
+                             src: Int = at(x1,y1)): Boolean {
         val next = initNext()
         next.description = "${'a' + x1}${y1 + 1}=>${'a' + x2}${y2 + 1}"
-        next.pieceName = getPiece(at(x1,y1)).name
-        val src = at(x1, y1)
+        next.pieceName = if (offBoard(x1,y1)) "new" else getPiece(at(x1, y1)).name
         val dst = at(x2, y2)
 
-        if (!checkLandingConstraints(dst,src,move)) return false
+        if (!checkLandingConstraints(dst, src, move)) return false
 
-        if (!checkJumpConstraints(next, x1, x2, y1, y2, move)) return false
+        if (!checkJumpConstraints(next, x1, x2, y1, y2, src, move)) return false
 
         if (dst.sign != 0) {
             val action = if (dst.sign == src.sign) move.land.own else move.land.opponent
             when (action) {
                 SWAP -> {
+                    if (offBoard(x1, y1)) throw RuntimeException("illegal swap with virtual piece")
                     next.setState(x1, y1, dst)
                     next.setState(x2, y2, src)
                 }
                 CAPTURE -> {
                     next.setState(x2, y2, src)
-                    next.setState(x1, y1, 0)
+                    if (!offBoard(x1,y1)) {
+                        next.setState(x1, y1, 0)
+                    }
+                }
+                STAY -> {
+                    // src and dst pieces stay where they are
                 }
                 else -> throw RuntimeException("grammar doesn't specify disposition of non-empty destination")
             }
         } else {
             if (move.land.none == ALLOWED) {
                 next.setState(x2, y2, src)
-                next.setState(x1, y1, 0)
+                if (!offBoard(x1,y1)) {
+                    next.setState(x1, y1, 0)
+                }
+            } else if (move.land.none == DEPLOY) {
+                // place a fresh piece from off board, leave src. where it is
+                next.setState(x2, y2, src)
             } else {
                 throw RuntimeException("grammar specifies swap or capture for empty cell")
             }
@@ -202,11 +225,20 @@ class GameState {
     }
 
     private fun forward(size: Int): List<Pair<Int, Int>> {
-        return square(size).filter { whiteMove && it.second > 0 || !whiteMove && it.second < 0 }
+        return square(size).filter {
+            if (gameSpec.boardSymmetry == NONE) {
+                it.second > 0
+            } else {
+                if (whiteMove) it.second > 0
+                else it.second < 0
+            }
+        }
     }
 
     private fun rank(row: Int): List<Pair<Int, Int>> {
-        val adjY = if (whiteMove) row else gameSpec.boardSize - 1 - row
+        val adjY = (
+                if (whiteMove || gameSpec.boardSymmetry == NONE) row - 1
+                else gameSpec.boardSize - row)
         val moves = arrayListOf<Pair<Int, Int>>()
         for (x in 0 until gameSpec.boardSize) {
             moves.add(Pair(x, adjY))
@@ -214,13 +246,22 @@ class GameState {
         return moves
     }
 
-    private fun pass(): List<Pair<Int,Int>> {
-        return arrayListOf(Pair(0,0))
+    private fun pass(): List<Pair<Int, Int>> {
+        return arrayListOf(Pair(0, 0))
     }
 
+    /**
+     * Collects the moves that may be performed by an actual (or virtual) piece
+     * A virtual piece would be one just off the board.
+     *
+     * @property moves the prioritized collection for accumulating moves
+     * @property x the x position of the piece
+     * @property y the y position of the piece (or -1 or boardSize for virtuals)
+     * @property p the piece type id (must be provided if the piece is virtual)
+     */
     private fun collectPieceMoves(moves: MutableMap<Int, ArrayList<GameState>>,
                                   x: Int, y: Int, p: Int = at(x, y)) {
-        val piece = getPiece(p) // gets current piece in position x,y
+        val piece = getPiece(p)
         for (move in piece.moveList) {
             val squares = arrayListOf<Pair<Int, Int>>()
 
@@ -230,6 +271,7 @@ class GameState {
                 var size = size_str.toInt()
                 if (size == 0) size = gameSpec.boardSize
 
+                // convert offset to board position (result may be out of bounds)
                 fun toBoard(offset: Pair<Int, Int>) = Pair(x + offset.first, y + offset.second)
 
                 val newSquares = when (pattern) {
@@ -255,31 +297,33 @@ class GameState {
             for (square in squares) {
                 val (x2, y2) = square
                 if (x2 >= 0 && x2 < gameSpec.boardSize && y2 >= 0 && y2 < gameSpec.boardSize) {
-                    if (piece.relative.allowed) {
-                        maybeAddPlaced(moves, move, x2, y2, p)
-                    } else {
-                        maybeAddMove(moves, move, x, y, x2, y2)
-                    }
-
+                    maybeAddMove(moves, move, x, y, x2, y2, p)
                 }
             }
         }
     }
 
     fun getLegalNextStates(): ArrayList<GameState> {
-        val states = TreeMap<Int,ArrayList<GameState>>()
+        val states = TreeMap<Int, ArrayList<GameState>>()
+        val playerSign = if (whiteMove) 1 else -1
 
-        gameBoard.forEachIndexed { y, row ->
-            row.forEachIndexed { x, piece ->
-                if (piece.sign == if (whiteMove) 1 else -1) {
-                    collectPieceMoves(states, x, y)
-                }
-
-                gameSpec.pieceList.forEach {
-                    it.moveList.forEach {
-                        if(it.fromWhere == FromWhere.OFFBOARD) {
-
+        when (gameSpec.moveSource) {
+            MoveSource.PIECES_ON_BOARD -> {
+                gameBoard.forEachIndexed { y, row ->
+                    row.forEachIndexed { x, pieceId ->
+                        if (pieceId.sign == playerSign) {
+                            collectPieceMoves(states, x, y)
                         }
+                    }
+                }
+            }
+            MoveSource.ENDS -> {
+                for (x in 0 until gameSpec.boardSize) {
+                    for (pieceId in gameSpec.pieceList.indices) {
+                        collectPieceMoves(
+                                states, x, -1, pieceId * playerSign)
+                        collectPieceMoves(
+                                states, x, gameSpec.boardSize, pieceId * playerSign)
                     }
                 }
             }
@@ -315,7 +359,7 @@ class GameState {
         for (index in 0 until size) print("--- ")
         println("#")
 
-        gameBoard.forEachIndexed { i, row ->
+        gameBoard.reversed().forEachIndexed { i, row ->
             print("#|")
             row.forEachIndexed { j, piece ->
                 if ((i + j) % 2 == 0) print("\u001B[47m\u001B[30m")
@@ -327,7 +371,7 @@ class GameState {
                 print("|")
 
             }
-            println("# ${i + 1}")
+            println("# ${gameSpec.boardSize - i}")
             print("# ")
             for (index in 0 until size) print("--- ")
             println("#")
