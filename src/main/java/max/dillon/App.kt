@@ -14,6 +14,8 @@ import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.*
 import kotlin.collections.ArrayList
 
+typealias MoveCandidates = Map<Int,ArrayList<GameState>>
+
 class GameState {
     var gameBoard: Array<IntArray>
     private val gameSpec: GameSpec
@@ -59,7 +61,8 @@ class GameState {
         gameBoard[y][x] = state
     }
 
-    private fun maybeAddPlaced(newStates: ArrayList<GameState>, move: GameGrammar.Move,
+    private fun maybeAddPlaced(moves: MutableMap<Int, ArrayList<GameState>>,
+                               move: GameGrammar.Move,
                                x: Int, y: Int, p: Int): Boolean {
 
         val next = initNext()
@@ -73,7 +76,7 @@ class GameState {
             return false
         }
         next.setState(x,y,p)
-        newStates.add(next)
+        //newStates.add(next)
         return true
     }
 
@@ -124,7 +127,8 @@ class GameState {
     }
 
 
-    private fun maybeAddMove(newStates: ArrayList<GameState>, move: GameGrammar.Move,
+    private fun maybeAddMove(moves: MutableMap<Int, ArrayList<GameState>>,
+                             move: GameGrammar.Move,
                              x1: Int, y1: Int, x2: Int, y2: Int): Boolean {
         val next = initNext()
         next.description = "${'a' + x1}${y1 + 1}=>${'a' + x2}${y2 + 1}"
@@ -135,8 +139,6 @@ class GameState {
         if (!checkLandingConstraints(dst,src,move)) return false
 
         if (!checkJumpConstraints(next, x1, x2, y1, y2, move)) return false
-
-
 
         if (dst.sign != 0) {
             val action = if (dst.sign == src.sign) move.land.own else move.land.opponent
@@ -159,20 +161,21 @@ class GameState {
                 throw RuntimeException("grammar specifies swap or capture for empty cell")
             }
         }
-        if (move.promoteCount == 0) {
-            newStates.add(next)
-        } else {
-            for (name in move.promoteList) {
-                val promo = next.initNext()
-                promo.whiteMove = next.whiteMove
-                for (i in gameSpec.pieceList.indices) {
-                    if (gameSpec.pieceList[i].name == name) {
-                        promo.setState(x2, y2, if (whiteMove) i else -1)
-                    }
+        if (move.exchange.length > 0) {
+            for (i in gameSpec.pieceList.indices) {
+                if (gameSpec.pieceList[i].name == move.exchange) {
+                    next.setState(x2, y2, if (whiteMove) i else -i)
                 }
-                promo.description = "${'a' + x1}${y1 + 1}=>${'a' + x2}${y2 + 1}_$name"
-                newStates.add(promo)
             }
+        }
+        if (move.`continue`) {
+            next.whiteMove = whiteMove
+        }
+        val list = moves[move.priority]
+        if (list == null) {
+            moves[move.priority] = arrayListOf(next)
+        } else {
+            list.add(next)
         }
         return true
     }
@@ -211,20 +214,21 @@ class GameState {
         return moves
     }
 
-    private fun getPieceMoves(x: Int, y: Int, p: Int = at(x, y)): ArrayList<GameState> {
-        val newStates = arrayListOf<GameState>()
-        val piece = getPiece(p) // gets current piece in position x,y
+    private fun pass(): List<Pair<Int,Int>> {
+        return arrayListOf(Pair(0,0))
+    }
 
+    private fun collectPieceMoves(moves: MutableMap<Int, ArrayList<GameState>>,
+                                  x: Int, y: Int, p: Int = at(x, y)) {
+        val piece = getPiece(p) // gets current piece in position x,y
         for (move in piece.moveList) {
             val squares = arrayListOf<Pair<Int, Int>>()
-
 
             for (template in move.templateList) {
                 val action = template.substring(0, 1)
                 val (pattern, size_str) = template.substring(1).split("_")
                 var size = size_str.toInt()
                 if (size == 0) size = gameSpec.boardSize
-
 
                 fun toBoard(offset: Pair<Int, Int>) = Pair(x + offset.first, y + offset.second)
 
@@ -233,6 +237,7 @@ class GameState {
                     "plus" -> plus(size).map(::toBoard)
                     "cross" -> cross(size).map(::toBoard)
                     "forward" -> forward(size).map(::toBoard)
+                    "pass" -> pass().map(::toBoard)
                     "rank" -> rank(size)
                     else -> arrayListOf()
                 }
@@ -251,22 +256,24 @@ class GameState {
                 val (x2, y2) = square
                 if (x2 >= 0 && x2 < gameSpec.boardSize && y2 >= 0 && y2 < gameSpec.boardSize) {
                     if (piece.relative.allowed) {
-                        maybeAddPlaced(newStates, move, x2, y2, p)
+                        maybeAddPlaced(moves, move, x2, y2, p)
                     } else {
-                        maybeAddMove(newStates, move, x, y, x2, y2)
+                        maybeAddMove(moves, move, x, y, x2, y2)
                     }
 
                 }
             }
         }
-        return newStates
     }
 
     fun getLegalNextStates(): ArrayList<GameState> {
-        val states = arrayListOf<GameState>()
+        val states = TreeMap<Int,ArrayList<GameState>>()
+
         gameBoard.forEachIndexed { y, row ->
             row.forEachIndexed { x, piece ->
-                if (piece.sign == if (whiteMove) 1 else -1) states.addAll(getPieceMoves(x, y))
+                if (piece.sign == if (whiteMove) 1 else -1) {
+                    collectPieceMoves(states, x, y)
+                }
 
                 gameSpec.pieceList.forEach {
                     it.moveList.forEach {
@@ -277,7 +284,7 @@ class GameState {
                 }
             }
         }
-        return states
+        return states.lastEntry()?.component2() ?: ArrayList()
     }
 
     fun gameOver(): Boolean {
@@ -308,7 +315,6 @@ class GameState {
         for (index in 0 until size) print("--- ")
         println("#")
 
-
         gameBoard.forEachIndexed { i, row ->
             print("#|")
             row.forEachIndexed { j, piece ->
@@ -335,17 +341,6 @@ class GameState {
     }
 }
 
-
-fun testStuff(gameSpec: GameSpec) {
-    val s1 = GameState(gameSpec)
-    s1.gameBoard.forEach { for (i in it.indices) it[i] = 0 }
-    s1.gameBoard[1][3] = 1
-    s1.printBoard()
-    for (s in s1.getLegalNextStates()) s.printBoard()
-}
-
-
-
 fun main(args: Array<String>) {
     var game: String
     var str: String
@@ -357,7 +352,6 @@ fun main(args: Array<String>) {
         } catch (e: NoSuchFileException) {
             println("there is no such file. try again")
         }
-
     }
 
     val builder = GameSpec.newBuilder()

@@ -1,0 +1,189 @@
+
+name: "checkers"
+board_size: 8
+board_symmetry: ROTATE
+
+piece {
+    name: "P"
+    count: 12
+    min: 0
+    placement: "x1y1"
+    placement: "x3y1"
+    placement: "x5y1"
+    placement: "x7y1"
+    placement: "x2y2"
+    placement: "x4y2"
+    placement: "x6y2"
+    placement: "x8y2"
+    placement: "x1y3"
+    placement: "x3y3"
+    placement: "x5y3"
+    placement: "x7y3"
+    move {
+        template: "+cross_1"
+        template: "=forward_1"
+        template: "-rank_7"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: DISALLOWED
+        }
+    }
+    move {
+        template: "+cross_1"
+        template: "=forward_1"
+        template: "=rank_7"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: DISALLOWED
+        }
+        exchange: "K"
+    }
+    move {
+        template: "+cross_2"
+        template: "-cross_1"
+        template: "=forward_2"
+        template: "-rank_7"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: DISALLOWED
+        }
+        jump {
+            none: DISALLOWED
+            own: DISALLOWED
+            opponent: CAPTURE
+        }
+        exchange: "*"
+        continue: true
+    }
+    move {
+        template: "+cross_2"
+        template: "-cross_1"
+        template: "=forward_2"
+        template: "=rank_7"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: DISALLOWED
+        }
+        jump {
+            none: DISALLOWED
+            own: DISALLOWED
+            opponent: CAPTURE
+        }
+        exchange: "K"
+    }
+}
+piece {
+    name: "*"
+    count: 0
+    min: 0
+    move {
+        template: "+cross_2"
+        template: "-cross_1"
+        template: "=forward_2"
+        template: "-rank_7"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: DISALLOWED
+        }
+        jump {
+            none: DISALLOWED
+            own: DISALLOWED
+            opponent: CAPTURE
+        }
+        continue: true
+        priority: 1
+    }
+    move {
+        template: "+cross_2"
+        template: "-cross_1"
+        template: "=forward_2"
+        template: "=rank_7"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: DISALLOWED
+        }
+        jump {
+            none: DISALLOWED
+            own: DISALLOWED
+            opponent: CAPTURE
+        }
+        exchange: "K"
+        priority: 1
+    }
+    move {
+        template: "+pass_0"
+        land {
+            none: DISALLOWED
+            own: SWAP
+            opponent: DISALLOWED
+        }
+        exchange: "P"
+        priority: 1
+    }
+}
+piece {
+    name: "K"
+    count: 0
+    min: 0
+    move {
+        template: "+cross_1"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: DISALLOWED
+        }
+    }
+    move {
+        template: "+cross_2"
+        template: "-cross_1"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: DISALLOWED
+        }
+        jump {
+            none: DISALLOWED
+            own: DISALLOWED
+            opponent: CAPTURE
+        }
+        exchange: "#"
+        continue: true
+    }
+}
+piece {
+    name: "#"
+    count: 0
+    min: 0
+    move {
+        template: "+cross_2"
+        template: "-cross_1"
+        land {
+            none: ALLOWED
+            own: DISALLOWED
+            opponent: DISALLOWED
+        }
+        jump {
+            none: DISALLOWED
+            own: DISALLOWED
+            opponent: CAPTURE
+        }
+        continue: true
+        priority: 1
+    }
+    move {
+        template: "+pass_0"
+        land {
+            none: DISALLOWED
+            own: SWAP
+            opponent: DISALLOWED
+        }
+        exchange: "K"
+        priority: 1
+    }
+}

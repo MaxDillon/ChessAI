@@ -34,7 +34,9 @@ message Move {
 
     MoveOptions land = 4;
     MoveOptions jump = 5;
-    repeated string promote = 6;
+    string exchange = 6;
+    uint32 priority = 7;
+    bool continue = 8;
 }
 
 message RelativePose {

@@ -1060,23 +1060,24 @@ public final class GameGrammar {
     max.dillon.GameGrammar.MoveOptionsOrBuilder getJumpOrBuilder();
 
     /**
-     * <code>repeated string promote = 6;</code>
+     * <code>string exchange = 6;</code>
      */
-    java.util.List<java.lang.String>
-        getPromoteList();
+    java.lang.String getExchange();
     /**
-     * <code>repeated string promote = 6;</code>
-     */
-    int getPromoteCount();
-    /**
-     * <code>repeated string promote = 6;</code>
-     */
-    java.lang.String getPromote(int index);
-    /**
-     * <code>repeated string promote = 6;</code>
+     * <code>string exchange = 6;</code>
      */
     com.google.protobuf.ByteString
-        getPromoteBytes(int index);
+        getExchangeBytes();
+
+    /**
+     * <code>uint32 priority = 7;</code>
+     */
+    int getPriority();
+
+    /**
+     * <code>bool continue = 8;</code>
+     */
+    boolean getContinue();
   }
   /**
    * Protobuf type {@code max.dillon.Move}
@@ -1092,7 +1093,9 @@ public final class GameGrammar {
     private Move() {
       template_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       fromWhere_ = 0;
-      promote_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      exchange_ = "";
+      priority_ = 0;
+      continue_ = false;
     }
 
     @java.lang.Override
@@ -1176,11 +1179,18 @@ public final class GameGrammar {
             }
             case 50: {
               java.lang.String s = input.readStringRequireUtf8();
-              if (!((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
-                promote_ = new com.google.protobuf.LazyStringArrayList();
-                mutable_bitField0_ |= 0x00000020;
-              }
-              promote_.add(s);
+
+              exchange_ = s;
+              break;
+            }
+            case 56: {
+
+              priority_ = input.readUInt32();
+              break;
+            }
+            case 64: {
+
+              continue_ = input.readBool();
               break;
             }
           }
@@ -1193,9 +1203,6 @@ public final class GameGrammar {
       } finally {
         if (((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
           template_ = template_.getUnmodifiableView();
-        }
-        if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
-          promote_ = promote_.getUnmodifiableView();
         }
         makeExtensionsImmutable();
       }
@@ -1321,33 +1328,56 @@ public final class GameGrammar {
       return getJump();
     }
 
-    public static final int PROMOTE_FIELD_NUMBER = 6;
-    private com.google.protobuf.LazyStringList promote_;
+    public static final int EXCHANGE_FIELD_NUMBER = 6;
+    private volatile java.lang.Object exchange_;
     /**
-     * <code>repeated string promote = 6;</code>
+     * <code>string exchange = 6;</code>
      */
-    public com.google.protobuf.ProtocolStringList
-        getPromoteList() {
-      return promote_;
+    public java.lang.String getExchange() {
+      java.lang.Object ref = exchange_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        exchange_ = s;
+        return s;
+      }
     }
     /**
-     * <code>repeated string promote = 6;</code>
-     */
-    public int getPromoteCount() {
-      return promote_.size();
-    }
-    /**
-     * <code>repeated string promote = 6;</code>
-     */
-    public java.lang.String getPromote(int index) {
-      return promote_.get(index);
-    }
-    /**
-     * <code>repeated string promote = 6;</code>
+     * <code>string exchange = 6;</code>
      */
     public com.google.protobuf.ByteString
-        getPromoteBytes(int index) {
-      return promote_.getByteString(index);
+        getExchangeBytes() {
+      java.lang.Object ref = exchange_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        exchange_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int PRIORITY_FIELD_NUMBER = 7;
+    private int priority_;
+    /**
+     * <code>uint32 priority = 7;</code>
+     */
+    public int getPriority() {
+      return priority_;
+    }
+
+    public static final int CONTINUE_FIELD_NUMBER = 8;
+    private boolean continue_;
+    /**
+     * <code>bool continue = 8;</code>
+     */
+    public boolean getContinue() {
+      return continue_;
     }
 
     private byte memoizedIsInitialized = -1;
@@ -1377,8 +1407,14 @@ public final class GameGrammar {
       if (jump_ != null) {
         output.writeMessage(5, getJump());
       }
-      for (int i = 0; i < promote_.size(); i++) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 6, promote_.getRaw(i));
+      if (!getExchangeBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 6, exchange_);
+      }
+      if (priority_ != 0) {
+        output.writeUInt32(7, priority_);
+      }
+      if (continue_ != false) {
+        output.writeBool(8, continue_);
       }
     }
 
@@ -1411,13 +1447,16 @@ public final class GameGrammar {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(5, getJump());
       }
-      {
-        int dataSize = 0;
-        for (int i = 0; i < promote_.size(); i++) {
-          dataSize += computeStringSizeNoTag(promote_.getRaw(i));
-        }
-        size += dataSize;
-        size += 1 * getPromoteList().size();
+      if (!getExchangeBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, exchange_);
+      }
+      if (priority_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(7, priority_);
+      }
+      if (continue_ != false) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(8, continue_);
       }
       memoizedSize = size;
       return size;
@@ -1453,8 +1492,12 @@ public final class GameGrammar {
         result = result && getJump()
             .equals(other.getJump());
       }
-      result = result && getPromoteList()
-          .equals(other.getPromoteList());
+      result = result && getExchange()
+          .equals(other.getExchange());
+      result = result && (getPriority()
+          == other.getPriority());
+      result = result && (getContinue()
+          == other.getContinue());
       return result;
     }
 
@@ -1483,10 +1526,13 @@ public final class GameGrammar {
         hash = (37 * hash) + JUMP_FIELD_NUMBER;
         hash = (53 * hash) + getJump().hashCode();
       }
-      if (getPromoteCount() > 0) {
-        hash = (37 * hash) + PROMOTE_FIELD_NUMBER;
-        hash = (53 * hash) + getPromoteList().hashCode();
-      }
+      hash = (37 * hash) + EXCHANGE_FIELD_NUMBER;
+      hash = (53 * hash) + getExchange().hashCode();
+      hash = (37 * hash) + PRIORITY_FIELD_NUMBER;
+      hash = (53 * hash) + getPriority();
+      hash = (37 * hash) + CONTINUE_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+          getContinue());
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -1638,8 +1684,12 @@ public final class GameGrammar {
           jump_ = null;
           jumpBuilder_ = null;
         }
-        promote_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000020);
+        exchange_ = "";
+
+        priority_ = 0;
+
+        continue_ = false;
+
         return this;
       }
 
@@ -1685,11 +1735,9 @@ public final class GameGrammar {
         } else {
           result.jump_ = jumpBuilder_.build();
         }
-        if (((bitField0_ & 0x00000020) == 0x00000020)) {
-          promote_ = promote_.getUnmodifiableView();
-          bitField0_ = (bitField0_ & ~0x00000020);
-        }
-        result.promote_ = promote_;
+        result.exchange_ = exchange_;
+        result.priority_ = priority_;
+        result.continue_ = continue_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1754,15 +1802,15 @@ public final class GameGrammar {
         if (other.hasJump()) {
           mergeJump(other.getJump());
         }
-        if (!other.promote_.isEmpty()) {
-          if (promote_.isEmpty()) {
-            promote_ = other.promote_;
-            bitField0_ = (bitField0_ & ~0x00000020);
-          } else {
-            ensurePromoteIsMutable();
-            promote_.addAll(other.promote_);
-          }
+        if (!other.getExchange().isEmpty()) {
+          exchange_ = other.exchange_;
           onChanged();
+        }
+        if (other.getPriority() != 0) {
+          setPriority(other.getPriority());
+        }
+        if (other.getContinue() != false) {
+          setContinue(other.getContinue());
         }
         onChanged();
         return this;
@@ -2280,96 +2328,123 @@ public final class GameGrammar {
         return jumpBuilder_;
       }
 
-      private com.google.protobuf.LazyStringList promote_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-      private void ensurePromoteIsMutable() {
-        if (!((bitField0_ & 0x00000020) == 0x00000020)) {
-          promote_ = new com.google.protobuf.LazyStringArrayList(promote_);
-          bitField0_ |= 0x00000020;
-         }
-      }
+      private java.lang.Object exchange_ = "";
       /**
-       * <code>repeated string promote = 6;</code>
+       * <code>string exchange = 6;</code>
        */
-      public com.google.protobuf.ProtocolStringList
-          getPromoteList() {
-        return promote_.getUnmodifiableView();
+      public java.lang.String getExchange() {
+        java.lang.Object ref = exchange_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          exchange_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
-       * <code>repeated string promote = 6;</code>
-       */
-      public int getPromoteCount() {
-        return promote_.size();
-      }
-      /**
-       * <code>repeated string promote = 6;</code>
-       */
-      public java.lang.String getPromote(int index) {
-        return promote_.get(index);
-      }
-      /**
-       * <code>repeated string promote = 6;</code>
+       * <code>string exchange = 6;</code>
        */
       public com.google.protobuf.ByteString
-          getPromoteBytes(int index) {
-        return promote_.getByteString(index);
+          getExchangeBytes() {
+        java.lang.Object ref = exchange_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          exchange_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
       }
       /**
-       * <code>repeated string promote = 6;</code>
+       * <code>string exchange = 6;</code>
        */
-      public Builder setPromote(
-          int index, java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  ensurePromoteIsMutable();
-        promote_.set(index, value);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string promote = 6;</code>
-       */
-      public Builder addPromote(
+      public Builder setExchange(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  ensurePromoteIsMutable();
-        promote_.add(value);
+  
+        exchange_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>repeated string promote = 6;</code>
+       * <code>string exchange = 6;</code>
        */
-      public Builder addAllPromote(
-          java.lang.Iterable<java.lang.String> values) {
-        ensurePromoteIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, promote_);
+      public Builder clearExchange() {
+        
+        exchange_ = getDefaultInstance().getExchange();
         onChanged();
         return this;
       }
       /**
-       * <code>repeated string promote = 6;</code>
+       * <code>string exchange = 6;</code>
        */
-      public Builder clearPromote() {
-        promote_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000020);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string promote = 6;</code>
-       */
-      public Builder addPromoteBytes(
+      public Builder setExchangeBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   checkByteStringIsUtf8(value);
-        ensurePromoteIsMutable();
-        promote_.add(value);
+        
+        exchange_ = value;
+        onChanged();
+        return this;
+      }
+
+      private int priority_ ;
+      /**
+       * <code>uint32 priority = 7;</code>
+       */
+      public int getPriority() {
+        return priority_;
+      }
+      /**
+       * <code>uint32 priority = 7;</code>
+       */
+      public Builder setPriority(int value) {
+        
+        priority_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>uint32 priority = 7;</code>
+       */
+      public Builder clearPriority() {
+        
+        priority_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private boolean continue_ ;
+      /**
+       * <code>bool continue = 8;</code>
+       */
+      public boolean getContinue() {
+        return continue_;
+      }
+      /**
+       * <code>bool continue = 8;</code>
+       */
+      public Builder setContinue(boolean value) {
+        
+        continue_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>bool continue = 8;</code>
+       */
+      public Builder clearContinue() {
+        
+        continue_ = false;
         onChanged();
         return this;
       }
@@ -2432,17 +2507,17 @@ public final class GameGrammar {
     boolean getAllowed();
 
     /**
-     * <code>.max.dillon.MoveOptions ignoreColor = 2;</code>
+     * <code>.max.dillon.MoveOptions color = 2;</code>
      */
-    boolean hasIgnoreColor();
+    boolean hasColor();
     /**
-     * <code>.max.dillon.MoveOptions ignoreColor = 2;</code>
+     * <code>.max.dillon.MoveOptions color = 2;</code>
      */
-    max.dillon.GameGrammar.MoveOptions getIgnoreColor();
+    max.dillon.GameGrammar.MoveOptions getColor();
     /**
-     * <code>.max.dillon.MoveOptions ignoreColor = 2;</code>
+     * <code>.max.dillon.MoveOptions color = 2;</code>
      */
-    max.dillon.GameGrammar.MoveOptionsOrBuilder getIgnoreColorOrBuilder();
+    max.dillon.GameGrammar.MoveOptionsOrBuilder getColorOrBuilder();
 
     /**
      * <code>repeated string type = 3;</code>
@@ -2511,13 +2586,13 @@ public final class GameGrammar {
             }
             case 18: {
               max.dillon.GameGrammar.MoveOptions.Builder subBuilder = null;
-              if (ignoreColor_ != null) {
-                subBuilder = ignoreColor_.toBuilder();
+              if (color_ != null) {
+                subBuilder = color_.toBuilder();
               }
-              ignoreColor_ = input.readMessage(max.dillon.GameGrammar.MoveOptions.parser(), extensionRegistry);
+              color_ = input.readMessage(max.dillon.GameGrammar.MoveOptions.parser(), extensionRegistry);
               if (subBuilder != null) {
-                subBuilder.mergeFrom(ignoreColor_);
-                ignoreColor_ = subBuilder.buildPartial();
+                subBuilder.mergeFrom(color_);
+                color_ = subBuilder.buildPartial();
               }
 
               break;
@@ -2567,25 +2642,25 @@ public final class GameGrammar {
       return allowed_;
     }
 
-    public static final int IGNORECOLOR_FIELD_NUMBER = 2;
-    private max.dillon.GameGrammar.MoveOptions ignoreColor_;
+    public static final int COLOR_FIELD_NUMBER = 2;
+    private max.dillon.GameGrammar.MoveOptions color_;
     /**
-     * <code>.max.dillon.MoveOptions ignoreColor = 2;</code>
+     * <code>.max.dillon.MoveOptions color = 2;</code>
      */
-    public boolean hasIgnoreColor() {
-      return ignoreColor_ != null;
+    public boolean hasColor() {
+      return color_ != null;
     }
     /**
-     * <code>.max.dillon.MoveOptions ignoreColor = 2;</code>
+     * <code>.max.dillon.MoveOptions color = 2;</code>
      */
-    public max.dillon.GameGrammar.MoveOptions getIgnoreColor() {
-      return ignoreColor_ == null ? max.dillon.GameGrammar.MoveOptions.getDefaultInstance() : ignoreColor_;
+    public max.dillon.GameGrammar.MoveOptions getColor() {
+      return color_ == null ? max.dillon.GameGrammar.MoveOptions.getDefaultInstance() : color_;
     }
     /**
-     * <code>.max.dillon.MoveOptions ignoreColor = 2;</code>
+     * <code>.max.dillon.MoveOptions color = 2;</code>
      */
-    public max.dillon.GameGrammar.MoveOptionsOrBuilder getIgnoreColorOrBuilder() {
-      return getIgnoreColor();
+    public max.dillon.GameGrammar.MoveOptionsOrBuilder getColorOrBuilder() {
+      return getColor();
     }
 
     public static final int TYPE_FIELD_NUMBER = 3;
@@ -2632,8 +2707,8 @@ public final class GameGrammar {
       if (allowed_ != false) {
         output.writeBool(1, allowed_);
       }
-      if (ignoreColor_ != null) {
-        output.writeMessage(2, getIgnoreColor());
+      if (color_ != null) {
+        output.writeMessage(2, getColor());
       }
       for (int i = 0; i < type_.size(); i++) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 3, type_.getRaw(i));
@@ -2649,9 +2724,9 @@ public final class GameGrammar {
         size += com.google.protobuf.CodedOutputStream
           .computeBoolSize(1, allowed_);
       }
-      if (ignoreColor_ != null) {
+      if (color_ != null) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, getIgnoreColor());
+          .computeMessageSize(2, getColor());
       }
       {
         int dataSize = 0;
@@ -2679,10 +2754,10 @@ public final class GameGrammar {
       boolean result = true;
       result = result && (getAllowed()
           == other.getAllowed());
-      result = result && (hasIgnoreColor() == other.hasIgnoreColor());
-      if (hasIgnoreColor()) {
-        result = result && getIgnoreColor()
-            .equals(other.getIgnoreColor());
+      result = result && (hasColor() == other.hasColor());
+      if (hasColor()) {
+        result = result && getColor()
+            .equals(other.getColor());
       }
       result = result && getTypeList()
           .equals(other.getTypeList());
@@ -2699,9 +2774,9 @@ public final class GameGrammar {
       hash = (37 * hash) + ALLOWED_FIELD_NUMBER;
       hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
           getAllowed());
-      if (hasIgnoreColor()) {
-        hash = (37 * hash) + IGNORECOLOR_FIELD_NUMBER;
-        hash = (53 * hash) + getIgnoreColor().hashCode();
+      if (hasColor()) {
+        hash = (37 * hash) + COLOR_FIELD_NUMBER;
+        hash = (53 * hash) + getColor().hashCode();
       }
       if (getTypeCount() > 0) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
@@ -2838,11 +2913,11 @@ public final class GameGrammar {
         super.clear();
         allowed_ = false;
 
-        if (ignoreColorBuilder_ == null) {
-          ignoreColor_ = null;
+        if (colorBuilder_ == null) {
+          color_ = null;
         } else {
-          ignoreColor_ = null;
-          ignoreColorBuilder_ = null;
+          color_ = null;
+          colorBuilder_ = null;
         }
         type_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000004);
@@ -2871,10 +2946,10 @@ public final class GameGrammar {
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
         result.allowed_ = allowed_;
-        if (ignoreColorBuilder_ == null) {
-          result.ignoreColor_ = ignoreColor_;
+        if (colorBuilder_ == null) {
+          result.color_ = color_;
         } else {
-          result.ignoreColor_ = ignoreColorBuilder_.build();
+          result.color_ = colorBuilder_.build();
         }
         if (((bitField0_ & 0x00000004) == 0x00000004)) {
           type_ = type_.getUnmodifiableView();
@@ -2926,8 +3001,8 @@ public final class GameGrammar {
         if (other.getAllowed() != false) {
           setAllowed(other.getAllowed());
         }
-        if (other.hasIgnoreColor()) {
-          mergeIgnoreColor(other.getIgnoreColor());
+        if (other.hasColor()) {
+          mergeColor(other.getColor());
         }
         if (!other.type_.isEmpty()) {
           if (type_.isEmpty()) {
@@ -2992,121 +3067,121 @@ public final class GameGrammar {
         return this;
       }
 
-      private max.dillon.GameGrammar.MoveOptions ignoreColor_ = null;
+      private max.dillon.GameGrammar.MoveOptions color_ = null;
       private com.google.protobuf.SingleFieldBuilderV3<
-          max.dillon.GameGrammar.MoveOptions, max.dillon.GameGrammar.MoveOptions.Builder, max.dillon.GameGrammar.MoveOptionsOrBuilder> ignoreColorBuilder_;
+          max.dillon.GameGrammar.MoveOptions, max.dillon.GameGrammar.MoveOptions.Builder, max.dillon.GameGrammar.MoveOptionsOrBuilder> colorBuilder_;
       /**
-       * <code>.max.dillon.MoveOptions ignoreColor = 2;</code>
+       * <code>.max.dillon.MoveOptions color = 2;</code>
        */
-      public boolean hasIgnoreColor() {
-        return ignoreColorBuilder_ != null || ignoreColor_ != null;
+      public boolean hasColor() {
+        return colorBuilder_ != null || color_ != null;
       }
       /**
-       * <code>.max.dillon.MoveOptions ignoreColor = 2;</code>
+       * <code>.max.dillon.MoveOptions color = 2;</code>
        */
-      public max.dillon.GameGrammar.MoveOptions getIgnoreColor() {
-        if (ignoreColorBuilder_ == null) {
-          return ignoreColor_ == null ? max.dillon.GameGrammar.MoveOptions.getDefaultInstance() : ignoreColor_;
+      public max.dillon.GameGrammar.MoveOptions getColor() {
+        if (colorBuilder_ == null) {
+          return color_ == null ? max.dillon.GameGrammar.MoveOptions.getDefaultInstance() : color_;
         } else {
-          return ignoreColorBuilder_.getMessage();
+          return colorBuilder_.getMessage();
         }
       }
       /**
-       * <code>.max.dillon.MoveOptions ignoreColor = 2;</code>
+       * <code>.max.dillon.MoveOptions color = 2;</code>
        */
-      public Builder setIgnoreColor(max.dillon.GameGrammar.MoveOptions value) {
-        if (ignoreColorBuilder_ == null) {
+      public Builder setColor(max.dillon.GameGrammar.MoveOptions value) {
+        if (colorBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
           }
-          ignoreColor_ = value;
+          color_ = value;
           onChanged();
         } else {
-          ignoreColorBuilder_.setMessage(value);
+          colorBuilder_.setMessage(value);
         }
 
         return this;
       }
       /**
-       * <code>.max.dillon.MoveOptions ignoreColor = 2;</code>
+       * <code>.max.dillon.MoveOptions color = 2;</code>
        */
-      public Builder setIgnoreColor(
+      public Builder setColor(
           max.dillon.GameGrammar.MoveOptions.Builder builderForValue) {
-        if (ignoreColorBuilder_ == null) {
-          ignoreColor_ = builderForValue.build();
+        if (colorBuilder_ == null) {
+          color_ = builderForValue.build();
           onChanged();
         } else {
-          ignoreColorBuilder_.setMessage(builderForValue.build());
+          colorBuilder_.setMessage(builderForValue.build());
         }
 
         return this;
       }
       /**
-       * <code>.max.dillon.MoveOptions ignoreColor = 2;</code>
+       * <code>.max.dillon.MoveOptions color = 2;</code>
        */
-      public Builder mergeIgnoreColor(max.dillon.GameGrammar.MoveOptions value) {
-        if (ignoreColorBuilder_ == null) {
-          if (ignoreColor_ != null) {
-            ignoreColor_ =
-              max.dillon.GameGrammar.MoveOptions.newBuilder(ignoreColor_).mergeFrom(value).buildPartial();
+      public Builder mergeColor(max.dillon.GameGrammar.MoveOptions value) {
+        if (colorBuilder_ == null) {
+          if (color_ != null) {
+            color_ =
+              max.dillon.GameGrammar.MoveOptions.newBuilder(color_).mergeFrom(value).buildPartial();
           } else {
-            ignoreColor_ = value;
+            color_ = value;
           }
           onChanged();
         } else {
-          ignoreColorBuilder_.mergeFrom(value);
+          colorBuilder_.mergeFrom(value);
         }
 
         return this;
       }
       /**
-       * <code>.max.dillon.MoveOptions ignoreColor = 2;</code>
+       * <code>.max.dillon.MoveOptions color = 2;</code>
        */
-      public Builder clearIgnoreColor() {
-        if (ignoreColorBuilder_ == null) {
-          ignoreColor_ = null;
+      public Builder clearColor() {
+        if (colorBuilder_ == null) {
+          color_ = null;
           onChanged();
         } else {
-          ignoreColor_ = null;
-          ignoreColorBuilder_ = null;
+          color_ = null;
+          colorBuilder_ = null;
         }
 
         return this;
       }
       /**
-       * <code>.max.dillon.MoveOptions ignoreColor = 2;</code>
+       * <code>.max.dillon.MoveOptions color = 2;</code>
        */
-      public max.dillon.GameGrammar.MoveOptions.Builder getIgnoreColorBuilder() {
+      public max.dillon.GameGrammar.MoveOptions.Builder getColorBuilder() {
         
         onChanged();
-        return getIgnoreColorFieldBuilder().getBuilder();
+        return getColorFieldBuilder().getBuilder();
       }
       /**
-       * <code>.max.dillon.MoveOptions ignoreColor = 2;</code>
+       * <code>.max.dillon.MoveOptions color = 2;</code>
        */
-      public max.dillon.GameGrammar.MoveOptionsOrBuilder getIgnoreColorOrBuilder() {
-        if (ignoreColorBuilder_ != null) {
-          return ignoreColorBuilder_.getMessageOrBuilder();
+      public max.dillon.GameGrammar.MoveOptionsOrBuilder getColorOrBuilder() {
+        if (colorBuilder_ != null) {
+          return colorBuilder_.getMessageOrBuilder();
         } else {
-          return ignoreColor_ == null ?
-              max.dillon.GameGrammar.MoveOptions.getDefaultInstance() : ignoreColor_;
+          return color_ == null ?
+              max.dillon.GameGrammar.MoveOptions.getDefaultInstance() : color_;
         }
       }
       /**
-       * <code>.max.dillon.MoveOptions ignoreColor = 2;</code>
+       * <code>.max.dillon.MoveOptions color = 2;</code>
        */
       private com.google.protobuf.SingleFieldBuilderV3<
           max.dillon.GameGrammar.MoveOptions, max.dillon.GameGrammar.MoveOptions.Builder, max.dillon.GameGrammar.MoveOptionsOrBuilder> 
-          getIgnoreColorFieldBuilder() {
-        if (ignoreColorBuilder_ == null) {
-          ignoreColorBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+          getColorFieldBuilder() {
+        if (colorBuilder_ == null) {
+          colorBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
               max.dillon.GameGrammar.MoveOptions, max.dillon.GameGrammar.MoveOptions.Builder, max.dillon.GameGrammar.MoveOptionsOrBuilder>(
-                  getIgnoreColor(),
+                  getColor(),
                   getParentForChildren(),
                   isClean());
-          ignoreColor_ = null;
+          color_ = null;
         }
-        return ignoreColorBuilder_;
+        return colorBuilder_;
       }
 
       private com.google.protobuf.LazyStringList type_ = com.google.protobuf.LazyStringArrayList.EMPTY;
@@ -5725,25 +5800,26 @@ public final class GameGrammar {
       ".dillon\"y\n\013MoveOptions\022!\n\004none\030\001 \001(\0162\023.m" +
       "ax.dillon.Outcome\022 \n\003own\030\002 \001(\0162\023.max.dil" +
       "lon.Outcome\022%\n\010opponent\030\003 \001(\0162\023.max.dill" +
-      "on.Outcome\"\315\001\n\004Move\022\020\n\010template\030\001 \003(\t\022(\n" +
+      "on.Outcome\"\362\001\n\004Move\022\020\n\010template\030\001 \003(\t\022(\n" +
       "\tfromWhere\030\002 \001(\0162\025.max.dillon.FromWhere\022" +
       "*\n\010relative\030\003 \001(\0132\030.max.dillon.RelativeP" +
       "ose\022%\n\004land\030\004 \001(\0132\027.max.dillon.MoveOptio" +
       "ns\022%\n\004jump\030\005 \001(\0132\027.max.dillon.MoveOption" +
-      "s\022\017\n\007promote\030\006 \003(\t\"[\n\014RelativePose\022\017\n\007al",
-      "lowed\030\001 \001(\010\022,\n\013ignoreColor\030\002 \001(\0132\027.max.d" +
-      "illon.MoveOptions\022\014\n\004type\030\003 \003(\t\"\220\001\n\005Piec" +
-      "e\022\014\n\004name\030\001 \001(\t\022\r\n\005count\030\002 \001(\r\022\013\n\003min\030\003 " +
-      "\001(\r\022\021\n\tplacement\030\004 \003(\t\022\036\n\004move\030\005 \003(\0132\020.m" +
-      "ax.dillon.Move\022*\n\010relative\030\006 \001(\0132\030.max.d" +
-      "illon.RelativePose\"|\n\010GameSpec\022\014\n\004name\030\001" +
-      " \001(\t\022\022\n\nboard_size\030\002 \001(\r\022,\n\016board_symmet" +
-      "ry\030\003 \001(\0162\024.max.dillon.Symmetry\022 \n\005piece\030" +
-      "\004 \003(\0132\021.max.dillon.Piece*-\n\010Symmetry\022\013\n\007" +
-      "REFLECT\020\000\022\n\n\006ROTATE\020\001\022\010\n\004NONE\020\002*=\n\007Outco",
-      "me\022\016\n\nDISALLOWED\020\000\022\013\n\007ALLOWED\020\001\022\013\n\007CAPTU" +
-      "RE\020\002\022\010\n\004SWAP\020\003*&\n\tFromWhere\022\013\n\007ONBOARD\020\000" +
-      "\022\014\n\010OFFBOARD\020\001b\006proto3"
+      "s\022\020\n\010exchange\030\006 \001(\t\022\020\n\010priority\030\007 \001(\r\022\020\n",
+      "\010continue\030\010 \001(\010\"U\n\014RelativePose\022\017\n\007allow" +
+      "ed\030\001 \001(\010\022&\n\005color\030\002 \001(\0132\027.max.dillon.Mov" +
+      "eOptions\022\014\n\004type\030\003 \003(\t\"\220\001\n\005Piece\022\014\n\004name" +
+      "\030\001 \001(\t\022\r\n\005count\030\002 \001(\r\022\013\n\003min\030\003 \001(\r\022\021\n\tpl" +
+      "acement\030\004 \003(\t\022\036\n\004move\030\005 \003(\0132\020.max.dillon" +
+      ".Move\022*\n\010relative\030\006 \001(\0132\030.max.dillon.Rel" +
+      "ativePose\"|\n\010GameSpec\022\014\n\004name\030\001 \001(\t\022\022\n\nb" +
+      "oard_size\030\002 \001(\r\022,\n\016board_symmetry\030\003 \001(\0162" +
+      "\024.max.dillon.Symmetry\022 \n\005piece\030\004 \003(\0132\021.m" +
+      "ax.dillon.Piece*-\n\010Symmetry\022\013\n\007REFLECT\020\000",
+      "\022\n\n\006ROTATE\020\001\022\010\n\004NONE\020\002*=\n\007Outcome\022\016\n\nDIS" +
+      "ALLOWED\020\000\022\013\n\007ALLOWED\020\001\022\013\n\007CAPTURE\020\002\022\010\n\004S" +
+      "WAP\020\003*&\n\tFromWhere\022\013\n\007ONBOARD\020\000\022\014\n\010OFFBO" +
+      "ARD\020\001b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -5768,13 +5844,13 @@ public final class GameGrammar {
     internal_static_max_dillon_Move_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_max_dillon_Move_descriptor,
-        new java.lang.String[] { "Template", "FromWhere", "Relative", "Land", "Jump", "Promote", });
+        new java.lang.String[] { "Template", "FromWhere", "Relative", "Land", "Jump", "Exchange", "Priority", "Continue", });
     internal_static_max_dillon_RelativePose_descriptor =
       getDescriptor().getMessageTypes().get(2);
     internal_static_max_dillon_RelativePose_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_max_dillon_RelativePose_descriptor,
-        new java.lang.String[] { "Allowed", "IgnoreColor", "Type", });
+        new java.lang.String[] { "Allowed", "Color", "Type", });
     internal_static_max_dillon_Piece_descriptor =
       getDescriptor().getMessageTypes().get(3);
     internal_static_max_dillon_Piece_fieldAccessorTable = new
