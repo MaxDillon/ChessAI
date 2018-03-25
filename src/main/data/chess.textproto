@@ -61,8 +61,7 @@ piece {
             own: DISALLOWED
             opponent: CAPTURE
          }
-         promote: "Q"
-         promote: "N"
+         exchange: "Q"
      }
     # pawn advance and promote
     move {
@@ -74,8 +73,7 @@ piece {
            own: DISALLOWED
            opponent: DISALLOWED
         }
-        promote: "Q"
-        promote: "N"
+        exchange: "Q"
     }
 }
 piece {

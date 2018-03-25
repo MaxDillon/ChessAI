@@ -67,7 +67,7 @@ class TestApp() {
         initBoard(white = Placement(p = "a7"),
                   black = Placement())
                 .getLegalNextStates().map { it.description }.sorted()
-                .shouldEqual(listOf("a7=>a8_N", "a7=>a8_Q"))
+                .shouldEqual(listOf("a7=>a8"))
 
         initBoard(white = Placement(p = "a3"),
                   black = Placement(p = "a4"))
@@ -104,7 +104,7 @@ class TestApp() {
                   black = Placement(p = "b2"),
                   whiteMove = false)
                 .getLegalNextStates().map { it.description }.sorted()
-                .shouldEqual(listOf("b2=>b1_N", "b2=>b1_Q"))
+                .shouldEqual(listOf("b2=>b1"))
     }
 
     @Test
