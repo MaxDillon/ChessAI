@@ -22,3 +22,8 @@ piece {
         }
     }
 }
+game_over {
+    condition: N_IN_A_ROW
+    param: 4
+    outcome: WIN
+}

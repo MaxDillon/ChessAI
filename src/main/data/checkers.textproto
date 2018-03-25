@@ -187,3 +187,7 @@ piece {
         priority: 1
     }
 }
+game_over {
+    condition: NO_PIECES_ON_BOARD
+    outcome: LOSS
+}

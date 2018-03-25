@@ -29,6 +29,23 @@ enum Outcome {
     IMPRESS = 6;
 }
 
+enum Condition {
+    NO_LEGAL_MOVE = 0;
+    NO_PIECES_ON_BOARD = 1;
+    KEY_PIECES_CAPTURED = 2;
+    BOARD_FULL = 3;
+    N_IN_A_ROW = 4;
+    MOVE_LIMIT = 5;
+}
+
+enum GameOutcome {
+    WIN = 0;
+    LOSS = 1;
+    DRAW = 3;
+    COUNT_LIVE_PIECES = 4;
+    COUNT_CAPTURED_PIECES = 5;
+}
+
 message MoveOptions {
     Outcome none = 1;
     Outcome own = 2;
@@ -52,6 +69,11 @@ message Piece {
     repeated Move move = 5;
 }
 
+message GameOver {
+    Condition condition = 1;
+    uint32 param = 2;
+    GameOutcome outcome = 3;
+}
 message GameSpec {
     string name = 1;
     uint32 board_size = 2;
@@ -59,4 +81,5 @@ message GameSpec {
     Symmetry board_symmetry = 4;
     MoveSource move_source = 5;
     repeated Piece piece = 6;
+    repeated GameOver game_over = 7;
 }

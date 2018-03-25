@@ -469,6 +469,265 @@ public final class GameGrammar {
     // @@protoc_insertion_point(enum_scope:max.dillon.Outcome)
   }
 
+  /**
+   * Protobuf enum {@code max.dillon.Condition}
+   */
+  public enum Condition
+      implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <code>NO_LEGAL_MOVE = 0;</code>
+     */
+    NO_LEGAL_MOVE(0),
+    /**
+     * <code>NO_PIECES_ON_BOARD = 1;</code>
+     */
+    NO_PIECES_ON_BOARD(1),
+    /**
+     * <code>KEY_PIECES_CAPTURED = 2;</code>
+     */
+    KEY_PIECES_CAPTURED(2),
+    /**
+     * <code>BOARD_FULL = 3;</code>
+     */
+    BOARD_FULL(3),
+    /**
+     * <code>N_IN_A_ROW = 4;</code>
+     */
+    N_IN_A_ROW(4),
+    /**
+     * <code>MOVE_LIMIT = 5;</code>
+     */
+    MOVE_LIMIT(5),
+    UNRECOGNIZED(-1),
+    ;
+
+    /**
+     * <code>NO_LEGAL_MOVE = 0;</code>
+     */
+    public static final int NO_LEGAL_MOVE_VALUE = 0;
+    /**
+     * <code>NO_PIECES_ON_BOARD = 1;</code>
+     */
+    public static final int NO_PIECES_ON_BOARD_VALUE = 1;
+    /**
+     * <code>KEY_PIECES_CAPTURED = 2;</code>
+     */
+    public static final int KEY_PIECES_CAPTURED_VALUE = 2;
+    /**
+     * <code>BOARD_FULL = 3;</code>
+     */
+    public static final int BOARD_FULL_VALUE = 3;
+    /**
+     * <code>N_IN_A_ROW = 4;</code>
+     */
+    public static final int N_IN_A_ROW_VALUE = 4;
+    /**
+     * <code>MOVE_LIMIT = 5;</code>
+     */
+    public static final int MOVE_LIMIT_VALUE = 5;
+
+
+    public final int getNumber() {
+      if (this == UNRECOGNIZED) {
+        throw new java.lang.IllegalArgumentException(
+            "Can't get the number of an unknown enum value.");
+      }
+      return value;
+    }
+
+    /**
+     * @deprecated Use {@link #forNumber(int)} instead.
+     */
+    @java.lang.Deprecated
+    public static Condition valueOf(int value) {
+      return forNumber(value);
+    }
+
+    public static Condition forNumber(int value) {
+      switch (value) {
+        case 0: return NO_LEGAL_MOVE;
+        case 1: return NO_PIECES_ON_BOARD;
+        case 2: return KEY_PIECES_CAPTURED;
+        case 3: return BOARD_FULL;
+        case 4: return N_IN_A_ROW;
+        case 5: return MOVE_LIMIT;
+        default: return null;
+      }
+    }
+
+    public static com.google.protobuf.Internal.EnumLiteMap<Condition>
+        internalGetValueMap() {
+      return internalValueMap;
+    }
+    private static final com.google.protobuf.Internal.EnumLiteMap<
+        Condition> internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<Condition>() {
+            public Condition findValueByNumber(int number) {
+              return Condition.forNumber(number);
+            }
+          };
+
+    public final com.google.protobuf.Descriptors.EnumValueDescriptor
+        getValueDescriptor() {
+      return getDescriptor().getValues().get(ordinal());
+    }
+    public final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptorForType() {
+      return getDescriptor();
+    }
+    public static final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptor() {
+      return max.dillon.GameGrammar.getDescriptor().getEnumTypes().get(4);
+    }
+
+    private static final Condition[] VALUES = values();
+
+    public static Condition valueOf(
+        com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+      if (desc.getType() != getDescriptor()) {
+        throw new java.lang.IllegalArgumentException(
+          "EnumValueDescriptor is not for this type.");
+      }
+      if (desc.getIndex() == -1) {
+        return UNRECOGNIZED;
+      }
+      return VALUES[desc.getIndex()];
+    }
+
+    private final int value;
+
+    private Condition(int value) {
+      this.value = value;
+    }
+
+    // @@protoc_insertion_point(enum_scope:max.dillon.Condition)
+  }
+
+  /**
+   * Protobuf enum {@code max.dillon.GameOutcome}
+   */
+  public enum GameOutcome
+      implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <code>WIN = 0;</code>
+     */
+    WIN(0),
+    /**
+     * <code>LOSS = 1;</code>
+     */
+    LOSS(1),
+    /**
+     * <code>DRAW = 3;</code>
+     */
+    DRAW(3),
+    /**
+     * <code>COUNT_LIVE_PIECES = 4;</code>
+     */
+    COUNT_LIVE_PIECES(4),
+    /**
+     * <code>COUNT_CAPTURED_PIECES = 5;</code>
+     */
+    COUNT_CAPTURED_PIECES(5),
+    UNRECOGNIZED(-1),
+    ;
+
+    /**
+     * <code>WIN = 0;</code>
+     */
+    public static final int WIN_VALUE = 0;
+    /**
+     * <code>LOSS = 1;</code>
+     */
+    public static final int LOSS_VALUE = 1;
+    /**
+     * <code>DRAW = 3;</code>
+     */
+    public static final int DRAW_VALUE = 3;
+    /**
+     * <code>COUNT_LIVE_PIECES = 4;</code>
+     */
+    public static final int COUNT_LIVE_PIECES_VALUE = 4;
+    /**
+     * <code>COUNT_CAPTURED_PIECES = 5;</code>
+     */
+    public static final int COUNT_CAPTURED_PIECES_VALUE = 5;
+
+
+    public final int getNumber() {
+      if (this == UNRECOGNIZED) {
+        throw new java.lang.IllegalArgumentException(
+            "Can't get the number of an unknown enum value.");
+      }
+      return value;
+    }
+
+    /**
+     * @deprecated Use {@link #forNumber(int)} instead.
+     */
+    @java.lang.Deprecated
+    public static GameOutcome valueOf(int value) {
+      return forNumber(value);
+    }
+
+    public static GameOutcome forNumber(int value) {
+      switch (value) {
+        case 0: return WIN;
+        case 1: return LOSS;
+        case 3: return DRAW;
+        case 4: return COUNT_LIVE_PIECES;
+        case 5: return COUNT_CAPTURED_PIECES;
+        default: return null;
+      }
+    }
+
+    public static com.google.protobuf.Internal.EnumLiteMap<GameOutcome>
+        internalGetValueMap() {
+      return internalValueMap;
+    }
+    private static final com.google.protobuf.Internal.EnumLiteMap<
+        GameOutcome> internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<GameOutcome>() {
+            public GameOutcome findValueByNumber(int number) {
+              return GameOutcome.forNumber(number);
+            }
+          };
+
+    public final com.google.protobuf.Descriptors.EnumValueDescriptor
+        getValueDescriptor() {
+      return getDescriptor().getValues().get(ordinal());
+    }
+    public final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptorForType() {
+      return getDescriptor();
+    }
+    public static final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptor() {
+      return max.dillon.GameGrammar.getDescriptor().getEnumTypes().get(5);
+    }
+
+    private static final GameOutcome[] VALUES = values();
+
+    public static GameOutcome valueOf(
+        com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+      if (desc.getType() != getDescriptor()) {
+        throw new java.lang.IllegalArgumentException(
+          "EnumValueDescriptor is not for this type.");
+      }
+      if (desc.getIndex() == -1) {
+        return UNRECOGNIZED;
+      }
+      return VALUES[desc.getIndex()];
+    }
+
+    private final int value;
+
+    private GameOutcome(int value) {
+      this.value = value;
+    }
+
+    // @@protoc_insertion_point(enum_scope:max.dillon.GameOutcome)
+  }
+
   public interface MoveOptionsOrBuilder extends
       // @@protoc_insertion_point(interface_extends:max.dillon.MoveOptions)
       com.google.protobuf.MessageOrBuilder {
@@ -3546,6 +3805,630 @@ public final class GameGrammar {
 
   }
 
+  public interface GameOverOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:max.dillon.GameOver)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>.max.dillon.Condition condition = 1;</code>
+     */
+    int getConditionValue();
+    /**
+     * <code>.max.dillon.Condition condition = 1;</code>
+     */
+    max.dillon.GameGrammar.Condition getCondition();
+
+    /**
+     * <code>uint32 param = 2;</code>
+     */
+    int getParam();
+
+    /**
+     * <code>.max.dillon.GameOutcome outcome = 3;</code>
+     */
+    int getOutcomeValue();
+    /**
+     * <code>.max.dillon.GameOutcome outcome = 3;</code>
+     */
+    max.dillon.GameGrammar.GameOutcome getOutcome();
+  }
+  /**
+   * Protobuf type {@code max.dillon.GameOver}
+   */
+  public  static final class GameOver extends
+      com.google.protobuf.GeneratedMessageV3 implements
+      // @@protoc_insertion_point(message_implements:max.dillon.GameOver)
+      GameOverOrBuilder {
+    // Use GameOver.newBuilder() to construct.
+    private GameOver(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+      super(builder);
+    }
+    private GameOver() {
+      condition_ = 0;
+      param_ = 0;
+      outcome_ = 0;
+    }
+
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+    getUnknownFields() {
+      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+    }
+    private GameOver(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      this();
+      int mutable_bitField0_ = 0;
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!input.skipField(tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 8: {
+              int rawValue = input.readEnum();
+
+              condition_ = rawValue;
+              break;
+            }
+            case 16: {
+
+              param_ = input.readUInt32();
+              break;
+            }
+            case 24: {
+              int rawValue = input.readEnum();
+
+              outcome_ = rawValue;
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e).setUnfinishedMessage(this);
+      } finally {
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return max.dillon.GameGrammar.internal_static_max_dillon_GameOver_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return max.dillon.GameGrammar.internal_static_max_dillon_GameOver_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              max.dillon.GameGrammar.GameOver.class, max.dillon.GameGrammar.GameOver.Builder.class);
+    }
+
+    public static final int CONDITION_FIELD_NUMBER = 1;
+    private int condition_;
+    /**
+     * <code>.max.dillon.Condition condition = 1;</code>
+     */
+    public int getConditionValue() {
+      return condition_;
+    }
+    /**
+     * <code>.max.dillon.Condition condition = 1;</code>
+     */
+    public max.dillon.GameGrammar.Condition getCondition() {
+      max.dillon.GameGrammar.Condition result = max.dillon.GameGrammar.Condition.valueOf(condition_);
+      return result == null ? max.dillon.GameGrammar.Condition.UNRECOGNIZED : result;
+    }
+
+    public static final int PARAM_FIELD_NUMBER = 2;
+    private int param_;
+    /**
+     * <code>uint32 param = 2;</code>
+     */
+    public int getParam() {
+      return param_;
+    }
+
+    public static final int OUTCOME_FIELD_NUMBER = 3;
+    private int outcome_;
+    /**
+     * <code>.max.dillon.GameOutcome outcome = 3;</code>
+     */
+    public int getOutcomeValue() {
+      return outcome_;
+    }
+    /**
+     * <code>.max.dillon.GameOutcome outcome = 3;</code>
+     */
+    public max.dillon.GameGrammar.GameOutcome getOutcome() {
+      max.dillon.GameGrammar.GameOutcome result = max.dillon.GameGrammar.GameOutcome.valueOf(outcome_);
+      return result == null ? max.dillon.GameGrammar.GameOutcome.UNRECOGNIZED : result;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (condition_ != max.dillon.GameGrammar.Condition.NO_LEGAL_MOVE.getNumber()) {
+        output.writeEnum(1, condition_);
+      }
+      if (param_ != 0) {
+        output.writeUInt32(2, param_);
+      }
+      if (outcome_ != max.dillon.GameGrammar.GameOutcome.WIN.getNumber()) {
+        output.writeEnum(3, outcome_);
+      }
+    }
+
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (condition_ != max.dillon.GameGrammar.Condition.NO_LEGAL_MOVE.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(1, condition_);
+      }
+      if (param_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(2, param_);
+      }
+      if (outcome_ != max.dillon.GameGrammar.GameOutcome.WIN.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(3, outcome_);
+      }
+      memoizedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof max.dillon.GameGrammar.GameOver)) {
+        return super.equals(obj);
+      }
+      max.dillon.GameGrammar.GameOver other = (max.dillon.GameGrammar.GameOver) obj;
+
+      boolean result = true;
+      result = result && condition_ == other.condition_;
+      result = result && (getParam()
+          == other.getParam());
+      result = result && outcome_ == other.outcome_;
+      return result;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + CONDITION_FIELD_NUMBER;
+      hash = (53 * hash) + condition_;
+      hash = (37 * hash) + PARAM_FIELD_NUMBER;
+      hash = (53 * hash) + getParam();
+      hash = (37 * hash) + OUTCOME_FIELD_NUMBER;
+      hash = (53 * hash) + outcome_;
+      hash = (29 * hash) + unknownFields.hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static max.dillon.GameGrammar.GameOver parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static max.dillon.GameGrammar.GameOver parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static max.dillon.GameGrammar.GameOver parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static max.dillon.GameGrammar.GameOver parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static max.dillon.GameGrammar.GameOver parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static max.dillon.GameGrammar.GameOver parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static max.dillon.GameGrammar.GameOver parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static max.dillon.GameGrammar.GameOver parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static max.dillon.GameGrammar.GameOver parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+    public static max.dillon.GameGrammar.GameOver parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static max.dillon.GameGrammar.GameOver parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static max.dillon.GameGrammar.GameOver parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(max.dillon.GameGrammar.GameOver prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code max.dillon.GameOver}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:max.dillon.GameOver)
+        max.dillon.GameGrammar.GameOverOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return max.dillon.GameGrammar.internal_static_max_dillon_GameOver_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return max.dillon.GameGrammar.internal_static_max_dillon_GameOver_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                max.dillon.GameGrammar.GameOver.class, max.dillon.GameGrammar.GameOver.Builder.class);
+      }
+
+      // Construct using max.dillon.GameGrammar.GameOver.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessageV3
+                .alwaysUseFieldBuilders) {
+        }
+      }
+      public Builder clear() {
+        super.clear();
+        condition_ = 0;
+
+        param_ = 0;
+
+        outcome_ = 0;
+
+        return this;
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return max.dillon.GameGrammar.internal_static_max_dillon_GameOver_descriptor;
+      }
+
+      public max.dillon.GameGrammar.GameOver getDefaultInstanceForType() {
+        return max.dillon.GameGrammar.GameOver.getDefaultInstance();
+      }
+
+      public max.dillon.GameGrammar.GameOver build() {
+        max.dillon.GameGrammar.GameOver result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public max.dillon.GameGrammar.GameOver buildPartial() {
+        max.dillon.GameGrammar.GameOver result = new max.dillon.GameGrammar.GameOver(this);
+        result.condition_ = condition_;
+        result.param_ = param_;
+        result.outcome_ = outcome_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder clone() {
+        return (Builder) super.clone();
+      }
+      public Builder setField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.setField(field, value);
+      }
+      public Builder clearField(
+          com.google.protobuf.Descriptors.FieldDescriptor field) {
+        return (Builder) super.clearField(field);
+      }
+      public Builder clearOneof(
+          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+        return (Builder) super.clearOneof(oneof);
+      }
+      public Builder setRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          int index, Object value) {
+        return (Builder) super.setRepeatedField(field, index, value);
+      }
+      public Builder addRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.addRepeatedField(field, value);
+      }
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof max.dillon.GameGrammar.GameOver) {
+          return mergeFrom((max.dillon.GameGrammar.GameOver)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(max.dillon.GameGrammar.GameOver other) {
+        if (other == max.dillon.GameGrammar.GameOver.getDefaultInstance()) return this;
+        if (other.condition_ != 0) {
+          setConditionValue(other.getConditionValue());
+        }
+        if (other.getParam() != 0) {
+          setParam(other.getParam());
+        }
+        if (other.outcome_ != 0) {
+          setOutcomeValue(other.getOutcomeValue());
+        }
+        onChanged();
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        max.dillon.GameGrammar.GameOver parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (max.dillon.GameGrammar.GameOver) e.getUnfinishedMessage();
+          throw e.unwrapIOException();
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+
+      private int condition_ = 0;
+      /**
+       * <code>.max.dillon.Condition condition = 1;</code>
+       */
+      public int getConditionValue() {
+        return condition_;
+      }
+      /**
+       * <code>.max.dillon.Condition condition = 1;</code>
+       */
+      public Builder setConditionValue(int value) {
+        condition_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.max.dillon.Condition condition = 1;</code>
+       */
+      public max.dillon.GameGrammar.Condition getCondition() {
+        max.dillon.GameGrammar.Condition result = max.dillon.GameGrammar.Condition.valueOf(condition_);
+        return result == null ? max.dillon.GameGrammar.Condition.UNRECOGNIZED : result;
+      }
+      /**
+       * <code>.max.dillon.Condition condition = 1;</code>
+       */
+      public Builder setCondition(max.dillon.GameGrammar.Condition value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        
+        condition_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.max.dillon.Condition condition = 1;</code>
+       */
+      public Builder clearCondition() {
+        
+        condition_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int param_ ;
+      /**
+       * <code>uint32 param = 2;</code>
+       */
+      public int getParam() {
+        return param_;
+      }
+      /**
+       * <code>uint32 param = 2;</code>
+       */
+      public Builder setParam(int value) {
+        
+        param_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>uint32 param = 2;</code>
+       */
+      public Builder clearParam() {
+        
+        param_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int outcome_ = 0;
+      /**
+       * <code>.max.dillon.GameOutcome outcome = 3;</code>
+       */
+      public int getOutcomeValue() {
+        return outcome_;
+      }
+      /**
+       * <code>.max.dillon.GameOutcome outcome = 3;</code>
+       */
+      public Builder setOutcomeValue(int value) {
+        outcome_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.max.dillon.GameOutcome outcome = 3;</code>
+       */
+      public max.dillon.GameGrammar.GameOutcome getOutcome() {
+        max.dillon.GameGrammar.GameOutcome result = max.dillon.GameGrammar.GameOutcome.valueOf(outcome_);
+        return result == null ? max.dillon.GameGrammar.GameOutcome.UNRECOGNIZED : result;
+      }
+      /**
+       * <code>.max.dillon.GameOutcome outcome = 3;</code>
+       */
+      public Builder setOutcome(max.dillon.GameGrammar.GameOutcome value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        
+        outcome_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.max.dillon.GameOutcome outcome = 3;</code>
+       */
+      public Builder clearOutcome() {
+        
+        outcome_ = 0;
+        onChanged();
+        return this;
+      }
+      public final Builder setUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return this;
+      }
+
+      public final Builder mergeUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return this;
+      }
+
+
+      // @@protoc_insertion_point(builder_scope:max.dillon.GameOver)
+    }
+
+    // @@protoc_insertion_point(class_scope:max.dillon.GameOver)
+    private static final max.dillon.GameGrammar.GameOver DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new max.dillon.GameGrammar.GameOver();
+    }
+
+    public static max.dillon.GameGrammar.GameOver getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<GameOver>
+        PARSER = new com.google.protobuf.AbstractParser<GameOver>() {
+      public GameOver parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+          return new GameOver(input, extensionRegistry);
+      }
+    };
+
+    public static com.google.protobuf.Parser<GameOver> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<GameOver> getParserForType() {
+      return PARSER;
+    }
+
+    public max.dillon.GameGrammar.GameOver getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
   public interface GameSpecOrBuilder extends
       // @@protoc_insertion_point(interface_extends:max.dillon.GameSpec)
       com.google.protobuf.MessageOrBuilder {
@@ -3615,6 +4498,30 @@ public final class GameGrammar {
      */
     max.dillon.GameGrammar.PieceOrBuilder getPieceOrBuilder(
         int index);
+
+    /**
+     * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+     */
+    java.util.List<max.dillon.GameGrammar.GameOver> 
+        getGameOverList();
+    /**
+     * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+     */
+    max.dillon.GameGrammar.GameOver getGameOver(int index);
+    /**
+     * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+     */
+    int getGameOverCount();
+    /**
+     * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+     */
+    java.util.List<? extends max.dillon.GameGrammar.GameOverOrBuilder> 
+        getGameOverOrBuilderList();
+    /**
+     * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+     */
+    max.dillon.GameGrammar.GameOverOrBuilder getGameOverOrBuilder(
+        int index);
   }
   /**
    * Protobuf type {@code max.dillon.GameSpec}
@@ -3634,6 +4541,7 @@ public final class GameGrammar {
       boardSymmetry_ = 0;
       moveSource_ = 0;
       piece_ = java.util.Collections.emptyList();
+      gameOver_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -3699,6 +4607,15 @@ public final class GameGrammar {
                   input.readMessage(max.dillon.GameGrammar.Piece.parser(), extensionRegistry));
               break;
             }
+            case 58: {
+              if (!((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
+                gameOver_ = new java.util.ArrayList<max.dillon.GameGrammar.GameOver>();
+                mutable_bitField0_ |= 0x00000040;
+              }
+              gameOver_.add(
+                  input.readMessage(max.dillon.GameGrammar.GameOver.parser(), extensionRegistry));
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -3709,6 +4626,9 @@ public final class GameGrammar {
       } finally {
         if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
           piece_ = java.util.Collections.unmodifiableList(piece_);
+        }
+        if (((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
+          gameOver_ = java.util.Collections.unmodifiableList(gameOver_);
         }
         makeExtensionsImmutable();
       }
@@ -3852,6 +4772,41 @@ public final class GameGrammar {
       return piece_.get(index);
     }
 
+    public static final int GAME_OVER_FIELD_NUMBER = 7;
+    private java.util.List<max.dillon.GameGrammar.GameOver> gameOver_;
+    /**
+     * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+     */
+    public java.util.List<max.dillon.GameGrammar.GameOver> getGameOverList() {
+      return gameOver_;
+    }
+    /**
+     * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+     */
+    public java.util.List<? extends max.dillon.GameGrammar.GameOverOrBuilder> 
+        getGameOverOrBuilderList() {
+      return gameOver_;
+    }
+    /**
+     * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+     */
+    public int getGameOverCount() {
+      return gameOver_.size();
+    }
+    /**
+     * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+     */
+    public max.dillon.GameGrammar.GameOver getGameOver(int index) {
+      return gameOver_.get(index);
+    }
+    /**
+     * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+     */
+    public max.dillon.GameGrammar.GameOverOrBuilder getGameOverOrBuilder(
+        int index) {
+      return gameOver_.get(index);
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -3881,6 +4836,9 @@ public final class GameGrammar {
       }
       for (int i = 0; i < piece_.size(); i++) {
         output.writeMessage(6, piece_.get(i));
+      }
+      for (int i = 0; i < gameOver_.size(); i++) {
+        output.writeMessage(7, gameOver_.get(i));
       }
     }
 
@@ -3912,6 +4870,10 @@ public final class GameGrammar {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(6, piece_.get(i));
       }
+      for (int i = 0; i < gameOver_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(7, gameOver_.get(i));
+      }
       memoizedSize = size;
       return size;
     }
@@ -3937,6 +4899,8 @@ public final class GameGrammar {
       result = result && moveSource_ == other.moveSource_;
       result = result && getPieceList()
           .equals(other.getPieceList());
+      result = result && getGameOverList()
+          .equals(other.getGameOverList());
       return result;
     }
 
@@ -3960,6 +4924,10 @@ public final class GameGrammar {
       if (getPieceCount() > 0) {
         hash = (37 * hash) + PIECE_FIELD_NUMBER;
         hash = (53 * hash) + getPieceList().hashCode();
+      }
+      if (getGameOverCount() > 0) {
+        hash = (37 * hash) + GAME_OVER_FIELD_NUMBER;
+        hash = (53 * hash) + getGameOverList().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -4087,6 +5055,7 @@ public final class GameGrammar {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
           getPieceFieldBuilder();
+          getGameOverFieldBuilder();
         }
       }
       public Builder clear() {
@@ -4106,6 +5075,12 @@ public final class GameGrammar {
           bitField0_ = (bitField0_ & ~0x00000020);
         } else {
           pieceBuilder_.clear();
+        }
+        if (gameOverBuilder_ == null) {
+          gameOver_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000040);
+        } else {
+          gameOverBuilder_.clear();
         }
         return this;
       }
@@ -4144,6 +5119,15 @@ public final class GameGrammar {
           result.piece_ = piece_;
         } else {
           result.piece_ = pieceBuilder_.build();
+        }
+        if (gameOverBuilder_ == null) {
+          if (((bitField0_ & 0x00000040) == 0x00000040)) {
+            gameOver_ = java.util.Collections.unmodifiableList(gameOver_);
+            bitField0_ = (bitField0_ & ~0x00000040);
+          }
+          result.gameOver_ = gameOver_;
+        } else {
+          result.gameOver_ = gameOverBuilder_.build();
         }
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -4226,6 +5210,32 @@ public final class GameGrammar {
                    getPieceFieldBuilder() : null;
             } else {
               pieceBuilder_.addAllMessages(other.piece_);
+            }
+          }
+        }
+        if (gameOverBuilder_ == null) {
+          if (!other.gameOver_.isEmpty()) {
+            if (gameOver_.isEmpty()) {
+              gameOver_ = other.gameOver_;
+              bitField0_ = (bitField0_ & ~0x00000040);
+            } else {
+              ensureGameOverIsMutable();
+              gameOver_.addAll(other.gameOver_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.gameOver_.isEmpty()) {
+            if (gameOverBuilder_.isEmpty()) {
+              gameOverBuilder_.dispose();
+              gameOverBuilder_ = null;
+              gameOver_ = other.gameOver_;
+              bitField0_ = (bitField0_ & ~0x00000040);
+              gameOverBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getGameOverFieldBuilder() : null;
+            } else {
+              gameOverBuilder_.addAllMessages(other.gameOver_);
             }
           }
         }
@@ -4722,6 +5732,246 @@ public final class GameGrammar {
         }
         return pieceBuilder_;
       }
+
+      private java.util.List<max.dillon.GameGrammar.GameOver> gameOver_ =
+        java.util.Collections.emptyList();
+      private void ensureGameOverIsMutable() {
+        if (!((bitField0_ & 0x00000040) == 0x00000040)) {
+          gameOver_ = new java.util.ArrayList<max.dillon.GameGrammar.GameOver>(gameOver_);
+          bitField0_ |= 0x00000040;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          max.dillon.GameGrammar.GameOver, max.dillon.GameGrammar.GameOver.Builder, max.dillon.GameGrammar.GameOverOrBuilder> gameOverBuilder_;
+
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public java.util.List<max.dillon.GameGrammar.GameOver> getGameOverList() {
+        if (gameOverBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(gameOver_);
+        } else {
+          return gameOverBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public int getGameOverCount() {
+        if (gameOverBuilder_ == null) {
+          return gameOver_.size();
+        } else {
+          return gameOverBuilder_.getCount();
+        }
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public max.dillon.GameGrammar.GameOver getGameOver(int index) {
+        if (gameOverBuilder_ == null) {
+          return gameOver_.get(index);
+        } else {
+          return gameOverBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public Builder setGameOver(
+          int index, max.dillon.GameGrammar.GameOver value) {
+        if (gameOverBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureGameOverIsMutable();
+          gameOver_.set(index, value);
+          onChanged();
+        } else {
+          gameOverBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public Builder setGameOver(
+          int index, max.dillon.GameGrammar.GameOver.Builder builderForValue) {
+        if (gameOverBuilder_ == null) {
+          ensureGameOverIsMutable();
+          gameOver_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          gameOverBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public Builder addGameOver(max.dillon.GameGrammar.GameOver value) {
+        if (gameOverBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureGameOverIsMutable();
+          gameOver_.add(value);
+          onChanged();
+        } else {
+          gameOverBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public Builder addGameOver(
+          int index, max.dillon.GameGrammar.GameOver value) {
+        if (gameOverBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureGameOverIsMutable();
+          gameOver_.add(index, value);
+          onChanged();
+        } else {
+          gameOverBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public Builder addGameOver(
+          max.dillon.GameGrammar.GameOver.Builder builderForValue) {
+        if (gameOverBuilder_ == null) {
+          ensureGameOverIsMutable();
+          gameOver_.add(builderForValue.build());
+          onChanged();
+        } else {
+          gameOverBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public Builder addGameOver(
+          int index, max.dillon.GameGrammar.GameOver.Builder builderForValue) {
+        if (gameOverBuilder_ == null) {
+          ensureGameOverIsMutable();
+          gameOver_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          gameOverBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public Builder addAllGameOver(
+          java.lang.Iterable<? extends max.dillon.GameGrammar.GameOver> values) {
+        if (gameOverBuilder_ == null) {
+          ensureGameOverIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, gameOver_);
+          onChanged();
+        } else {
+          gameOverBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public Builder clearGameOver() {
+        if (gameOverBuilder_ == null) {
+          gameOver_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000040);
+          onChanged();
+        } else {
+          gameOverBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public Builder removeGameOver(int index) {
+        if (gameOverBuilder_ == null) {
+          ensureGameOverIsMutable();
+          gameOver_.remove(index);
+          onChanged();
+        } else {
+          gameOverBuilder_.remove(index);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public max.dillon.GameGrammar.GameOver.Builder getGameOverBuilder(
+          int index) {
+        return getGameOverFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public max.dillon.GameGrammar.GameOverOrBuilder getGameOverOrBuilder(
+          int index) {
+        if (gameOverBuilder_ == null) {
+          return gameOver_.get(index);  } else {
+          return gameOverBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public java.util.List<? extends max.dillon.GameGrammar.GameOverOrBuilder> 
+           getGameOverOrBuilderList() {
+        if (gameOverBuilder_ != null) {
+          return gameOverBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(gameOver_);
+        }
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public max.dillon.GameGrammar.GameOver.Builder addGameOverBuilder() {
+        return getGameOverFieldBuilder().addBuilder(
+            max.dillon.GameGrammar.GameOver.getDefaultInstance());
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public max.dillon.GameGrammar.GameOver.Builder addGameOverBuilder(
+          int index) {
+        return getGameOverFieldBuilder().addBuilder(
+            index, max.dillon.GameGrammar.GameOver.getDefaultInstance());
+      }
+      /**
+       * <code>repeated .max.dillon.GameOver game_over = 7;</code>
+       */
+      public java.util.List<max.dillon.GameGrammar.GameOver.Builder> 
+           getGameOverBuilderList() {
+        return getGameOverFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          max.dillon.GameGrammar.GameOver, max.dillon.GameGrammar.GameOver.Builder, max.dillon.GameGrammar.GameOverOrBuilder> 
+          getGameOverFieldBuilder() {
+        if (gameOverBuilder_ == null) {
+          gameOverBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              max.dillon.GameGrammar.GameOver, max.dillon.GameGrammar.GameOver.Builder, max.dillon.GameGrammar.GameOverOrBuilder>(
+                  gameOver_,
+                  ((bitField0_ & 0x00000040) == 0x00000040),
+                  getParentForChildren(),
+                  isClean());
+          gameOver_ = null;
+        }
+        return gameOverBuilder_;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return this;
@@ -4787,6 +6037,11 @@ public final class GameGrammar {
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_max_dillon_Piece_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_max_dillon_GameOver_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_max_dillon_GameOver_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_max_dillon_GameSpec_descriptor;
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
@@ -4810,19 +6065,28 @@ public final class GameGrammar {
       "xchange\030\006 \001(\t\022\020\n\010priority\030\007 \001(\r\022\020\n\010conti" +
       "nue\030\010 \001(\010\"d\n\005Piece\022\014\n\004name\030\001 \001(\t\022\r\n\005coun" +
       "t\030\002 \001(\r\022\013\n\003min\030\003 \001(\r\022\021\n\tplacement\030\004 \003(\t\022",
-      "\036\n\004move\030\005 \003(\0132\020.max.dillon.Move\"\327\001\n\010Game" +
-      "Spec\022\014\n\004name\030\001 \001(\t\022\022\n\nboard_size\030\002 \001(\r\022," +
-      "\n\016board_topology\030\003 \001(\0162\024.max.dillon.Topo" +
-      "logy\022,\n\016board_symmetry\030\004 \001(\0162\024.max.dillo" +
-      "n.Symmetry\022+\n\013move_source\030\005 \001(\0162\026.max.di" +
-      "llon.MoveSource\022 \n\005piece\030\006 \003(\0132\021.max.dil" +
-      "lon.Piece*/\n\010Topology\022\n\n\006SQUARE\020\000\022\014\n\010CYL" +
-      "INDER\020\001\022\t\n\005TORUS\020\002*-\n\010Symmetry\022\n\n\006ROTATE" +
-      "\020\000\022\013\n\007REFLECT\020\001\022\010\n\004NONE\020\002*+\n\nMoveSource\022" +
-      "\023\n\017PIECES_ON_BOARD\020\000\022\010\n\004ENDS\020\001*`\n\007Outcom",
-      "e\022\016\n\nDISALLOWED\020\000\022\013\n\007ALLOWED\020\001\022\013\n\007CAPTUR" +
-      "E\020\002\022\010\n\004SWAP\020\003\022\010\n\004STAY\020\004\022\n\n\006DEPLOY\020\005\022\013\n\007I" +
-      "MPRESS\020\006b\006proto3"
+      "\036\n\004move\030\005 \003(\0132\020.max.dillon.Move\"m\n\010GameO" +
+      "ver\022(\n\tcondition\030\001 \001(\0162\025.max.dillon.Cond" +
+      "ition\022\r\n\005param\030\002 \001(\r\022(\n\007outcome\030\003 \001(\0162\027." +
+      "max.dillon.GameOutcome\"\200\002\n\010GameSpec\022\014\n\004n" +
+      "ame\030\001 \001(\t\022\022\n\nboard_size\030\002 \001(\r\022,\n\016board_t" +
+      "opology\030\003 \001(\0162\024.max.dillon.Topology\022,\n\016b" +
+      "oard_symmetry\030\004 \001(\0162\024.max.dillon.Symmetr" +
+      "y\022+\n\013move_source\030\005 \001(\0162\026.max.dillon.Move" +
+      "Source\022 \n\005piece\030\006 \003(\0132\021.max.dillon.Piece" +
+      "\022\'\n\tgame_over\030\007 \003(\0132\024.max.dillon.GameOve",
+      "r*/\n\010Topology\022\n\n\006SQUARE\020\000\022\014\n\010CYLINDER\020\001\022" +
+      "\t\n\005TORUS\020\002*-\n\010Symmetry\022\n\n\006ROTATE\020\000\022\013\n\007RE" +
+      "FLECT\020\001\022\010\n\004NONE\020\002*+\n\nMoveSource\022\023\n\017PIECE" +
+      "S_ON_BOARD\020\000\022\010\n\004ENDS\020\001*`\n\007Outcome\022\016\n\nDIS" +
+      "ALLOWED\020\000\022\013\n\007ALLOWED\020\001\022\013\n\007CAPTURE\020\002\022\010\n\004S" +
+      "WAP\020\003\022\010\n\004STAY\020\004\022\n\n\006DEPLOY\020\005\022\013\n\007IMPRESS\020\006" +
+      "*\177\n\tCondition\022\021\n\rNO_LEGAL_MOVE\020\000\022\026\n\022NO_P" +
+      "IECES_ON_BOARD\020\001\022\027\n\023KEY_PIECES_CAPTURED\020" +
+      "\002\022\016\n\nBOARD_FULL\020\003\022\016\n\nN_IN_A_ROW\020\004\022\016\n\nMOV" +
+      "E_LIMIT\020\005*\\\n\013GameOutcome\022\007\n\003WIN\020\000\022\010\n\004LOS",
+      "S\020\001\022\010\n\004DRAW\020\003\022\025\n\021COUNT_LIVE_PIECES\020\004\022\031\n\025" +
+      "COUNT_CAPTURED_PIECES\020\005b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -4854,12 +6118,18 @@ public final class GameGrammar {
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_max_dillon_Piece_descriptor,
         new java.lang.String[] { "Name", "Count", "Min", "Placement", "Move", });
-    internal_static_max_dillon_GameSpec_descriptor =
+    internal_static_max_dillon_GameOver_descriptor =
       getDescriptor().getMessageTypes().get(3);
+    internal_static_max_dillon_GameOver_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_max_dillon_GameOver_descriptor,
+        new java.lang.String[] { "Condition", "Param", "Outcome", });
+    internal_static_max_dillon_GameSpec_descriptor =
+      getDescriptor().getMessageTypes().get(4);
     internal_static_max_dillon_GameSpec_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_max_dillon_GameSpec_descriptor,
-        new java.lang.String[] { "Name", "BoardSize", "BoardTopology", "BoardSymmetry", "MoveSource", "Piece", });
+        new java.lang.String[] { "Name", "BoardSize", "BoardTopology", "BoardSymmetry", "MoveSource", "Piece", "GameOver", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
