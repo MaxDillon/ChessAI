@@ -367,9 +367,9 @@ class GameState {
             row.forEachIndexed { j, piece ->
                 if ((i + j) % 2 == 0) print("\u001B[47m\u001B[30m")
                 print("\u001B[1m")
-                print(if (piece < 0) "  :" else if (piece > 0) "   " else "   ")
+                print(if (piece < 0) "  |" else if (piece > 0) "  -" else "   ")
                 print(if (piece == 0) " " else gameSpec.pieceList[abs(piece)].name)
-                print(if (piece < 0) ":  " else if (piece > 0) "   " else "   ")
+                print(if (piece < 0) "|  " else if (piece > 0) "-  " else "   ")
                 print("\u001B[0m")
 
             }
@@ -383,6 +383,7 @@ class GameState {
             }
             println()
         }
+        println("\n\n")
     }
 
 
