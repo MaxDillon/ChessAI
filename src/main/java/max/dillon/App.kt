@@ -327,6 +327,9 @@ class GameState {
                     }
                 }
             }
+            else -> {
+                throw(RuntimeException("moveSource is neither on board or ends"))
+            }
         }
         return states.lastEntry()?.component2() ?: ArrayList()
     }
@@ -348,6 +351,57 @@ class GameState {
         }
         return false
     }
+
+    fun printBoardLarge() {
+
+        gameBoard.reversed().forEachIndexed { i, row ->
+
+
+            row.forEachIndexed { k, _ ->
+                if ((i + k) % 2 == 0) print("\u001B[47m\u001B[30m")
+                print("       ")
+                print("\u001B[0m")
+            }
+            println()
+
+            row.forEachIndexed { j, piece ->
+                if ((i + j) % 2 == 0) print("\u001B[47m\u001B[30m")
+                print("\u001B[1m")
+                print(if (piece < 0) "  :" else if (piece > 0) "   " else "   ")
+                print(if (piece == 0) " " else gameSpec.pieceList[abs(piece)].name)
+                print(if (piece < 0) ":  " else if (piece > 0) "   " else "   ")
+                print("\u001B[0m")
+
+            }
+
+            println()
+
+            row.forEachIndexed { k, _ ->
+                if ((i + k) % 2 == 0) print("\u001B[47m\u001B[30m")
+                print("       ")
+                print("\u001B[0m")
+            }
+            println()
+        }
+    }
+
+
+    fun printBoardSmall() {
+        println()
+        gameBoard.reversed().forEachIndexed { i, row ->
+            row.forEachIndexed { j, piece ->
+                if ((i + j) % 2 == 0) print("\u001B[47m\u001B[30m")
+                print("\u001B[1m")
+                print(if (piece < 0) "[" else if (piece > 0) " " else " ")
+                print(if (piece == 0) " " else gameSpec.pieceList[abs(piece)].name)
+                print(if (piece < 0) "]" else if (piece > 0) " " else " ")
+                print("\u001B[0m")
+            }
+            println()
+        }
+        println()
+    }
+
 
     fun printBoard() {
         val size = gameSpec.boardSize
@@ -415,7 +469,11 @@ fun main(args: Array<String>) {
         val msg = if (gameOver) "Game Over" else "now $color's move"
 
         println("${state.pieceName} ${state.description}, $msg\n")
-        state.printBoard()
+
+//        state.printBoardSmall()
+//        state.printBoard()
+        state.printBoardLarge()
+
         if (gameOver) break
         val nextStates = state.getLegalNextStates()
         if (nextStates.size == 0) return
