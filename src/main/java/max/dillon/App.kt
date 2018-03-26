@@ -14,7 +14,8 @@ import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.*
 import kotlin.collections.ArrayList
 
-typealias MoveCandidates = Map<Int, ArrayList<GameState>>
+
+//typealias MoveCandidates = Map<Int, ArrayList<GameState>>
 
 class GameState {
     var gameBoard: Array<IntArray>
@@ -142,10 +143,10 @@ class GameState {
     private fun maybeAddMove(moves: MutableMap<Int, ArrayList<GameState>>,
                              move: GameGrammar.Move,
                              x1: Int, y1: Int, x2: Int, y2: Int,
-                             src: Int = at(x1,y1)): Boolean {
+                             src: Int = at(x1, y1)): Boolean {
         val next = initNext()
         next.description = "${'a' + x1}${y1 + 1}=>${'a' + x2}${y2 + 1}"
-        next.pieceName = if (offBoard(x1,y1)) "new" else getPiece(at(x1, y1)).name
+        next.pieceName = if (offBoard(x1, y1)) "new" else getPiece(at(x1, y1)).name
         val dst = at(x2, y2)
 
         if (!checkLandingConstraints(dst, src, move)) return false
@@ -162,7 +163,7 @@ class GameState {
                 }
                 CAPTURE -> {
                     next.setState(x2, y2, src)
-                    if (!offBoard(x1,y1)) {
+                    if (!offBoard(x1, y1)) {
                         next.setState(x1, y1, 0)
                     }
                 }
@@ -174,7 +175,7 @@ class GameState {
         } else {
             if (move.land.none == ALLOWED) {
                 next.setState(x2, y2, src)
-                if (!offBoard(x1,y1)) {
+                if (!offBoard(x1, y1)) {
                     next.setState(x1, y1, 0)
                 }
             } else if (move.land.none == DEPLOY) {
@@ -352,38 +353,34 @@ class GameState {
         return false
     }
 
+
     fun printBoardLarge() {
+
+        val h_ = "\u001B[47m"
+        val _h = "\u001B[0m"
+        val b_ = "\u001B[1m"
 
         gameBoard.reversed().forEachIndexed { i, row ->
 
 
-            row.forEachIndexed { k, _ ->
-                if ((i + k) % 2 == 0) print("\u001B[47m\u001B[30m")
-                print("       ")
-                print("\u001B[0m")
-            }
-            println()
+            row.forEachIndexed { j, _ ->
+                if ((i + j) % 2 == 0) print(h_)
+                print("       $_h")
+            }.also { println() }
 
             row.forEachIndexed { j, piece ->
-                if ((i + j) % 2 == 0) print("\u001B[47m\u001B[30m")
-                print("\u001B[1m")
-                print(if (piece < 0) "  |" else if (piece > 0) "  -" else "   ")
-                print(if (piece == 0) " " else gameSpec.pieceList[abs(piece)].name)
-                print(if (piece < 0) "|  " else if (piece > 0) "-  " else "   ")
-                print("\u001B[0m")
+                if ((i + j) % 2 == 0) print(h_)
+                var pieceStr = gameSpec.pieceList[abs(piece)].name
+                val symbol = if (piece < 0) "|" else if (piece > 0) "'" else " ".also { pieceStr = " " }
 
-            }
+                print("$b_  $symbol$pieceStr$symbol  $_h")
+            }.also { println() }
 
-            println()
-
-            row.forEachIndexed { k, _ ->
-                if ((i + k) % 2 == 0) print("\u001B[47m\u001B[30m")
-                print("       ")
-                print("\u001B[0m")
-            }
-            println()
-        }
-        println("\n\n")
+            row.forEachIndexed { j, _ ->
+                if ((i + j) % 2 == 0) print(h_)
+                print("       $_h")
+            }.also { println() }
+        }.also { println("\n\n") }
     }
 
 
