@@ -145,7 +145,7 @@ class GameState {
                              x1: Int, y1: Int, x2: Int, y2: Int,
                              src: Int = at(x1, y1)): Boolean {
         val next = initNext()
-        next.description = "${'a' + x1}${y1 + 1}=>${'a' + x2}${y2 + 1}"
+        next.description = "${'a' + x1}${y1 + 1} -> ${'a' + x2}${y2 + 1}"
         next.pieceName = if (offBoard(x1, y1)) "new" else getPiece(at(x1, y1)).name
         val dst = at(x2, y2)
 
@@ -353,8 +353,21 @@ class GameState {
         return false
     }
 
+    fun getRow(row: IntArray,i: Int) {
+        val h_ = "\u001B[47m"
+        val _h = "\u001B[0m"
+        print("\u001B[40m   \u001B[0m")
+        row.forEachIndexed { j, _ ->
+            if ((i + j) % 2 == 0) print(h_)
+            print("       $_h")
+        }.also { println("\u001B[40m   \u001B[0m") }
+    }
+
 
     fun printBoardLarge() {
+        print("\u001B[40m      ")
+        for(index in 0 until gameSpec.boardSize) print("       ")
+        println("\u001B[0m")
 
         val h_ = "\u001B[47m"
         val _h = "\u001B[0m"
@@ -362,25 +375,24 @@ class GameState {
 
         gameBoard.reversed().forEachIndexed { i, row ->
 
-
-            row.forEachIndexed { j, _ ->
-                if ((i + j) % 2 == 0) print(h_)
-                print("       $_h")
-            }.also { println() }
-
+            getRow(row,i)
+            print("\u001B[40m   \u001B[0m")
             row.forEachIndexed { j, piece ->
                 if ((i + j) % 2 == 0) print(h_)
                 var pieceStr = gameSpec.pieceList[abs(piece)].name
                 val symbol = if (piece < 0) "|" else if (piece > 0) "'" else " ".also { pieceStr = " " }
-
                 print("$b_  $symbol$pieceStr$symbol  $_h")
-            }.also { println() }
 
-            row.forEachIndexed { j, _ ->
-                if ((i + j) % 2 == 0) print(h_)
-                print("       $_h")
-            }.also { println() }
-        }.also { println("\n\n") }
+            }.also { println("\u001B[37m\u001B[40m ${gameSpec.boardSize-i} \u001B[0m")}
+
+            getRow(row,i)
+
+        }
+        print("\u001B[37m\u001B[40m   ")
+        for (index in 0 until gameSpec.boardSize) print("   " + ('a' + index) + "   ")
+        print("   \u001B[0m")
+        println("\n\n")
+
     }
 
 
@@ -466,10 +478,8 @@ fun main(args: Array<String>) {
         val color = if (state.whiteMove) "white" else "black"
         val msg = if (gameOver) "Game Over" else "now $color's move"
 
-        println("${state.pieceName} ${state.description}, $msg\n")
+        println("${state.pieceName} ${state.description}, $\nmsg\n")
 
-//        state.printBoardSmall()
-//        state.printBoard()
         state.printBoardLarge()
 
         if (gameOver) break
