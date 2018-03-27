@@ -303,9 +303,49 @@ class GameState {
         }
     }
 
+    fun loopBoard(lambda: (square: Int)->Unit) {
+        for (row in gameBoard) {
+            for (i in row) {
+                lambda.invoke(row[i])
+            }
+        }
+    }
+
+    private fun endConditionMet(): Boolean {
+
+        for (state in gameSpec.gameOverList) {
+            if (state.condition == GameGrammar.Condition.NO_LEGAL_MOVE) {
+
+            }
+            if (state.condition == GameGrammar.Condition.BOARD_FULL) {
+
+            }
+            if (state.condition == GameGrammar.Condition.KEY_PIECES_CAPTURED) {
+
+            }
+            if (state.condition == GameGrammar.Condition.MOVE_LIMIT) {
+
+            }
+            if (state.condition == GameGrammar.Condition.N_IN_A_ROW) {
+
+            }
+            if (state.condition == GameGrammar.Condition.NO_PIECES_ON_BOARD) {
+
+            }
+
+        }
+
+
+        return false
+    }
+
     fun getLegalNextStates(): ArrayList<GameState> {
         val states = TreeMap<Int, ArrayList<GameState>>()
         val playerSign = if (whiteMove) 1 else -1
+
+        if (endConditionMet()) {
+            return arrayListOf()
+        }
 
         when (gameSpec.moveSource) {
             MoveSource.PIECES_ON_BOARD -> {
@@ -446,19 +486,37 @@ class GameState {
     }
 
 
+
+
+    /**
+     * print statements for board
+     *
+     *  small board
+     *  reg board
+     *  large board
+     *
+     * **/
+
+
+
     fun getRow(row: IntArray,i: Int) {
         val h_ = "\u001B[47m"
         val _h = "\u001B[0m"
-        print("\u001B[40m   \u001B[0m")
+        print("\u001B[40m    \u001B[0m")
         row.forEachIndexed { j, _ ->
             if ((i + j) % 2 == 0) print(h_)
             print("       $_h")
-        }.also { println("\u001B[40m   \u001B[0m") }
+        }.also { println("\u001B[37m\u001B[40m    \u001B[0m")}
     }
 
 
     fun printBoardLarge() {
-        print("\u001B[40m      ")
+
+
+        print("\u001B[40m        ")
+        for(index in 0 until gameSpec.boardSize) print("       ")
+        println("\u001B[0m")
+        print("\u001B[40m        ")
         for(index in 0 until gameSpec.boardSize) print("       ")
         println("\u001B[0m")
 
@@ -469,21 +527,23 @@ class GameState {
         gameBoard.reversed().forEachIndexed { i, row ->
 
             getRow(row,i)
-            print("\u001B[40m   \u001B[0m")
+            print("\u001B[40m    \u001B[0m")
             row.forEachIndexed { j, piece ->
                 if ((i + j) % 2 == 0) print(h_)
                 var pieceStr = gameSpec.pieceList[abs(piece)].name
-                val symbol = if (piece < 0) "|" else if (piece > 0) "'" else " ".also { pieceStr = " " }
+                val symbol = if (piece < 0) "-" else if (piece > 0) " " else " ".also { pieceStr = " " }
                 print("$b_  $symbol$pieceStr$symbol  $_h")
 
-            }.also { println("\u001B[37m\u001B[40m ${gameSpec.boardSize-i} \u001B[0m")}
+            }.also { println("\u001B[37m\u001B[40m  ${gameSpec.boardSize-i} \u001B[0m")}
 
             getRow(row,i)
 
         }
-        print("\u001B[37m\u001B[40m   ")
+        print("\u001B[37m\u001B[40m    ")
+        for(index in 0 until gameSpec.boardSize) print("       ")
+        print("    \u001B[0m\n\u001B[37m\u001B[40m    ")
         for (index in 0 until gameSpec.boardSize) print("   " + ('a' + index) + "   ")
-        print("   \u001B[0m")
+        print("    \u001B[0m")
         println("\n\n")
 
     }
@@ -542,12 +602,14 @@ class GameState {
     }
 }
 
+
+
 fun main(args: Array<String>) {
     var game: String
     var str: String
     while (true) {
         try {
-            game = readLine() ?: ""
+            game = readLine() ?: "chess"
             str = String(Files.readAllBytes(Paths.get("src/main/data/$game.textproto")))
             break
         } catch (e: NoSuchFileException) {
@@ -565,6 +627,8 @@ fun main(args: Array<String>) {
     val rand = Random()
     var state = GameState(gameSpec)
     var count = 0
+
+    GameWindow()
     while (true) {
         count++
         val gameOver = state.gameOutcome() != GameOutcome.UNDETERMINED
