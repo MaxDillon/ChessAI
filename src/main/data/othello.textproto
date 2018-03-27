@@ -60,5 +60,5 @@ piece {
 }
 game_over {
     condition: NO_LEGAL_MOVE
-    outcome: COUNT_LIVE_PIECES
+    decision: COUNT_LIVE_PIECES
 }

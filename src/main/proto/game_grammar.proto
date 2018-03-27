@@ -38,7 +38,7 @@ enum Condition {
     MOVE_LIMIT = 5;
 }
 
-enum GameOutcome {
+enum GameDecision {
     WIN = 0;
     LOSS = 1;
     DRAW = 3;
@@ -72,7 +72,7 @@ message Piece {
 message GameOver {
     Condition condition = 1;
     uint32 param = 2;
-    GameOutcome outcome = 3;
+    GameDecision decision = 3;
 }
 message GameSpec {
     string name = 1;

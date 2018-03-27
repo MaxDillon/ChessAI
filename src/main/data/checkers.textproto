@@ -189,5 +189,5 @@ piece {
 }
 game_over {
     condition: NO_PIECES_ON_BOARD
-    outcome: LOSS
+    decision: LOSS
 }

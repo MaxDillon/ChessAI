@@ -176,5 +176,5 @@ piece {
 }
 game_over {
     condition: KEY_PIECES_CAPTURED
-    outcome: LOSS
+    decision: LOSS
 }

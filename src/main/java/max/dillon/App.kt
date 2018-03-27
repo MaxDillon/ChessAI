@@ -13,6 +13,11 @@ import max.dillon.GameGrammar.Symmetry.*
 import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.*
 import kotlin.collections.ArrayList
+import kotlin.math.min
+
+enum class GameOutcome {
+    UNDETERMINED, WIN_WHITE, WIN_BLACK, DRAW
+}
 
 class GameState {
     var gameBoard: Array<IntArray>
@@ -24,6 +29,7 @@ class GameState {
     var y2 = -1
     var description = ""
     var pieceMoved = 0
+    var moveDepth = 0
 
     constructor(gameSpec: GameSpec) {
         this.gameSpec = gameSpec
@@ -47,6 +53,7 @@ class GameState {
         this.gameSpec = prev.gameSpec
         this.gameBoard = Array(prev.gameBoard.size) { prev.gameBoard[it].clone() }
         this.whiteMove = !prev.whiteMove
+        this.moveDepth = prev.moveDepth + 1
         this.x1 = x1
         this.y1 = y1
         this.x2 = x2
@@ -64,6 +71,9 @@ class GameState {
     private fun setState(x: Int, y: Int, state: Int) {
         gameBoard[y][x] = state
     }
+
+    private fun numEmptyCells(): Int =
+            gameBoard.map { it.filter { it == 0 }.count() }.sum()
 
     /**
      * A method to map a GameState for a given legal move into an output space
@@ -324,7 +334,7 @@ class GameState {
         return states.lastEntry()?.component2() ?: ArrayList()
     }
 
-    fun gameOver(): Boolean {
+    fun pieceCounts(): Pair<IntArray,IntArray> {
         val p1Counts = IntArray(gameSpec.pieceList.size, { 0 })
         val p2Counts = IntArray(gameSpec.pieceList.size, { 0 })
         for (row in gameBoard) {
@@ -333,14 +343,108 @@ class GameState {
                 if (piece < 0) p2Counts[-piece] += 1
             }
         }
-        for (i in gameSpec.pieceList.indices) {
-            if (p1Counts[i] < gameSpec.pieceList[i].min ||
-                    p2Counts[i] < gameSpec.pieceList[i].min) {
-                return true
+        return Pair(p1Counts, p2Counts)
+    }
+
+    fun maxSequenceLengths(n: Int): Pair<Int,Int> {
+        val sz = gameSpec.boardSize
+        fun atSafe(row: Int, col: Int): Int {
+            if (row < 0 || col < 0 || row >= sz || col >= sz) {
+                return 0
+            } else {
+                return at(row, col)
             }
         }
-        return false
+        var maxSeq = 0
+        var minSeq = 0
+        for (row in 0 until sz) {
+            for (col in 0 until sz) {
+                var counts = arrayOf(0,0,0,0)
+                for (i in 0 until n) {
+                    counts[0] += atSafe(row, col+i)
+                    counts[1] += atSafe(row+i, col)
+                    counts[2] += atSafe(row+i, col+i)
+                    counts[3] += atSafe(row+i, col-i)
+                }
+                maxSeq = max(maxSeq, counts.max() ?: 0)
+                minSeq = min(minSeq, counts.min() ?: 0)
+            }
+        }
+        return Pair(maxSeq, minSeq)
     }
+
+    fun outcomeByDecision(gameDecision: GameDecision): GameOutcome {
+        return when (gameDecision) {
+            GameDecision.WIN ->
+                if (whiteMove) GameOutcome.WIN_WHITE else GameOutcome.WIN_BLACK
+            GameDecision.LOSS ->
+                if (whiteMove) GameOutcome.WIN_BLACK else GameOutcome.WIN_WHITE
+            GameDecision.DRAW ->
+                GameOutcome.DRAW
+            GameDecision.COUNT_CAPTURED_PIECES -> {
+                GameOutcome.UNDETERMINED // todo
+            }
+            GameDecision.COUNT_LIVE_PIECES -> {
+                GameOutcome.UNDETERMINED // todo
+            }
+            else -> GameOutcome.UNDETERMINED
+        }
+    }
+
+    fun gameOutcome(): GameOutcome {
+        val counts: Pair<IntArray,IntArray> by lazy {
+            pieceCounts()
+        }
+        for (game_over in gameSpec.gameOverList) {
+            when (game_over.condition) {
+                Condition.NO_LEGAL_MOVE -> {
+                    if (getLegalNextStates().isEmpty()) {
+                        return outcomeByDecision(game_over.decision)
+                    }
+                }
+                Condition.MOVE_LIMIT -> {
+                    if (moveDepth > game_over.param) {
+                        return outcomeByDecision(game_over.decision)
+                    }
+                }
+                Condition.BOARD_FULL -> {
+                    if (numEmptyCells() == 0) {
+                        return outcomeByDecision(game_over.decision)
+                    }
+                }
+                Condition.KEY_PIECES_CAPTURED -> {
+                    for (i in gameSpec.pieceList.indices) {
+                        if (counts.first[i] < gameSpec.pieceList[i].min) {
+                            return GameOutcome.WIN_BLACK
+                        }
+                        if (counts.second[i] < gameSpec.pieceList[i].min) {
+                            return GameOutcome.WIN_WHITE
+                        }
+                    }
+                }
+                Condition.NO_PIECES_ON_BOARD -> {
+                    if (counts.first.sum() == 0) {
+                        return GameOutcome.WIN_BLACK
+                    }
+                    if (counts.second.sum() == 0) {
+                        return GameOutcome.WIN_WHITE
+                    }
+                }
+                Condition.N_IN_A_ROW -> {
+                    val maxLengths = maxSequenceLengths(game_over.param)
+                    if (maxLengths.first >= game_over.param) {
+                        return GameOutcome.WIN_WHITE
+                    }
+                    if (maxLengths.second >= game_over.param) {
+                        return GameOutcome.WIN_BLACK
+                    }
+                }
+                else -> {}
+            }
+        }
+        return GameOutcome.UNDETERMINED
+    }
+
 
     fun getRow(row: IntArray,i: Int) {
         val h_ = "\u001B[47m"
@@ -463,7 +567,7 @@ fun main(args: Array<String>) {
     var count = 0
     while (true) {
         count++
-        val gameOver = state.gameOver()
+        val gameOver = state.gameOutcome() != GameOutcome.UNDETERMINED
         val color = if (state.whiteMove) "white" else "black"
         val msg = if (gameOver) "Game Over" else "now $color's move"
 

@@ -604,9 +604,9 @@ public final class GameGrammar {
   }
 
   /**
-   * Protobuf enum {@code max.dillon.GameOutcome}
+   * Protobuf enum {@code max.dillon.GameDecision}
    */
-  public enum GameOutcome
+  public enum GameDecision
       implements com.google.protobuf.ProtocolMessageEnum {
     /**
      * <code>WIN = 0;</code>
@@ -665,11 +665,11 @@ public final class GameGrammar {
      * @deprecated Use {@link #forNumber(int)} instead.
      */
     @java.lang.Deprecated
-    public static GameOutcome valueOf(int value) {
+    public static GameDecision valueOf(int value) {
       return forNumber(value);
     }
 
-    public static GameOutcome forNumber(int value) {
+    public static GameDecision forNumber(int value) {
       switch (value) {
         case 0: return WIN;
         case 1: return LOSS;
@@ -680,15 +680,15 @@ public final class GameGrammar {
       }
     }
 
-    public static com.google.protobuf.Internal.EnumLiteMap<GameOutcome>
+    public static com.google.protobuf.Internal.EnumLiteMap<GameDecision>
         internalGetValueMap() {
       return internalValueMap;
     }
     private static final com.google.protobuf.Internal.EnumLiteMap<
-        GameOutcome> internalValueMap =
-          new com.google.protobuf.Internal.EnumLiteMap<GameOutcome>() {
-            public GameOutcome findValueByNumber(int number) {
-              return GameOutcome.forNumber(number);
+        GameDecision> internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<GameDecision>() {
+            public GameDecision findValueByNumber(int number) {
+              return GameDecision.forNumber(number);
             }
           };
 
@@ -705,9 +705,9 @@ public final class GameGrammar {
       return max.dillon.GameGrammar.getDescriptor().getEnumTypes().get(5);
     }
 
-    private static final GameOutcome[] VALUES = values();
+    private static final GameDecision[] VALUES = values();
 
-    public static GameOutcome valueOf(
+    public static GameDecision valueOf(
         com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
       if (desc.getType() != getDescriptor()) {
         throw new java.lang.IllegalArgumentException(
@@ -721,11 +721,11 @@ public final class GameGrammar {
 
     private final int value;
 
-    private GameOutcome(int value) {
+    private GameDecision(int value) {
       this.value = value;
     }
 
-    // @@protoc_insertion_point(enum_scope:max.dillon.GameOutcome)
+    // @@protoc_insertion_point(enum_scope:max.dillon.GameDecision)
   }
 
   public interface MoveOptionsOrBuilder extends
@@ -3824,13 +3824,13 @@ public final class GameGrammar {
     int getParam();
 
     /**
-     * <code>.max.dillon.GameOutcome outcome = 3;</code>
+     * <code>.max.dillon.GameDecision decision = 3;</code>
      */
-    int getOutcomeValue();
+    int getDecisionValue();
     /**
-     * <code>.max.dillon.GameOutcome outcome = 3;</code>
+     * <code>.max.dillon.GameDecision decision = 3;</code>
      */
-    max.dillon.GameGrammar.GameOutcome getOutcome();
+    max.dillon.GameGrammar.GameDecision getDecision();
   }
   /**
    * Protobuf type {@code max.dillon.GameOver}
@@ -3846,7 +3846,7 @@ public final class GameGrammar {
     private GameOver() {
       condition_ = 0;
       param_ = 0;
-      outcome_ = 0;
+      decision_ = 0;
     }
 
     @java.lang.Override
@@ -3888,7 +3888,7 @@ public final class GameGrammar {
             case 24: {
               int rawValue = input.readEnum();
 
-              outcome_ = rawValue;
+              decision_ = rawValue;
               break;
             }
           }
@@ -3939,20 +3939,20 @@ public final class GameGrammar {
       return param_;
     }
 
-    public static final int OUTCOME_FIELD_NUMBER = 3;
-    private int outcome_;
+    public static final int DECISION_FIELD_NUMBER = 3;
+    private int decision_;
     /**
-     * <code>.max.dillon.GameOutcome outcome = 3;</code>
+     * <code>.max.dillon.GameDecision decision = 3;</code>
      */
-    public int getOutcomeValue() {
-      return outcome_;
+    public int getDecisionValue() {
+      return decision_;
     }
     /**
-     * <code>.max.dillon.GameOutcome outcome = 3;</code>
+     * <code>.max.dillon.GameDecision decision = 3;</code>
      */
-    public max.dillon.GameGrammar.GameOutcome getOutcome() {
-      max.dillon.GameGrammar.GameOutcome result = max.dillon.GameGrammar.GameOutcome.valueOf(outcome_);
-      return result == null ? max.dillon.GameGrammar.GameOutcome.UNRECOGNIZED : result;
+    public max.dillon.GameGrammar.GameDecision getDecision() {
+      max.dillon.GameGrammar.GameDecision result = max.dillon.GameGrammar.GameDecision.valueOf(decision_);
+      return result == null ? max.dillon.GameGrammar.GameDecision.UNRECOGNIZED : result;
     }
 
     private byte memoizedIsInitialized = -1;
@@ -3973,8 +3973,8 @@ public final class GameGrammar {
       if (param_ != 0) {
         output.writeUInt32(2, param_);
       }
-      if (outcome_ != max.dillon.GameGrammar.GameOutcome.WIN.getNumber()) {
-        output.writeEnum(3, outcome_);
+      if (decision_ != max.dillon.GameGrammar.GameDecision.WIN.getNumber()) {
+        output.writeEnum(3, decision_);
       }
     }
 
@@ -3991,9 +3991,9 @@ public final class GameGrammar {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(2, param_);
       }
-      if (outcome_ != max.dillon.GameGrammar.GameOutcome.WIN.getNumber()) {
+      if (decision_ != max.dillon.GameGrammar.GameDecision.WIN.getNumber()) {
         size += com.google.protobuf.CodedOutputStream
-          .computeEnumSize(3, outcome_);
+          .computeEnumSize(3, decision_);
       }
       memoizedSize = size;
       return size;
@@ -4014,7 +4014,7 @@ public final class GameGrammar {
       result = result && condition_ == other.condition_;
       result = result && (getParam()
           == other.getParam());
-      result = result && outcome_ == other.outcome_;
+      result = result && decision_ == other.decision_;
       return result;
     }
 
@@ -4029,8 +4029,8 @@ public final class GameGrammar {
       hash = (53 * hash) + condition_;
       hash = (37 * hash) + PARAM_FIELD_NUMBER;
       hash = (53 * hash) + getParam();
-      hash = (37 * hash) + OUTCOME_FIELD_NUMBER;
-      hash = (53 * hash) + outcome_;
+      hash = (37 * hash) + DECISION_FIELD_NUMBER;
+      hash = (53 * hash) + decision_;
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -4164,7 +4164,7 @@ public final class GameGrammar {
 
         param_ = 0;
 
-        outcome_ = 0;
+        decision_ = 0;
 
         return this;
       }
@@ -4190,7 +4190,7 @@ public final class GameGrammar {
         max.dillon.GameGrammar.GameOver result = new max.dillon.GameGrammar.GameOver(this);
         result.condition_ = condition_;
         result.param_ = param_;
-        result.outcome_ = outcome_;
+        result.decision_ = decision_;
         onBuilt();
         return result;
       }
@@ -4238,8 +4238,8 @@ public final class GameGrammar {
         if (other.getParam() != 0) {
           setParam(other.getParam());
         }
-        if (other.outcome_ != 0) {
-          setOutcomeValue(other.getOutcomeValue());
+        if (other.decision_ != 0) {
+          setDecisionValue(other.getDecisionValue());
         }
         onChanged();
         return this;
@@ -4337,46 +4337,46 @@ public final class GameGrammar {
         return this;
       }
 
-      private int outcome_ = 0;
+      private int decision_ = 0;
       /**
-       * <code>.max.dillon.GameOutcome outcome = 3;</code>
+       * <code>.max.dillon.GameDecision decision = 3;</code>
        */
-      public int getOutcomeValue() {
-        return outcome_;
+      public int getDecisionValue() {
+        return decision_;
       }
       /**
-       * <code>.max.dillon.GameOutcome outcome = 3;</code>
+       * <code>.max.dillon.GameDecision decision = 3;</code>
        */
-      public Builder setOutcomeValue(int value) {
-        outcome_ = value;
+      public Builder setDecisionValue(int value) {
+        decision_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>.max.dillon.GameOutcome outcome = 3;</code>
+       * <code>.max.dillon.GameDecision decision = 3;</code>
        */
-      public max.dillon.GameGrammar.GameOutcome getOutcome() {
-        max.dillon.GameGrammar.GameOutcome result = max.dillon.GameGrammar.GameOutcome.valueOf(outcome_);
-        return result == null ? max.dillon.GameGrammar.GameOutcome.UNRECOGNIZED : result;
+      public max.dillon.GameGrammar.GameDecision getDecision() {
+        max.dillon.GameGrammar.GameDecision result = max.dillon.GameGrammar.GameDecision.valueOf(decision_);
+        return result == null ? max.dillon.GameGrammar.GameDecision.UNRECOGNIZED : result;
       }
       /**
-       * <code>.max.dillon.GameOutcome outcome = 3;</code>
+       * <code>.max.dillon.GameDecision decision = 3;</code>
        */
-      public Builder setOutcome(max.dillon.GameGrammar.GameOutcome value) {
+      public Builder setDecision(max.dillon.GameGrammar.GameDecision value) {
         if (value == null) {
           throw new NullPointerException();
         }
         
-        outcome_ = value.getNumber();
+        decision_ = value.getNumber();
         onChanged();
         return this;
       }
       /**
-       * <code>.max.dillon.GameOutcome outcome = 3;</code>
+       * <code>.max.dillon.GameDecision decision = 3;</code>
        */
-      public Builder clearOutcome() {
+      public Builder clearDecision() {
         
-        outcome_ = 0;
+        decision_ = 0;
         onChanged();
         return this;
       }
@@ -6065,28 +6065,28 @@ public final class GameGrammar {
       "xchange\030\006 \001(\t\022\020\n\010priority\030\007 \001(\r\022\020\n\010conti" +
       "nue\030\010 \001(\010\"d\n\005Piece\022\014\n\004name\030\001 \001(\t\022\r\n\005coun" +
       "t\030\002 \001(\r\022\013\n\003min\030\003 \001(\r\022\021\n\tplacement\030\004 \003(\t\022",
-      "\036\n\004move\030\005 \003(\0132\020.max.dillon.Move\"m\n\010GameO" +
+      "\036\n\004move\030\005 \003(\0132\020.max.dillon.Move\"o\n\010GameO" +
       "ver\022(\n\tcondition\030\001 \001(\0162\025.max.dillon.Cond" +
-      "ition\022\r\n\005param\030\002 \001(\r\022(\n\007outcome\030\003 \001(\0162\027." +
-      "max.dillon.GameOutcome\"\200\002\n\010GameSpec\022\014\n\004n" +
-      "ame\030\001 \001(\t\022\022\n\nboard_size\030\002 \001(\r\022,\n\016board_t" +
-      "opology\030\003 \001(\0162\024.max.dillon.Topology\022,\n\016b" +
-      "oard_symmetry\030\004 \001(\0162\024.max.dillon.Symmetr" +
-      "y\022+\n\013move_source\030\005 \001(\0162\026.max.dillon.Move" +
-      "Source\022 \n\005piece\030\006 \003(\0132\021.max.dillon.Piece" +
-      "\022\'\n\tgame_over\030\007 \003(\0132\024.max.dillon.GameOve",
-      "r*/\n\010Topology\022\n\n\006SQUARE\020\000\022\014\n\010CYLINDER\020\001\022" +
-      "\t\n\005TORUS\020\002*-\n\010Symmetry\022\n\n\006ROTATE\020\000\022\013\n\007RE" +
-      "FLECT\020\001\022\010\n\004NONE\020\002*+\n\nMoveSource\022\023\n\017PIECE" +
-      "S_ON_BOARD\020\000\022\010\n\004ENDS\020\001*`\n\007Outcome\022\016\n\nDIS" +
-      "ALLOWED\020\000\022\013\n\007ALLOWED\020\001\022\013\n\007CAPTURE\020\002\022\010\n\004S" +
-      "WAP\020\003\022\010\n\004STAY\020\004\022\n\n\006DEPLOY\020\005\022\013\n\007IMPRESS\020\006" +
-      "*\177\n\tCondition\022\021\n\rNO_LEGAL_MOVE\020\000\022\026\n\022NO_P" +
-      "IECES_ON_BOARD\020\001\022\027\n\023KEY_PIECES_CAPTURED\020" +
-      "\002\022\016\n\nBOARD_FULL\020\003\022\016\n\nN_IN_A_ROW\020\004\022\016\n\nMOV" +
-      "E_LIMIT\020\005*\\\n\013GameOutcome\022\007\n\003WIN\020\000\022\010\n\004LOS",
-      "S\020\001\022\010\n\004DRAW\020\003\022\025\n\021COUNT_LIVE_PIECES\020\004\022\031\n\025" +
-      "COUNT_CAPTURED_PIECES\020\005b\006proto3"
+      "ition\022\r\n\005param\030\002 \001(\r\022*\n\010decision\030\003 \001(\0162\030" +
+      ".max.dillon.GameDecision\"\200\002\n\010GameSpec\022\014\n" +
+      "\004name\030\001 \001(\t\022\022\n\nboard_size\030\002 \001(\r\022,\n\016board" +
+      "_topology\030\003 \001(\0162\024.max.dillon.Topology\022,\n" +
+      "\016board_symmetry\030\004 \001(\0162\024.max.dillon.Symme" +
+      "try\022+\n\013move_source\030\005 \001(\0162\026.max.dillon.Mo" +
+      "veSource\022 \n\005piece\030\006 \003(\0132\021.max.dillon.Pie" +
+      "ce\022\'\n\tgame_over\030\007 \003(\0132\024.max.dillon.GameO",
+      "ver*/\n\010Topology\022\n\n\006SQUARE\020\000\022\014\n\010CYLINDER\020" +
+      "\001\022\t\n\005TORUS\020\002*-\n\010Symmetry\022\n\n\006ROTATE\020\000\022\013\n\007" +
+      "REFLECT\020\001\022\010\n\004NONE\020\002*+\n\nMoveSource\022\023\n\017PIE" +
+      "CES_ON_BOARD\020\000\022\010\n\004ENDS\020\001*`\n\007Outcome\022\016\n\nD" +
+      "ISALLOWED\020\000\022\013\n\007ALLOWED\020\001\022\013\n\007CAPTURE\020\002\022\010\n" +
+      "\004SWAP\020\003\022\010\n\004STAY\020\004\022\n\n\006DEPLOY\020\005\022\013\n\007IMPRESS" +
+      "\020\006*\177\n\tCondition\022\021\n\rNO_LEGAL_MOVE\020\000\022\026\n\022NO" +
+      "_PIECES_ON_BOARD\020\001\022\027\n\023KEY_PIECES_CAPTURE" +
+      "D\020\002\022\016\n\nBOARD_FULL\020\003\022\016\n\nN_IN_A_ROW\020\004\022\016\n\nM" +
+      "OVE_LIMIT\020\005*]\n\014GameDecision\022\007\n\003WIN\020\000\022\010\n\004",
+      "LOSS\020\001\022\010\n\004DRAW\020\003\022\025\n\021COUNT_LIVE_PIECES\020\004\022" +
+      "\031\n\025COUNT_CAPTURED_PIECES\020\005b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -6123,7 +6123,7 @@ public final class GameGrammar {
     internal_static_max_dillon_GameOver_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_max_dillon_GameOver_descriptor,
-        new java.lang.String[] { "Condition", "Param", "Outcome", });
+        new java.lang.String[] { "Condition", "Param", "Decision", });
     internal_static_max_dillon_GameSpec_descriptor =
       getDescriptor().getMessageTypes().get(4);
     internal_static_max_dillon_GameSpec_fieldAccessorTable = new
