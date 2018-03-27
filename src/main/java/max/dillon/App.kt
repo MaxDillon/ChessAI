@@ -361,16 +361,16 @@ class GameState {
             for (col in 0 until sz) {
                 var counts = arrayOf(0,0,0,0)
                 for (i in 0 until n) {
-                    counts[0] += atSafe(row, col+i)
-                    counts[1] += atSafe(row+i, col)
-                    counts[2] += atSafe(row+i, col+i)
-                    counts[3] += atSafe(row+i, col-i)
+                    counts[0] += atSafe(row, col+i).sign
+                    counts[1] += atSafe(row+i, col).sign
+                    counts[2] += atSafe(row+i, col+i).sign
+                    counts[3] += atSafe(row+i, col-i).sign
                 }
                 maxSeq = max(maxSeq, counts.max() ?: 0)
                 minSeq = min(minSeq, counts.min() ?: 0)
             }
         }
-        return Pair(maxSeq, minSeq)
+        return Pair(maxSeq, abs(minSeq))
     }
 
     fun outcomeByDecision(gameDecision: GameDecision): GameOutcome {
