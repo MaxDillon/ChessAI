@@ -14,15 +14,16 @@ import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.*
 import kotlin.collections.ArrayList
 
-
-//typealias MoveCandidates = Map<Int, ArrayList<GameState>>
-
 class GameState {
     var gameBoard: Array<IntArray>
-    private val gameSpec: GameSpec
+    val gameSpec: GameSpec
     var whiteMove = true
-    var description = "Start"
-    var pieceName = ""
+    var x1 = -1
+    var y1 = -1
+    var x2 = -1
+    var y2 = -1
+    var description = ""
+    var pieceMoved = 0
 
     constructor(gameSpec: GameSpec) {
         this.gameSpec = gameSpec
@@ -42,18 +43,20 @@ class GameState {
         }
     }
 
+    constructor(prev: GameState, x1: Int, y1: Int, x2: Int, y2: Int, piece: Int) {
+        this.gameSpec = prev.gameSpec
+        this.gameBoard = Array(prev.gameBoard.size) { prev.gameBoard[it].clone() }
+        this.whiteMove = !prev.whiteMove
+        this.x1 = x1
+        this.y1 = y1
+        this.x2 = x2
+        this.y2 = y2
+        this.pieceMoved = piece
+        this.description = "${'a' + x1}${y1 + 1} -> ${'a' + x2}${y2 + 1}"
+    }
+
     private fun at(x: Int, y: Int): Int {
         return gameBoard[y][x]
-    }
-
-    constructor(gameSpec: GameSpec, gameBoard: Array<IntArray>, whiteMove: Boolean) : this(gameSpec) {
-        this.gameBoard = gameBoard
-        this.whiteMove = whiteMove
-    }
-
-    private fun initNext(): GameState {
-        val array = Array(gameBoard.size) { gameBoard[it].clone() }
-        return GameState(gameSpec, array, !whiteMove)
     }
 
     private fun getPiece(i: Int): GameGrammar.Piece = gameSpec.getPiece(abs(i))
@@ -62,32 +65,21 @@ class GameState {
         gameBoard[y][x] = state
     }
 
-    private fun maybeAddPlaced(moves: MutableMap<Int, ArrayList<GameState>>,
-                               move: GameGrammar.Move,
-                               x: Int, y: Int, piece: Int): Boolean {
-
-        val next = initNext()
-        next.description = "${'a' + x}${y + 1}"
-        val dst = at(x, y)
-
-        if (dst == 0 && move.land.none == DISALLOWED) {
-            return false
-        } else if (dst.sign == piece.sign && move.land.own == DISALLOWED) {
-            return false
-        } else if (dst.sign == -piece.sign && move.land.opponent == DISALLOWED) {
-            return false
-        }
-        next.setState(x, y, piece)
-
-        val list = moves[move.priority]
-        if (list == null) {
-            moves[move.priority] = arrayListOf(next)
-        } else {
-            list.add(next)
-        }
-        return true
+    /**
+     * A method to map a GameState for a given legal move into an output space
+     * of size srcSize * dstSize = (N x N + P) * (N x N) where N is the board
+     * size and P is the number piece classes (to deal with cases where we place
+     * a new piece on the board and need to identify its class).
+     */
+    fun getMoveIndex(): Int {
+        val dim = gameSpec.boardSize
+        val numPieces = gameSpec.pieceCount
+        val src = (
+                if (offBoard(x1, y1)) abs(pieceMoved)
+                else numPieces + y1 + x1 * dim)
+        val dst = y2 + dim * x2
+        return src * dim * dim + dst
     }
-
 
     fun checkLandingConstraints(dest: Int, piece: Int, move: Move): Boolean {
         if (dest == 0 && move.land.none == DISALLOWED) {
@@ -144,13 +136,10 @@ class GameState {
                              move: GameGrammar.Move,
                              x1: Int, y1: Int, x2: Int, y2: Int,
                              src: Int = at(x1, y1)): Boolean {
-        val next = initNext()
-        next.description = "${'a' + x1}${y1 + 1} -> ${'a' + x2}${y2 + 1}"
-        next.pieceName = if (offBoard(x1, y1)) "new" else getPiece(at(x1, y1)).name
+        val next = GameState(this, x1, y1, x2, y2, src)
         val dst = at(x2, y2)
 
         if (!checkLandingConstraints(dst, src, move)) return false
-
         if (!checkJumpConstraints(next, x1, x2, y1, y2, src, move)) return false
 
         if (dst.sign != 0) {
@@ -185,7 +174,7 @@ class GameState {
                 throw RuntimeException("grammar specifies swap or capture for empty cell")
             }
         }
-        if (move.exchange.length > 0) {
+        if (move.exchange.isNotEmpty()) {
             for (i in gameSpec.pieceList.indices) {
                 if (gameSpec.pieceList[i].name == move.exchange) {
                     next.setState(x2, y2, if (whiteMove) i else -i)
@@ -478,7 +467,7 @@ fun main(args: Array<String>) {
         val color = if (state.whiteMove) "white" else "black"
         val msg = if (gameOver) "Game Over" else "now $color's move"
 
-        println("${state.pieceName} ${state.description}, $\nmsg\n")
+        println("${state.pieceMoved} ${state.description}, \n$msg\n")
 
         state.printBoardLarge()
 
