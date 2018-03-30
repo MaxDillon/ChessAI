@@ -75,7 +75,7 @@ class GameState {
         val meanCount = visitCount / parentCount
         val u = min(2f, (meanCount + 1) / (visitCount + 1f))
         val q = totalValue / visitCount
-        return q + u
+        return prior + q + u * 0
     }
 
     fun updateValue(value: Float) {
@@ -112,11 +112,12 @@ class GameState {
         return src * dim * dim + dst
     }
 
+    private val rand = Random()
     // actual call out ot model goes here
     fun predict(): Pair<Float, FloatArray> {
         val dim = gameSpec.boardSize
         val numPieces = gameSpec.pieceCount
-        return Pair(0.0f, FloatArray((dim * dim + numPieces) * dim * dim, { 0.1f }))
+        return Pair(0.0f, FloatArray((dim * dim + numPieces) * dim * dim, { rand.nextFloat() }))
     }
 
     fun checkLandingConstraints(dest: Int, piece: Int, move: Move): Boolean {
