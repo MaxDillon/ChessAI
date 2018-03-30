@@ -30,6 +30,15 @@ class GameState {
     var description = ""
     var pieceMoved = 0
     var moveDepth = 0
+    val nextMoves: ArrayList<GameState> by lazy {
+        getLegalNextStates()
+    }
+    var leaf = true
+    var prior = 0f
+    var visitCount = 0
+    var totalValue = 0.0f
+
+    // TODO: gameOutcome maybe should be lazy
 
     constructor(gameSpec: GameSpec) {
         this.gameSpec = gameSpec
@@ -62,6 +71,18 @@ class GameState {
         this.description = "${'a' + x1}${y1 + 1} -> ${'a' + x2}${y2 + 1}"
     }
 
+    fun score(parentCount: Int): Float {
+        val meanCount = visitCount / parentCount
+        val u = min(2f, (meanCount + 1) / (visitCount + 1f))
+        val q = totalValue / visitCount
+        return q + u
+    }
+
+    fun updateValue(value: Float) {
+        totalValue += value
+        visitCount += 1
+    }
+
     private fun at(x: Int, y: Int): Int {
         return gameBoard[y][x]
     }
@@ -89,6 +110,13 @@ class GameState {
                 else numPieces + y1 + x1 * dim)
         val dst = y2 + dim * x2
         return src * dim * dim + dst
+    }
+
+    // actual call out ot model goes here
+    fun predict(): Pair<Float, FloatArray> {
+        val dim = gameSpec.boardSize
+        val numPieces = gameSpec.pieceCount
+        return Pair(0.0f, FloatArray((dim * dim + numPieces) * dim * dim, { 0.1f }))
     }
 
     fun checkLandingConstraints(dest: Int, piece: Int, move: Move): Boolean {
@@ -303,7 +331,7 @@ class GameState {
         }
     }
 
-
+    // for lazy init of nextMoves. should not be called directly
     fun getLegalNextStates(): ArrayList<GameState> {
         val states = TreeMap<Int, ArrayList<GameState>>()
         val playerSign = if (whiteMove) 1 else -1
@@ -333,6 +361,32 @@ class GameState {
             }
         }
         return states.lastEntry()?.component2() ?: ArrayList()
+    }
+
+    fun expand() {
+        if (!leaf) {
+            return
+        }
+        totalValue = when (gameOutcome()) {
+            GameOutcome.UNDETERMINED -> {
+                val (value, priors) = predict()
+                for (move in nextMoves) {
+                    move.prior = priors[move.getMoveIndex()]
+                }
+                value
+            }
+            GameOutcome.WIN_BLACK -> {
+                if (whiteMove) -1f else 1f
+            }
+            GameOutcome.WIN_WHITE -> {
+                if (whiteMove) 1f else -1f
+            }
+            GameOutcome.DRAW -> {
+                0f
+            }
+        }
+        visitCount = 1
+        leaf = false
     }
 
     fun pieceCounts(): Pair<IntArray, IntArray> {
@@ -398,7 +452,7 @@ class GameState {
         for (game_over in gameSpec.gameOverList) {
             when (game_over.condition) {
                 Condition.NO_LEGAL_MOVE -> {
-                    if (getLegalNextStates().isEmpty()) {
+                    if (nextMoves.isEmpty()) {
                         return outcomeByDecision(game_over.decision)
                     }
                 }
@@ -585,6 +639,9 @@ fun main(args: Array<String>) {
     var state = GameState(gameSpec)
     var count = 0
 
+    play(gameSpec)
+    return
+
     var result: GameOutcome
     while (true) {
         count++
@@ -598,7 +655,7 @@ fun main(args: Array<String>) {
         state.printBoardLarge()
 
         if (gameOver) break
-        val nextStates = state.getLegalNextStates()
+        val nextStates = state.nextMoves
         if (nextStates.size == 0) break
         state = nextStates[rand.nextInt(nextStates.size)]
     }

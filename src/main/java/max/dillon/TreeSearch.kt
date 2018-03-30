@@ -1,42 +1,28 @@
 package max.dillon
 
-
-fun predict(state: GameState): Pair<Float, FloatArray> {
-
-
-    TODO("Implement")
-}
-
-
-fun subset(array: FloatArray, states: ArrayList<GameState>): FloatArray {
-
-
-    TODO("Implement")
-}
-
-
-fun expand(state: GameState) {
-    state.nextMoves = state.getLegalNextStates()
-    val (value, priors) = predict(state)
-    for (move in state.nextMoves) {
-        move.prior = priors[move.getIndex()]
+fun treeSearch(state: GameState): GameState {
+    for (i in 1..1600) {
+        var node = state
+        var stack = ArrayList<GameState>()
+        while (!node.leaf && node.gameOutcome() == GameOutcome.UNDETERMINED) {
+            stack.add(node)
+            node = node.nextMoves.maxBy { it.score(node.visitCount) } ?: throw RuntimeException("wtf")
+        }
+        node.expand()
+        for (parent in stack) {
+            parent.updateValue(node.totalValue * (if (node.whiteMove == parent.whiteMove) 1 else -1))
+        }
     }
-
-
-}
-
-fun treeSearch(state: GameState): Array<TreeSearchResult> {
-    val legalMoves = state.getLegalNextStates()
-    val predictions = predict(state)
-
-
-    TODO("Implement")
+    return state.nextMoves.maxBy { state.visitCount } ?: throw RuntimeException("wtf")
 }
 
 
-data class TreeSearchResult(
-        val state: GameState,
-        val prior: Float,
-        var count: Int,
-        var value: Float
-)
+fun play(spec: GameGrammar.GameSpec) {
+    var state = GameState(spec)
+    while (state.gameOutcome() == GameOutcome.UNDETERMINED) {
+        state = treeSearch(state)
+        println(state.description)
+        state.printBoardLarge()
+    }
+}
+

@@ -7,7 +7,6 @@ import javax.swing.AbstractButton
 import javax.swing.Spring.height
 import sun.swing.SwingUtilities2.drawRect
 import com.sun.java.swing.plaf.windows.WindowsGraphicsUtils.paintText
-import oracle.jvm.hotspot.jfr.JFR
 import java.awt.Color
 import java.awt.Color.*
 import java.awt.Dimension
