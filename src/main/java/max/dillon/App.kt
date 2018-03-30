@@ -303,7 +303,7 @@ class GameState {
         }
     }
 
-    fun loopBoard(lambda: (square: Int)->Unit) {
+    fun loopBoard(lambda: (square: Int) -> Unit) {
         for (row in gameBoard) {
             for (i in row) {
                 lambda.invoke(row[i])
@@ -374,7 +374,7 @@ class GameState {
         return states.lastEntry()?.component2() ?: ArrayList()
     }
 
-    fun pieceCounts(): Pair<IntArray,IntArray> {
+    fun pieceCounts(): Pair<IntArray, IntArray> {
         val p1Counts = IntArray(gameSpec.pieceList.size, { 0 })
         val p2Counts = IntArray(gameSpec.pieceList.size, { 0 })
         for (row in gameBoard) {
@@ -386,25 +386,21 @@ class GameState {
         return Pair(p1Counts, p2Counts)
     }
 
-    fun maxSequenceLengths(n: Int): Pair<Int,Int> {
+    fun maxSequenceLengths(n: Int): Pair<Int, Int> {
         val sz = gameSpec.boardSize
-        fun atSafe(row: Int, col: Int): Int {
-            if (row < 0 || col < 0 || row >= sz || col >= sz) {
-                return 0
-            } else {
-                return at(row, col)
-            }
-        }
+        fun atSafe(row: Int, col: Int) = if (row < 0 || col < 0 || row >= sz || col >= sz) 0 else at(row, col)
+
+
         var maxSeq = 0
         var minSeq = 0
         for (row in 0 until sz) {
             for (col in 0 until sz) {
-                var counts = arrayOf(0,0,0,0)
+                val counts = arrayOf(0, 0, 0, 0)
                 for (i in 0 until n) {
-                    counts[0] += atSafe(row, col+i).sign
-                    counts[1] += atSafe(row+i, col).sign
-                    counts[2] += atSafe(row+i, col+i).sign
-                    counts[3] += atSafe(row+i, col-i).sign
+                    counts[0] += atSafe(row, col + i).sign
+                    counts[1] += atSafe(row + i, col).sign
+                    counts[2] += atSafe(row + i, col + i).sign
+                    counts[3] += atSafe(row + i, col - i).sign
                 }
                 maxSeq = max(maxSeq, counts.max() ?: 0)
                 minSeq = min(minSeq, counts.min() ?: 0)
@@ -421,18 +417,21 @@ class GameState {
                 if (whiteMove) GameOutcome.WIN_BLACK else GameOutcome.WIN_WHITE
             GameDecision.DRAW ->
                 GameOutcome.DRAW
+            GameDecision.COUNT_LIVE_PIECES -> {
+                val (player1Count, player2Counts) = pieceCounts()
+                if (player1Count.sum() == player2Counts.sum()) GameOutcome.DRAW
+                else if (player1Count.sum() > player2Counts.sum()) GameOutcome.WIN_WHITE else GameOutcome.WIN_BLACK
+            }
             GameDecision.COUNT_CAPTURED_PIECES -> {
                 GameOutcome.UNDETERMINED // todo
             }
-            GameDecision.COUNT_LIVE_PIECES -> {
-                GameOutcome.UNDETERMINED // todo
-            }
             else -> GameOutcome.UNDETERMINED
+
         }
     }
 
     fun gameOutcome(): GameOutcome {
-        val counts: Pair<IntArray,IntArray> by lazy {
+        val counts: Pair<IntArray, IntArray> by lazy {
             pieceCounts()
         }
         for (game_over in gameSpec.gameOverList) {
@@ -479,13 +478,12 @@ class GameState {
                         return GameOutcome.WIN_BLACK
                     }
                 }
-                else -> {}
+                else -> {
+                }
             }
         }
         return GameOutcome.UNDETERMINED
     }
-
-
 
 
     /**
@@ -498,15 +496,14 @@ class GameState {
      * **/
 
 
-
-    fun getRow(row: IntArray,i: Int) {
+    private fun getRow(row: IntArray, i: Int) {
         val h_ = "\u001B[47m"
         val _h = "\u001B[0m"
         print("\u001B[40m    \u001B[0m")
         row.forEachIndexed { j, _ ->
             if ((i + j) % 2 == 0) print(h_)
             print("       $_h")
-        }.also { println("\u001B[37m\u001B[40m    \u001B[0m")}
+        }.also { println("\u001B[37m\u001B[40m    \u001B[0m") }
     }
 
 
@@ -514,10 +511,10 @@ class GameState {
 
 
         print("\u001B[40m        ")
-        for(index in 0 until gameSpec.boardSize) print("       ")
+        for (index in 0 until gameSpec.boardSize) print("       ")
         println("\u001B[0m")
         print("\u001B[40m        ")
-        for(index in 0 until gameSpec.boardSize) print("       ")
+        for (index in 0 until gameSpec.boardSize) print("       ")
         println("\u001B[0m")
 
         val h_ = "\u001B[47m"
@@ -526,7 +523,7 @@ class GameState {
 
         gameBoard.reversed().forEachIndexed { i, row ->
 
-            getRow(row,i)
+            getRow(row, i)
             print("\u001B[40m    \u001B[0m")
             row.forEachIndexed { j, piece ->
                 if ((i + j) % 2 == 0) print(h_)
@@ -534,13 +531,13 @@ class GameState {
                 val symbol = if (piece < 0) "-" else if (piece > 0) " " else " ".also { pieceStr = " " }
                 print("$b_  $symbol$pieceStr$symbol  $_h")
 
-            }.also { println("\u001B[37m\u001B[40m  ${gameSpec.boardSize-i} \u001B[0m")}
+            }.also { println("\u001B[37m\u001B[40m  ${gameSpec.boardSize - i} \u001B[0m") }
 
-            getRow(row,i)
+            getRow(row, i)
 
         }
         print("\u001B[37m\u001B[40m    ")
-        for(index in 0 until gameSpec.boardSize) print("       ")
+        for (index in 0 until gameSpec.boardSize) print("       ")
         print("    \u001B[0m\n\u001B[37m\u001B[40m    ")
         for (index in 0 until gameSpec.boardSize) print("   " + ('a' + index) + "   ")
         print("    \u001B[0m")
@@ -603,7 +600,6 @@ class GameState {
 }
 
 
-
 fun main(args: Array<String>) {
     var game: String
     var str: String
@@ -628,10 +624,11 @@ fun main(args: Array<String>) {
     var state = GameState(gameSpec)
     var count = 0
 
-    GameWindow()
+    var result: GameOutcome
     while (true) {
         count++
-        val gameOver = state.gameOutcome() != GameOutcome.UNDETERMINED
+        result = state.gameOutcome()
+        val gameOver = result != GameOutcome.UNDETERMINED
         val color = if (state.whiteMove) "white" else "black"
         val msg = if (gameOver) "Game Over" else "now $color's move"
 
@@ -641,10 +638,11 @@ fun main(args: Array<String>) {
 
         if (gameOver) break
         val nextStates = state.getLegalNextStates()
-        if (nextStates.size == 0) return
+        if (nextStates.size == 0) break
         state = nextStates[rand.nextInt(nextStates.size)]
     }
     println("$count moves")
+    println(result)
 }
 
 
