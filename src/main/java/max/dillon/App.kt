@@ -303,49 +303,10 @@ class GameState {
         }
     }
 
-    fun loopBoard(lambda: (square: Int) -> Unit) {
-        for (row in gameBoard) {
-            for (i in row) {
-                lambda.invoke(row[i])
-            }
-        }
-    }
-
-    private fun endConditionMet(): Boolean {
-
-        for (state in gameSpec.gameOverList) {
-            if (state.condition == GameGrammar.Condition.NO_LEGAL_MOVE) {
-
-            }
-            if (state.condition == GameGrammar.Condition.BOARD_FULL) {
-
-            }
-            if (state.condition == GameGrammar.Condition.KEY_PIECES_CAPTURED) {
-
-            }
-            if (state.condition == GameGrammar.Condition.MOVE_LIMIT) {
-
-            }
-            if (state.condition == GameGrammar.Condition.N_IN_A_ROW) {
-
-            }
-            if (state.condition == GameGrammar.Condition.NO_PIECES_ON_BOARD) {
-
-            }
-
-        }
-
-
-        return false
-    }
 
     fun getLegalNextStates(): ArrayList<GameState> {
         val states = TreeMap<Int, ArrayList<GameState>>()
         val playerSign = if (whiteMove) 1 else -1
-
-        if (endConditionMet()) {
-            return arrayListOf()
-        }
 
         when (gameSpec.moveSource) {
             MoveSource.PIECES_ON_BOARD -> {
