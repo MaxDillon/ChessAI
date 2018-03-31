@@ -630,19 +630,25 @@ class GameState {
     }
 }
 
+fun getGame(): String {
 
-fun main(args: Array<String>) {
-    var game: String
-    var str: String
     while (true) {
+        val string = readLine()?:"Chess"
+        val game = if (string == "") "chess" else string
+
         try {
-            game = readLine() ?: "chess"
-            str = String(Files.readAllBytes(Paths.get("src/main/data/$game.textproto")))
-            break
+            return String(Files.readAllBytes(Paths.get("src/main/data/$game.textproto")))
+
         } catch (e: NoSuchFileException) {
             println("there is no such file. try again")
         }
     }
+}
+
+
+fun main(args: Array<String>) {
+
+    val str = getGame()
 
     val builder = GameSpec.newBuilder()
     TextFormat.getParser().merge(str, builder)
@@ -657,7 +663,6 @@ fun main(args: Array<String>) {
 
     play(gameSpec)
     return
-
     var result: GameOutcome
     while (true) {
         count++
@@ -677,6 +682,7 @@ fun main(args: Array<String>) {
     }
     println("$count moves")
     println(result)
+
 }
 
 

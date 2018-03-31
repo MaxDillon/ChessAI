@@ -2,11 +2,7 @@ package max.dillon
 
 import javax.swing.JButton
 import javax.swing.plaf.basic.BasicButtonUI
-import javax.swing.text.StyleConstants.setBackground
 import javax.swing.AbstractButton
-import javax.swing.Spring.height
-import sun.swing.SwingUtilities2.drawRect
-import com.sun.java.swing.plaf.windows.WindowsGraphicsUtils.paintText
 import java.awt.Color
 import java.awt.Color.*
 import java.awt.Dimension
@@ -99,6 +95,8 @@ class Display: JPanel() {
         layout = null
         repaint()
         isVisible = true
+        val button = createCustom("hello")
+        button.isVisible = true
 
     }
 
