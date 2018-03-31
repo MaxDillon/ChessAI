@@ -120,5 +120,26 @@ class TestApp() {
                 .shouldEqual(listOf("d4 -> b3", "d4 -> b5", "d4 -> c2", "d4 -> c6",
                                     "d4 -> e2", "d4 -> e6", "d4 -> f3", "d4 -> f5"))
     }
+
+    @Test
+    fun searchTest() {
+        val state = initBoard(
+                white = Placement(
+                        p = "a2,b2,c2,d2,f1,f2",
+                        r = "a1,d1",
+                        n = "f5",
+                        k = "e1"
+                ),
+                black = Placement(
+                        q = "e6",
+                        k = "c8",
+                        r = "h8",
+                        p = "a7,b7,f7,g7",
+                        n = "c6"
+                ))
+        treeSearch(state)
+    }
+
+
 }
 
