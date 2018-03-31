@@ -5,6 +5,8 @@ fun valueFor(player: GameState, node: GameState): Float {
     return sign * node.totalValue
 }
 
+fun Float.f3(): String = String.format("%.3f", this)
+
 fun treeSearch(playerState: GameState): GameState {
     assert(playerState.outcome == GameOutcome.UNDETERMINED)
     var parents = ArrayList<GameState>()
@@ -13,7 +15,7 @@ fun treeSearch(playerState: GameState): GameState {
         return playerState.nextMoves[0]
     }
 
-    var maxExpansion = 20000
+    var maxExpansion = 5000
     while (maxExpansion > 0) {
         parents.clear()
         var currentNode = playerState
@@ -40,7 +42,11 @@ fun treeSearch(playerState: GameState): GameState {
             }
         }
     }
-    return playerState.nextMoves.maxBy { it.visitCount } ?: throw RuntimeException("wtf")
+    return playerState.nextMoves.maxBy {
+        print("${it.description} ${it.visitCount} ")
+        println("${(valueFor(playerState, it) / it.visitCount).f3()} ${it.prior.f3()}")
+        it.visitCount
+    } ?: throw RuntimeException("wtf")
 }
 
 

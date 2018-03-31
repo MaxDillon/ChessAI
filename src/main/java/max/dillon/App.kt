@@ -69,12 +69,14 @@ class GameState {
         this.description = "${'a' + x1}${y1 + 1} -> ${'a' + x2}${y2 + 1}"
     }
 
+    override fun toString(): String = "${moveDepth}: after ${description} whitemove: ${whiteMove}"
+
     fun scoreFor(parent: GameState): Float {
         val tempScore: Float = when (outcome) {
             GameOutcome.UNDETERMINED -> {
                 // See https://en.wikipedia.org/wiki/Monte_Carlo_tree_search for formula balancing exploitation/exploration
                 val expectedValue = totalValue / (visitCount + 1)
-                val explorationValue = sqrt(2f * log(parent.visitCount.toFloat() + 1f, E.toFloat()) /
+                val explorationValue = sqrt(5f * log(parent.visitCount.toFloat() + 1f, E.toFloat()) /
                                                     (visitCount.toFloat() + 1f))
                 val sign = if (parent.whiteMove == whiteMove) 1 else -1
                 return (sign * expectedValue) + explorationValue + prior
@@ -131,7 +133,9 @@ class GameState {
     fun predict(): Pair<Float, FloatArray> {
         val dim = gameSpec.boardSize
         val numPieces = gameSpec.pieceCount
-        return Pair(0.0f, FloatArray((dim * dim + numPieces) * dim * dim, { rand.nextFloat() }))
+        return Pair(0.0f, FloatArray((dim * dim + numPieces) * dim * dim, {
+            0.5f + (rand.nextFloat() - 0.5f) / 10
+        }))
     }
 
     fun checkLandingConstraints(dest: Int, piece: Int, move: Move): Boolean {
@@ -632,51 +636,45 @@ class GameState {
 
 
 fun main(args: Array<String>) {
-    var game: String
-    var str: String
-    while (true) {
-        try {
-            game = readLine() ?: "chess"
-            str = String(Files.readAllBytes(Paths.get("src/main/data/$game.textproto")))
-            break
-        } catch (e: NoSuchFileException) {
-            println("there is no such file. try again")
-        }
+    var game: String = if (args.size > 0) args[0] else readLine() ?: "chess"
+    var specStr: String
+    try {
+        specStr = String(Files.readAllBytes(Paths.get("src/main/data/$game.textproto")))
+    } catch (e: NoSuchFileException) {
+        println("No game spec found for '${game}'.")
+        return
     }
-
     val builder = GameSpec.newBuilder()
-    TextFormat.getParser().merge(str, builder)
-
+    TextFormat.getParser().merge(specStr, builder)
     val gameSpec = builder.apply {
         addPiece(0, builder.addPieceBuilder())
     }.build()
 
-    val rand = Random()
-    var state = GameState(gameSpec)
-    var count = 0
-
     play(gameSpec)
-    return
 
-    var result: GameOutcome
-    while (true) {
-        count++
-        result = state.outcome
-        val gameOver = result != GameOutcome.UNDETERMINED
-        val color = if (state.whiteMove) "white" else "black"
-        val msg = if (gameOver) "Game Over" else "now $color's move"
-
-        println("${state.pieceMoved} ${state.description}, \n$msg\n")
-
-        state.printBoardLarge()
-
-        if (gameOver) break
-        val nextStates = state.nextMoves
-        if (nextStates.size == 0) break
-        state = nextStates[rand.nextInt(nextStates.size)]
-    }
-    println("$count moves")
-    println(result)
+//    val rand = Random()
+//    var state = GameState(gameSpec)
+//    var count = 0
+//
+//    var result: GameOutcome
+//    while (true) {
+//        count++
+//        result = state.outcome
+//        val gameOver = result != GameOutcome.UNDETERMINED
+//        val color = if (state.whiteMove) "white" else "black"
+//        val msg = if (gameOver) "Game Over" else "now $color's move"
+//
+//        println("${state.pieceMoved} ${state.description}, \n$msg\n")
+//
+//        state.printBoardLarge()
+//
+//        if (gameOver) break
+//        val nextStates = state.nextMoves
+//        if (nextStates.size == 0) break
+//        state = nextStates[rand.nextInt(nextStates.size)]
+//    }
+//    println("$count moves")
+//    println(result)
 }
 
 
