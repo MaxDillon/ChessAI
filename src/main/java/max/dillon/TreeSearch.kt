@@ -1,16 +1,19 @@
 package max.dillon
 
-fun valueFor(player: GameState, node: GameState): Int {
+fun valueFor(player: GameState, node: GameState): Float {
     val sign = if (player.whiteMove == node.whiteMove) 1 else -1
-    return sign * node.visitCount
+    return sign * node.totalValue
 }
 
 fun treeSearch(playerState: GameState): GameState {
     assert(playerState.outcome == GameOutcome.UNDETERMINED)
     var parents = ArrayList<GameState>()
     playerState.expand()
+    if (playerState.nextMoves.size == 1) {
+        return playerState.nextMoves[0]
+    }
 
-    var maxExpansion = 10000
+    var maxExpansion = 20000
     while (maxExpansion > 0) {
         parents.clear()
         var currentNode = playerState
@@ -18,26 +21,26 @@ fun treeSearch(playerState: GameState): GameState {
         while (true) {
             parents.add(currentNode)
             currentNode = currentNode.nextMoves.maxBy {
-                it.score(currentNode.visitCount)
+                it.scoreFor(currentNode)
             } ?: throw RuntimeException("wtf")
             if (!currentNode.leaf && currentNode.outcome == GameOutcome.UNDETERMINED) {
                 continue
             }
+            maxExpansion--
+            currentNode.expand() // make sure we have node value evaluated
             if (currentNode.outcome != GameOutcome.UNDETERMINED) {
-                parents.forEach { it.updateValue(currentNode.totalValue) }
+                parents.forEach { it.updateValue(valueFor(it, currentNode)) }
                 break
             }
-            currentNode.expand()
-            maxExpansion--
             if (currentNode.totalValue == 0f) {
                 continue
             } else {
-                parents.forEach { it.updateValue(currentNode.totalValue) }
+                parents.forEach { it.updateValue(valueFor(it, currentNode)) }
                 break
             }
         }
     }
-    return playerState.nextMoves.maxBy { valueFor(playerState, it) } ?: throw RuntimeException("wtf")
+    return playerState.nextMoves.maxBy { it.visitCount } ?: throw RuntimeException("wtf")
 }
 
 

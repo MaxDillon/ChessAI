@@ -3,9 +3,6 @@ package max.dillon
 import com.google.protobuf.TextFormat
 import java.nio.file.Files
 import java.nio.file.Paths
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.sign
 import java.nio.file.NoSuchFileException
 import java.util.*
 
@@ -13,7 +10,7 @@ import max.dillon.GameGrammar.Symmetry.*
 import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.*
 import kotlin.collections.ArrayList
-import kotlin.math.min
+import kotlin.math.*
 
 enum class GameOutcome {
     UNDETERMINED, WIN_WHITE, WIN_BLACK, DRAW
@@ -72,24 +69,27 @@ class GameState {
         this.description = "${'a' + x1}${y1 + 1} -> ${'a' + x2}${y2 + 1}"
     }
 
-    fun score(parentCount: Int): Float {
-        return when (outcome) {
+    fun scoreFor(parent: GameState): Float {
+        val tempScore: Float = when (outcome) {
             GameOutcome.UNDETERMINED -> {
-                val meanCount = visitCount / parentCount
-                val u = min(2f, (meanCount + 1) / (visitCount + 1f))
-                val q = totalValue / visitCount
-                prior + q + u
+                // See https://en.wikipedia.org/wiki/Monte_Carlo_tree_search for formula balancing exploitation/exploration
+                val expectedValue = totalValue / (visitCount + 1)
+                val explorationValue = sqrt(2f * log(parent.visitCount.toFloat() + 1f, E.toFloat()) /
+                                                    (visitCount.toFloat() + 1f))
+                val sign = if (parent.whiteMove == whiteMove) 1 else -1
+                return (sign * expectedValue) + explorationValue + prior
             }
             GameOutcome.WIN_WHITE -> {
-                if (whiteMove) 10f else -10f
+                if (parent.whiteMove) 10f else -10f
             }
             GameOutcome.WIN_BLACK -> {
-                if (whiteMove) -10f else 10f
+                if (parent.whiteMove) -10f else 10f
             }
             GameOutcome.DRAW -> {
                 0f
             }
         }
+        return tempScore
     }
 
     fun updateValue(value: Float) {
