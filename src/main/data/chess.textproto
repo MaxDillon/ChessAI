@@ -178,3 +178,8 @@ game_over {
     condition: KEY_PIECES_CAPTURED
     decision: LOSS
 }
+game_over {
+    condition: MOVE_LIMIT
+    param: 150
+    decision: DRAW
+}

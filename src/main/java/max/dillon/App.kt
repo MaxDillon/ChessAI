@@ -33,12 +33,13 @@ class GameState {
     val nextMoves: ArrayList<GameState> by lazy {
         getLegalNextStates()
     }
+    val outcome: GameOutcome by lazy {
+        gameOutcome()
+    }
     var leaf = true
     var prior = 0f
     var visitCount = 0
     var totalValue = 0.0f
-
-    // TODO: gameOutcome maybe should be lazy
 
     constructor(gameSpec: GameSpec) {
         this.gameSpec = gameSpec
@@ -72,10 +73,23 @@ class GameState {
     }
 
     fun score(parentCount: Int): Float {
-        val meanCount = visitCount / parentCount
-        val u = min(2f, (meanCount + 1) / (visitCount + 1f))
-        val q = totalValue / visitCount
-        return prior + q + u * 0
+        return when (outcome) {
+            GameOutcome.UNDETERMINED -> {
+                val meanCount = visitCount / parentCount
+                val u = min(2f, (meanCount + 1) / (visitCount + 1f))
+                val q = totalValue / visitCount
+                prior + q + u
+            }
+            GameOutcome.WIN_WHITE -> {
+                if (whiteMove) 10f else -10f
+            }
+            GameOutcome.WIN_BLACK -> {
+                if (whiteMove) -10f else 10f
+            }
+            GameOutcome.DRAW -> {
+                0f
+            }
+        }
     }
 
     fun updateValue(value: Float) {
@@ -368,7 +382,7 @@ class GameState {
         if (!leaf) {
             return
         }
-        totalValue = when (gameOutcome()) {
+        totalValue = when (outcome) {
             GameOutcome.UNDETERMINED -> {
                 val (value, priors) = predict()
                 for (move in nextMoves) {
@@ -446,6 +460,7 @@ class GameState {
         }
     }
 
+    // for lazy init of outcome. should not be called directly
     fun gameOutcome(): GameOutcome {
         val counts: Pair<IntArray, IntArray> by lazy {
             pieceCounts()
@@ -646,7 +661,7 @@ fun main(args: Array<String>) {
     var result: GameOutcome
     while (true) {
         count++
-        result = state.gameOutcome()
+        result = state.outcome
         val gameOver = result != GameOutcome.UNDETERMINED
         val color = if (state.whiteMove) "white" else "black"
         val msg = if (gameOver) "Game Over" else "now $color's move"

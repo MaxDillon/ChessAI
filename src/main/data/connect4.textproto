@@ -27,3 +27,7 @@ game_over {
     param: 4
     decision: WIN
 }
+game_over {
+    condition: BOARD_FULL
+    decision: DRAW
+}
