@@ -1,14 +1,15 @@
 package max.dillon
 
 import com.google.protobuf.TextFormat
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.NoSuchFileException
-import java.util.*
-
-import max.dillon.GameGrammar.Symmetry.*
-import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.*
+import max.dillon.GameGrammar.Outcome.*
+import max.dillon.GameGrammar.Symmetry.NONE
+import max.dillon.GameGrammar.Symmetry.ROTATE
+import java.io.FileOutputStream
+import java.nio.file.Files
+import java.nio.file.NoSuchFileException
+import java.nio.file.Paths
+import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.*
 
@@ -16,8 +17,47 @@ enum class GameOutcome {
     UNDETERMINED, WIN_WHITE, WIN_BLACK, DRAW
 }
 
+class Memoize1<in T, out R>(val f: (T) -> R) : (T) -> R {
+    private val values = mutableMapOf<T, R>()
+    override fun invoke(x: T): R {
+        return values.getOrPut(x, { f(x) })
+    }
+}
+
+fun <T, R> ((T) -> R).memoize(): (T) -> R = Memoize1(this)
+
+private fun square(size: Int): List<Pair<Int, Int>> {
+    val moves = arrayListOf<Pair<Int, Int>>()
+    for (i in 0..size) {
+        for (j in 1..size) {
+            moves.add(Pair(i, j))
+            moves.add(Pair(-j, i))
+            moves.add(Pair(-i, -j))
+            moves.add(Pair(j, -i))
+        }
+    }
+    return moves
+}
+
+val square_m = ::square.memoize()
+
+private fun plus(size: Int): List<Pair<Int, Int>> {
+    return square(size).filter { it.first == 0 || it.second == 0 }
+}
+
+val plus_m = ::plus.memoize()
+
+private fun cross(size: Int): List<Pair<Int, Int>> {
+    return square(size).filter { Math.abs(it.first) == Math.abs(it.second) }
+}
+
+val cross_m = ::cross.memoize()
+
+val rand = Random()
+
 class GameState {
     var gameBoard: Array<IntArray>
+    var rowOwned: BooleanArray
     val gameSpec: GameSpec
     var whiteMove = true
     var x1 = -1
@@ -40,7 +80,8 @@ class GameState {
 
     constructor(gameSpec: GameSpec) {
         this.gameSpec = gameSpec
-        gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
+        gameBoard = Array(gameSpec.boardSize) { IntArray(gameSpec.boardSize) { 0 } }
+        rowOwned = BooleanArray(gameSpec.boardSize) { true }
         gameSpec.pieceList.forEachIndexed { pieceType, piece ->
             piece.placementList.forEach { placement ->
                 val (x, y) = placement.substring(1).split("y").map { it.toInt() - 1 }
@@ -58,7 +99,8 @@ class GameState {
 
     constructor(prev: GameState, x1: Int, y1: Int, x2: Int, y2: Int, piece: Int) {
         this.gameSpec = prev.gameSpec
-        this.gameBoard = Array(prev.gameBoard.size) { prev.gameBoard[it].clone() }
+        this.gameBoard = Array(prev.gameBoard.size) { prev.gameBoard[it] }
+        this.rowOwned = BooleanArray(gameSpec.boardSize) { false }
         this.whiteMove = !prev.whiteMove
         this.moveDepth = prev.moveDepth + 1
         this.x1 = x1
@@ -69,12 +111,14 @@ class GameState {
         this.description = "${'a' + x1}${y1 + 1} -> ${'a' + x2}${y2 + 1}"
     }
 
+    override fun toString(): String = "${moveDepth}: after ${description} whitemove: ${whiteMove}"
+
     fun scoreFor(parent: GameState): Float {
         val tempScore: Float = when (outcome) {
             GameOutcome.UNDETERMINED -> {
                 // See https://en.wikipedia.org/wiki/Monte_Carlo_tree_search for formula balancing exploitation/exploration
                 val expectedValue = totalValue / (visitCount + 1)
-                val explorationValue = sqrt(2f * log(parent.visitCount.toFloat() + 1f, E.toFloat()) /
+                val explorationValue = sqrt(5f * log(parent.visitCount.toFloat() + 1f, E.toFloat()) /
                                                     (visitCount.toFloat() + 1f))
                 val sign = if (parent.whiteMove == whiteMove) 1 else -1
                 return (sign * expectedValue) + explorationValue + prior
@@ -97,13 +141,17 @@ class GameState {
         visitCount += 1
     }
 
-    private fun at(x: Int, y: Int): Int {
+    fun at(x: Int, y: Int): Int {
         return gameBoard[y][x]
     }
 
     private fun getPiece(i: Int): GameGrammar.Piece = gameSpec.getPiece(abs(i))
 
     private fun setState(x: Int, y: Int, state: Int) {
+        if (!rowOwned[y]) {
+            gameBoard[y] = gameBoard[y].clone()
+            rowOwned[y] = true
+        }
         gameBoard[y][x] = state
     }
 
@@ -126,12 +174,13 @@ class GameState {
         return src * dim * dim + dst
     }
 
-    private val rand = Random()
     // actual call out ot model goes here
     fun predict(): Pair<Float, FloatArray> {
         val dim = gameSpec.boardSize
         val numPieces = gameSpec.pieceCount
-        return Pair(0.0f, FloatArray((dim * dim + numPieces) * dim * dim, { rand.nextFloat() }))
+        return Pair(0.0f, FloatArray((dim * dim + numPieces) * dim * dim, {
+            0.5f + (rand.nextFloat() - 0.5f) / 10
+        }))
     }
 
     fun checkLandingConstraints(dest: Int, piece: Int, move: Move): Boolean {
@@ -246,27 +295,6 @@ class GameState {
         return true
     }
 
-    private fun square(size: Int): List<Pair<Int, Int>> {
-        val moves = arrayListOf<Pair<Int, Int>>()
-        for (i in 0..size) {
-            for (j in 1..size) {
-                moves.add(Pair(i, j))
-                moves.add(Pair(-j, i))
-                moves.add(Pair(-i, -j))
-                moves.add(Pair(j, -i))
-            }
-        }
-        return moves
-    }
-
-    private fun plus(size: Int): List<Pair<Int, Int>> {
-        return square(size).filter { it.first == 0 || it.second == 0 }
-    }
-
-    private fun cross(size: Int): List<Pair<Int, Int>> {
-        return square(size).filter { Math.abs(it.first) == Math.abs(it.second) }
-    }
-
     private fun forward(size: Int): List<Pair<Int, Int>> {
         return square(size).filter {
             if (gameSpec.boardSymmetry == NONE) {
@@ -318,9 +346,9 @@ class GameState {
                 fun toBoard(offset: Pair<Int, Int>) = Pair(x + offset.first, y + offset.second)
 
                 val newSquares = when (pattern) {
-                    "square" -> square(size).map(::toBoard)
-                    "plus" -> plus(size).map(::toBoard)
-                    "cross" -> cross(size).map(::toBoard)
+                    "square" -> square_m(size).map(::toBoard)
+                    "plus" -> plus_m(size).map(::toBoard)
+                    "cross" -> cross_m(size).map(::toBoard)
                     "forward" -> forward(size).map(::toBoard)
                     "pass" -> pass().map(::toBoard)
                     "rank" -> rank(size)
@@ -538,7 +566,7 @@ class GameState {
     }
 
 
-    fun printBoardLarge() {
+    fun printBoard() {
 
 
         print("\u001B[40m        ")
@@ -577,112 +605,71 @@ class GameState {
     }
 
 
-    fun printBoardSmall() {
-        println()
-        gameBoard.reversed().forEachIndexed { i, row ->
-            row.forEachIndexed { j, piece ->
-                if ((i + j) % 2 == 0) print("\u001B[47m\u001B[30m")
-                print("\u001B[1m")
-                print(if (piece < 0) "[" else if (piece > 0) " " else " ")
-                print(if (piece == 0) " " else gameSpec.pieceList[abs(piece)].name)
-                print(if (piece < 0) "]" else if (piece > 0) " " else " ")
-                print("\u001B[0m")
-            }
-            println()
-        }
-        println()
-    }
-
-
-    fun printBoard() {
-        val size = gameSpec.boardSize
-        print("# ")
-        for (index in 0 until size) print("# # ")
-        println("#")
-
-        print("# ")
-        for (index in 0 until size) print("--- ")
-        println("#")
-
-        gameBoard.reversed().forEachIndexed { i, row ->
-            print("#|")
-            row.forEachIndexed { j, piece ->
-                if ((i + j) % 2 == 0) print("\u001B[47m\u001B[30m")
-                print("\u001B[1m")
-                print(if (piece < 0) ":" else if (piece > 0) " " else " ")
-                print(if (piece == 0) " " else gameSpec.pieceList[abs(piece)].name)
-                print(if (piece < 0) ":" else if (piece > 0) " " else " ")
-                print("\u001B[0m")
-                print("|")
-
-            }
-            println("# ${gameSpec.boardSize - i}")
-            print("# ")
-            for (index in 0 until size) print("--- ")
-            println("#")
-        }
-        print("# ")
-        for (index in 0 until size) print("# # ")
-        println("#")
-
-        for (index in 0 until size) print("   " + ('a' + index))
-        println("\n\n")
-    }
-}
-
-fun getGame(): String {
-
-    while (true) {
-        val string = readLine()?:"Chess"
-        val game = if (string == "") "chess" else string
-
-        try {
-            return String(Files.readAllBytes(Paths.get("src/main/data/$game.textproto")))
-
-        } catch (e: NoSuchFileException) {
-            println("there is no such file. try again")
-        }
-    }
 }
 
 
 fun main(args: Array<String>) {
-
-    val str = getGame()
-
+    val game: String = if (args.size > 0) args[0] else readLine() ?: "chess"
+    val specStr: String
+    try {
+        specStr = String(Files.readAllBytes(Paths.get("src/main/data/$game.textproto")))
+    } catch (e: NoSuchFileException) {
+        println("No game spec found for '${game}'.")
+        return
+    }
     val builder = GameSpec.newBuilder()
-    TextFormat.getParser().merge(str, builder)
-
+    TextFormat.getParser().merge(specStr, builder)
     val gameSpec = builder.apply {
         addPiece(0, builder.addPieceBuilder())
     }.build()
 
-    val rand = Random()
-    var state = GameState(gameSpec)
-    var count = 0
 
-    play(gameSpec)
-    return
-    var result: GameOutcome
-    while (true) {
-        count++
-        result = state.outcome
-        val gameOver = result != GameOutcome.UNDETERMINED
-        val color = if (state.whiteMove) "white" else "black"
-        val msg = if (gameOver) "Game Over" else "now $color's move"
+//    var instance = TrainingInstance.newBuilder().build()
+//    // set its various files copying from a gamestate
+//    instance.treeSearchResultList.add()
+//
+//
+//
+//    val outputStream = FileOutputStream("foosb")
+//    gameSpec.writeDelimitedTo(outputStream)
+//    gameSpec.writeDelimitedTo(outputStream)
+//    gameSpec.writeDelimitedTo(outputStream)
+//    outputStream.close()
+//
+//    val inputStream = FileInputStream("foosb")
+//    val g1 = GameSpec.parseDelimitedFrom(inputStream)
+//    val g2 = GameSpec.parseDelimitedFrom(inputStream)
+//    val g3 = GameSpec.parseDelimitedFrom(inputStream)
+//    println("${g1.name} ${g2.name} ${g3.name}")
+//    return
+//
+    val outputStream = FileOutputStream("${gameSpec.name}.${System.currentTimeMillis()}")
+    while (true) play(gameSpec, outputStream)
 
-        println("${state.pieceMoved} ${state.description}, \n$msg\n")
 
-        state.printBoardLarge()
-
-        if (gameOver) break
-        val nextStates = state.nextMoves
-        if (nextStates.size == 0) break
-        state = nextStates[rand.nextInt(nextStates.size)]
-    }
-    println("$count moves")
-    println(result)
-
+//    val rand = Random()
+//    var state = GameState(gameSpec)
+//    var count = 0
+//
+//    var result: GameOutcome
+//    while (true) {
+//        count++
+//        result = state.outcome
+//        val gameOver = result != GameOutcome.UNDETERMINED
+//        val color = if (state.whiteMove) "white" else "black"
+//        val msg = if (gameOver) "Game Over" else "now $color's move"
+//
+//        println("${state.pieceMoved} ${state.description}, \n$msg\n")
+//
+//        state.printBoardLarge()
+//
+//        if (gameOver) break
+//        val nextStates = state.nextMoves
+//        if (nextStates.size == 0) break
+//        state = nextStates[rand.nextInt(nextStates.size)]
+//    }
+//    println("$count moves")
+//    println(result)
 }
 
 
