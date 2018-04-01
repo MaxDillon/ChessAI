@@ -1,5 +1,8 @@
 package max.dillon
 
+import com.google.common.math.IntMath.mod
+import com.google.protobuf.ByteString
+import com.google.protobuf.CodedOutputStream
 import com.google.protobuf.TextFormat
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -9,8 +12,13 @@ import java.util.*
 import max.dillon.GameGrammar.Symmetry.*
 import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.*
+import max.dillon.Instance.*
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.OutputStream
 import kotlin.collections.ArrayList
 import kotlin.math.*
+import kotlin.system.measureTimeMillis
 
 enum class GameOutcome {
     UNDETERMINED, WIN_WHITE, WIN_BLACK, DRAW
@@ -99,7 +107,7 @@ class GameState {
         visitCount += 1
     }
 
-    private fun at(x: Int, y: Int): Int {
+    fun at(x: Int, y: Int): Int {
         return gameBoard[y][x]
     }
 
@@ -542,7 +550,8 @@ class GameState {
     }
 
 
-    fun printBoardLarge() {
+    fun printBoard() {
+
 
 
         print("\u001B[40m        ")
@@ -581,63 +590,12 @@ class GameState {
     }
 
 
-    fun printBoardSmall() {
-        println()
-        gameBoard.reversed().forEachIndexed { i, row ->
-            row.forEachIndexed { j, piece ->
-                if ((i + j) % 2 == 0) print("\u001B[47m\u001B[30m")
-                print("\u001B[1m")
-                print(if (piece < 0) "[" else if (piece > 0) " " else " ")
-                print(if (piece == 0) " " else gameSpec.pieceList[abs(piece)].name)
-                print(if (piece < 0) "]" else if (piece > 0) " " else " ")
-                print("\u001B[0m")
-            }
-            println()
-        }
-        println()
-    }
-
-
-    fun printBoard() {
-        val size = gameSpec.boardSize
-        print("# ")
-        for (index in 0 until size) print("# # ")
-        println("#")
-
-        print("# ")
-        for (index in 0 until size) print("--- ")
-        println("#")
-
-        gameBoard.reversed().forEachIndexed { i, row ->
-            print("#|")
-            row.forEachIndexed { j, piece ->
-                if ((i + j) % 2 == 0) print("\u001B[47m\u001B[30m")
-                print("\u001B[1m")
-                print(if (piece < 0) ":" else if (piece > 0) " " else " ")
-                print(if (piece == 0) " " else gameSpec.pieceList[abs(piece)].name)
-                print(if (piece < 0) ":" else if (piece > 0) " " else " ")
-                print("\u001B[0m")
-                print("|")
-
-            }
-            println("# ${gameSpec.boardSize - i}")
-            print("# ")
-            for (index in 0 until size) print("--- ")
-            println("#")
-        }
-        print("# ")
-        for (index in 0 until size) print("# # ")
-        println("#")
-
-        for (index in 0 until size) print("   " + ('a' + index))
-        println("\n\n")
-    }
 }
 
 
 fun main(args: Array<String>) {
-    var game: String = if (args.size > 0) args[0] else readLine() ?: "chess"
-    var specStr: String
+    val game: String = if (args.size > 0) args[0] else readLine() ?: "chess"
+    val specStr: String
     try {
         specStr = String(Files.readAllBytes(Paths.get("src/main/data/$game.textproto")))
     } catch (e: NoSuchFileException) {
@@ -650,7 +608,30 @@ fun main(args: Array<String>) {
         addPiece(0, builder.addPieceBuilder())
     }.build()
 
-    play(gameSpec)
+
+//    var instance = TrainingInstance.newBuilder().build()
+//    // set its various files copying from a gamestate
+//    instance.treeSearchResultList.add()
+//
+//
+//
+//    val outputStream = FileOutputStream("foosb")
+//    gameSpec.writeDelimitedTo(outputStream)
+//    gameSpec.writeDelimitedTo(outputStream)
+//    gameSpec.writeDelimitedTo(outputStream)
+//    outputStream.close()
+//
+//    val inputStream = FileInputStream("foosb")
+//    val g1 = GameSpec.parseDelimitedFrom(inputStream)
+//    val g2 = GameSpec.parseDelimitedFrom(inputStream)
+//    val g3 = GameSpec.parseDelimitedFrom(inputStream)
+//    println("${g1.name} ${g2.name} ${g3.name}")
+//    return
+//
+    val outputStream = FileOutputStream("${gameSpec.name}.${System.currentTimeMillis()}")
+    while (true) play(gameSpec, outputStream)
+
+
 
 //    val rand = Random()
 //    var state = GameState(gameSpec)

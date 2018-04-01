@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package max.dillon;
+
+message TreeSearchResult {
+    uint32 index = 1;
+    float prior = 2;
+    float mean_value = 3;
+    float num_visits = 4;
+}
+
+message TrainingInstance {
+    bytes board_state = 1;
+    bool white_move = 2;
+    uint32 outcome = 3;
+    uint32 game_length = 4;
+    repeated TreeSearchResult tree_search_result = 5;
+}
+
