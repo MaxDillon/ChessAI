@@ -6,8 +6,6 @@ import java.io.OutputStream
 import java.lang.Math.pow
 import java.util.*
 
-val rand = Random()
-
 fun valueFor(player: GameState, node: GameState): Float {
     val sign = if (player.whiteMove == node.whiteMove) 1 else -1
     return sign * node.totalValue

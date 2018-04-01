@@ -53,8 +53,11 @@ private fun cross(size: Int): List<Pair<Int, Int>> {
 
 val cross_m = ::cross.memoize()
 
+val rand = Random()
+
 class GameState {
     var gameBoard: Array<IntArray>
+    var rowOwned: BooleanArray
     val gameSpec: GameSpec
     var whiteMove = true
     var x1 = -1
@@ -77,7 +80,8 @@ class GameState {
 
     constructor(gameSpec: GameSpec) {
         this.gameSpec = gameSpec
-        gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
+        gameBoard = Array(gameSpec.boardSize) { IntArray(gameSpec.boardSize) { 0 } }
+        rowOwned = BooleanArray(gameSpec.boardSize) { true }
         gameSpec.pieceList.forEachIndexed { pieceType, piece ->
             piece.placementList.forEach { placement ->
                 val (x, y) = placement.substring(1).split("y").map { it.toInt() - 1 }
@@ -95,7 +99,8 @@ class GameState {
 
     constructor(prev: GameState, x1: Int, y1: Int, x2: Int, y2: Int, piece: Int) {
         this.gameSpec = prev.gameSpec
-        this.gameBoard = Array(prev.gameBoard.size) { prev.gameBoard[it].clone() }
+        this.gameBoard = Array(prev.gameBoard.size) { prev.gameBoard[it] }
+        this.rowOwned = BooleanArray(gameSpec.boardSize) { false }
         this.whiteMove = !prev.whiteMove
         this.moveDepth = prev.moveDepth + 1
         this.x1 = x1
@@ -143,6 +148,10 @@ class GameState {
     private fun getPiece(i: Int): GameGrammar.Piece = gameSpec.getPiece(abs(i))
 
     private fun setState(x: Int, y: Int, state: Int) {
+        if (!rowOwned[y]) {
+            gameBoard[y] = gameBoard[y].clone()
+            rowOwned[y] = true
+        }
         gameBoard[y][x] = state
     }
 
@@ -165,7 +174,6 @@ class GameState {
         return src * dim * dim + dst
     }
 
-    private val rand = Random()
     // actual call out ot model goes here
     fun predict(): Pair<Float, FloatArray> {
         val dim = gameSpec.boardSize
