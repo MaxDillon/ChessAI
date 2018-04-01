@@ -24,6 +24,38 @@ enum class GameOutcome {
     UNDETERMINED, WIN_WHITE, WIN_BLACK, DRAW
 }
 
+class Memoize1<in T, out R>(val f: (T) -> R) : (T) -> R {
+    private val values = mutableMapOf<T, R>()
+    override fun invoke(x: T): R {
+        return values.getOrPut(x, { f(x) })
+    }
+}
+fun <T, R> ((T) -> R).memoize(): (T) -> R = Memoize1(this)
+
+private fun square(size: Int): List<Pair<Int, Int>> {
+    val moves = arrayListOf<Pair<Int, Int>>()
+    for (i in 0..size) {
+        for (j in 1..size) {
+            moves.add(Pair(i, j))
+            moves.add(Pair(-j, i))
+            moves.add(Pair(-i, -j))
+            moves.add(Pair(j, -i))
+        }
+    }
+    return moves
+}
+val square_m = ::square.memoize()
+
+private fun plus(size: Int): List<Pair<Int, Int>> {
+    return square(size).filter { it.first == 0 || it.second == 0 }
+}
+val plus_m = ::plus.memoize()
+
+private fun cross(size: Int): List<Pair<Int, Int>> {
+    return square(size).filter { Math.abs(it.first) == Math.abs(it.second) }
+}
+val cross_m = ::cross.memoize()
+
 class GameState {
     var gameBoard: Array<IntArray>
     val gameSpec: GameSpec
@@ -258,27 +290,6 @@ class GameState {
         return true
     }
 
-    private fun square(size: Int): List<Pair<Int, Int>> {
-        val moves = arrayListOf<Pair<Int, Int>>()
-        for (i in 0..size) {
-            for (j in 1..size) {
-                moves.add(Pair(i, j))
-                moves.add(Pair(-j, i))
-                moves.add(Pair(-i, -j))
-                moves.add(Pair(j, -i))
-            }
-        }
-        return moves
-    }
-
-    private fun plus(size: Int): List<Pair<Int, Int>> {
-        return square(size).filter { it.first == 0 || it.second == 0 }
-    }
-
-    private fun cross(size: Int): List<Pair<Int, Int>> {
-        return square(size).filter { Math.abs(it.first) == Math.abs(it.second) }
-    }
-
     private fun forward(size: Int): List<Pair<Int, Int>> {
         return square(size).filter {
             if (gameSpec.boardSymmetry == NONE) {
@@ -330,9 +341,9 @@ class GameState {
                 fun toBoard(offset: Pair<Int, Int>) = Pair(x + offset.first, y + offset.second)
 
                 val newSquares = when (pattern) {
-                    "square" -> square(size).map(::toBoard)
-                    "plus" -> plus(size).map(::toBoard)
-                    "cross" -> cross(size).map(::toBoard)
+                    "square" -> square_m(size).map(::toBoard)
+                    "plus" -> plus_m(size).map(::toBoard)
+                    "cross" -> cross_m(size).map(::toBoard)
                     "forward" -> forward(size).map(::toBoard)
                     "pass" -> pass().map(::toBoard)
                     "rank" -> rank(size)
