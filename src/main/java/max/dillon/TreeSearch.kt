@@ -67,18 +67,10 @@ fun cumulativeDist(states: ArrayList<GameState>): DoubleArray {
     return DoubleArray(states.size, { cuml += raised[it]; cuml / rsum })
 }
 
-fun recordGame(finalState: GameState, states: ArrayList<GameState>, outputStream: OutputStream) {
+fun recordGame(finalState: GameState, states: ArrayList<SlimState>, outputStream: OutputStream) {
     states.forEach { state ->
-
-        val sz = state.gameSpec.boardSize
-        val arr = ByteArray(sz * sz) {
-            val row = it / sz
-            val col = it % sz
-            (128 + state.at(row, col)).toByte()
-        }
-
         Instance.TrainingInstance.newBuilder().apply {
-            boardState = ByteString.copyFrom(arr)
+            boardState = ByteString.copyFrom(state.state)
             whiteMove = state.whiteMove
             gameLength = finalState.moveDepth
             outcome = when (finalState.outcome) {
@@ -87,16 +79,8 @@ fun recordGame(finalState: GameState, states: ArrayList<GameState>, outputStream
                 GameOutcome.DRAW -> 0
                 else -> throw(RuntimeException("undetermined state at end of game"))
             }
-
-            state.nextMoves.forEach {
-                val tsr = Instance.TreeSearchResult.newBuilder().apply {
-                    index = it.getMoveIndex()
-                    prior = it.prior
-                    meanValue = it.totalValue / it.visitCount
-                    numVisits = it.visitCount.toFloat()
-                }.build()
-                addTreeSearchResult(tsr)
-
+            state.treeSearchResults.forEach {
+                addTreeSearchResult(it)
             }
         }.build().writeDelimitedTo(outputStream)
     }
@@ -112,10 +96,32 @@ fun humanInput(state: GameState): GameState {
 
 }
 
+data class SlimState(val state: ByteArray,
+                     val whiteMove: Boolean,
+                     val treeSearchResults: Array<Instance.TreeSearchResult>)
+
+fun slim(state: GameState): SlimState {
+    val sz = state.gameSpec.boardSize
+    val arr = ByteArray(sz * sz) {
+        val row = it / sz
+        val col = it % sz
+        (128 + state.at(row, col)).toByte()
+    }
+    val tsr = Array(state.nextMoves.size) {
+        val child = state.nextMoves[it]
+        Instance.TreeSearchResult.newBuilder().apply {
+            index = child.getMoveIndex()
+            prior = child.prior
+            meanValue = child.totalValue / child.visitCount
+            numVisits = child.visitCount.toFloat()
+        }.build()
+    }
+    return SlimState(arr, state.whiteMove, tsr)
+}
 
 fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream) {
     var state = GameState(spec)
-    val stateArray: ArrayList<GameState> = arrayListOf(state)
+    val stateArray: ArrayList<SlimState> = arrayListOf(slim(state))
 
     while (state.gameOutcome() == GameOutcome.UNDETERMINED) {
 //        state = if (state.whiteMove) treeSearch(state) else humanInput(state)
@@ -123,7 +129,7 @@ fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream) {
         println(state.description)
         state.printBoard()
 
-        stateArray.add(state)
+        stateArray.add(slim(state))
     }
     recordGame(state, stateArray, outputStream)
 }

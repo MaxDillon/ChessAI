@@ -1,24 +1,17 @@
 package max.dillon
 
-import com.google.common.math.IntMath.mod
-import com.google.protobuf.ByteString
-import com.google.protobuf.CodedOutputStream
 import com.google.protobuf.TextFormat
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.NoSuchFileException
-import java.util.*
-
-import max.dillon.GameGrammar.Symmetry.*
-import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.*
-import max.dillon.Instance.*
-import java.io.FileInputStream
+import max.dillon.GameGrammar.Outcome.*
+import max.dillon.GameGrammar.Symmetry.NONE
+import max.dillon.GameGrammar.Symmetry.ROTATE
 import java.io.FileOutputStream
-import java.io.OutputStream
+import java.nio.file.Files
+import java.nio.file.NoSuchFileException
+import java.nio.file.Paths
+import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.*
-import kotlin.system.measureTimeMillis
 
 enum class GameOutcome {
     UNDETERMINED, WIN_WHITE, WIN_BLACK, DRAW
@@ -30,6 +23,7 @@ class Memoize1<in T, out R>(val f: (T) -> R) : (T) -> R {
         return values.getOrPut(x, { f(x) })
     }
 }
+
 fun <T, R> ((T) -> R).memoize(): (T) -> R = Memoize1(this)
 
 private fun square(size: Int): List<Pair<Int, Int>> {
@@ -44,16 +38,19 @@ private fun square(size: Int): List<Pair<Int, Int>> {
     }
     return moves
 }
+
 val square_m = ::square.memoize()
 
 private fun plus(size: Int): List<Pair<Int, Int>> {
     return square(size).filter { it.first == 0 || it.second == 0 }
 }
+
 val plus_m = ::plus.memoize()
 
 private fun cross(size: Int): List<Pair<Int, Int>> {
     return square(size).filter { Math.abs(it.first) == Math.abs(it.second) }
 }
+
 val cross_m = ::cross.memoize()
 
 class GameState {
@@ -564,7 +561,6 @@ class GameState {
     fun printBoard() {
 
 
-
         print("\u001B[40m        ")
         for (index in 0 until gameSpec.boardSize) print("       ")
         println("\u001B[0m")
@@ -641,7 +637,6 @@ fun main(args: Array<String>) {
 //
     val outputStream = FileOutputStream("${gameSpec.name}.${System.currentTimeMillis()}")
     while (true) play(gameSpec, outputStream)
-
 
 
 //    val rand = Random()
