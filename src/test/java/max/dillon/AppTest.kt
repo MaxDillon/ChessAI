@@ -2,50 +2,52 @@ package max.dillon
 
 import com.google.protobuf.TextFormat
 import org.amshove.kluent.shouldEqual
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
+import org.deeplearning4j.util.ModelSerializer
 import org.junit.Test
 import java.nio.file.Files
 import java.nio.file.Paths
 
-fun getGameSpec(): GameGrammar.GameSpec {
-    val specStr = String(Files.readAllBytes(Paths.get("src/main/data/chess.textproto")))
-    val gameSpec = GameGrammar.GameSpec.newBuilder().apply {
-        TextFormat.getParser().merge(specStr, this)
-        addPiece(0, addPieceBuilder()) // hack: inserting null piece at index 0
-    }.build()
-    return gameSpec
-}
+class TestChess() {
+    val gameSpec: GameGrammar.GameSpec
 
-data class Placement(
-        val p: String = "", val n: String = "", val b: String = "",
-        val r: String = "", val q: String = "", val k: String = "")
+    init {
+        val specStr = String(Files.readAllBytes(Paths.get("src/main/data/chess.textproto")))
+        gameSpec = GameGrammar.GameSpec.newBuilder().apply {
+            TextFormat.getParser().merge(specStr, this)
+            addPiece(0, addPieceBuilder()) // hack: inserting null piece at index 0
+        }.build()
+    }
 
-fun initBoard(white: Placement, black: Placement, whiteMove: Boolean = true): GameState {
-    val gameSpec = getGameSpec()
-    val state = GameState(gameSpec)
-    state.whiteMove = whiteMove
-    state.gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
+    data class Placement(
+            val p: String = "", val n: String = "", val b: String = "",
+            val r: String = "", val q: String = "", val k: String = "")
 
-    fun place(placement: Placement, sign: Int) {
-        val (p, n, b, r, q, k) = placement
-        arrayListOf<String>(p, n, b, r, q, k).forEachIndexed { i, pstr ->
-            if (pstr.length > 0) {
-                for (j in pstr.split(",")) {
-                    val x = j.first() - 'a'
-                    val y = j.substring(1).toInt() - 1
-                    state.gameBoard[y][x] = sign * (i + 1)
+    fun initBoard(white: Placement, black: Placement, whiteMove: Boolean = true,
+                  model: MultiLayerNetwork? = null): GameState {
+        val state = GameState(gameSpec, model)
+        state.whiteMove = whiteMove
+        state.gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
+
+        fun place(placement: Placement, sign: Int) {
+            val (p, n, b, r, q, k) = placement
+            arrayListOf<String>(p, n, b, r, q, k).forEachIndexed { i, pstr ->
+                if (pstr.length > 0) {
+                    for (j in pstr.split(",")) {
+                        val x = j.first() - 'a'
+                        val y = j.substring(1).toInt() - 1
+                        state.gameBoard[y][x] = sign * (i + 1)
+                    }
                 }
             }
         }
+        place(white, 1)
+        place(black, -1)
+        return state
     }
-    place(white, 1)
-    place(black, -1)
-    return state
-}
 
-class TestApp() {
     @Test
     fun pawnMoves() {
-
         initBoard(white = Placement(p = "a2"),
                   black = Placement())
                 .getLegalNextStates().map { it.description }.sorted()
@@ -137,33 +139,149 @@ class TestApp() {
                         p = "a7,b7,f7,g7",
                         n = "c6"
                 ))
-        treeSearch(state)
+        treeSearch(state, 3.0)
     }
 
     @Test
     fun moveIndexTest() {
-        val spec = getGameSpec()
-        println(spec.pieceCount)
-        for (p in spec.pieceList) println("piece: ${p.name}")
-
-        val state = initBoard(
+        initBoard(
                 white = Placement(p = "c5"),
-                black = Placement(p = "b5,b6")
-        )
-        val moves = state.nextMoves
-
-        //                     col      row           col      row
-        // a1=>a2: 513  = (8 + (0 * 8) + 0) * 8 * 8 + (0 * 8) + 1
-        // c1=>c2: 1553 = (8 + (2 * 8) + 0) * 8 * 8 + (2 * 8) + 1
-        // c5=>b6: 1805 = (8 + (2 * 8) + 4) * 8 * 8 + (1 * 8) + 5
-        // g3=>e1: 3744 = (8 + (6 * 8) + 2) * 8 * 8 + (4 * 8) + 0
-
-        // g3=>e1: 3232 = ((6 * 8) + 2) * 8 * 8 + (4 * 8) + 0
-
-        val src = 40 + 2 + 6
-        val dst = 40 + 3
-        //moves[0].getMoveIndex().shouldEqual(src * 8 * 8 + dst)
+                black = Placement(p = "c6,b6", k = "d6"))
+                .nextMoves.map { it.getMoveIndex() }.sorted()
+                .shouldEqual(listOf((4 + 2 * 8) * (8 * 8) + (5 + 1 * 8),
+                                    (4 + 2 * 8) * (8 * 8) + (5 + 3 * 8)))
     }
-
 }
 
+class TestOthello() {
+    val gameSpec: GameGrammar.GameSpec
+
+    init {
+        val specStr = String(Files.readAllBytes(Paths.get("src/main/data/othello.textproto")))
+        gameSpec = GameGrammar.GameSpec.newBuilder().apply {
+            TextFormat.getParser().merge(specStr, this)
+            addPiece(0, addPieceBuilder()) // hack: inserting null piece at index 0
+        }.build()
+    }
+
+    fun initBoard(white: String, black: String, whiteMove: Boolean = true): GameState {
+        val state = GameState(gameSpec)
+        state.whiteMove = whiteMove
+        state.gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
+
+        fun place(placement: String, sign: Int) {
+            for (j in placement.split(",")) {
+                val x = j.first() - 'a'
+                val y = j.substring(1).toInt() - 1
+                state.gameBoard[y][x] = sign
+            }
+        }
+        place(white, 1)
+        place(black, -1)
+        return state
+    }
+
+    @Test
+    fun moves() {
+        initBoard(white = "d4,e5",
+                  black = "d5,e4")
+                .getLegalNextStates().map { it.description }.sorted()
+                .shouldEqual(listOf("d4 -> d6", "d4 -> f4", "e5 -> c5", "e5 -> e3"))
+
+        initBoard(white = "a1,a2,b1",
+                  black = "a3,b2,c1")
+                .getLegalNextStates().map { it.description }.sorted()
+                .shouldEqual(listOf("a1 -> c3", "a2 -> a4", "a2 -> c2", "b1 -> b3", "b1 -> d1"))
+
+        initBoard(white = "a1,a2,b1",
+                  black = "a3,b2,c1",
+                  whiteMove = false)
+                .getLegalNextStates().map { it.description }.size
+                .shouldEqual(0)
+
+        // Test chaining, exchanges, impressment
+        // Impress one piece of the other, exchange for P2
+        val states1 = initBoard(white = "c1,a3",
+                                black = "c2,b3")
+                .getLegalNextStates()
+        states1.map { it.description }.sorted().shouldEqual(listOf("a3 -> c3", "c1 -> c3"))
+        (states1[0].at(2, 1) * states1[0].at(1, 2)).shouldEqual(-1)
+        (states1[1].at(2, 1) * states1[1].at(1, 2)).shouldEqual(-1)
+        (states1[0].at(2, 1) * states1[1].at(2, 1)).shouldEqual(-1)
+        states1[0].at(2, 2).shouldEqual(2)
+        states1[1].at(2, 2).shouldEqual(2)
+        states1[0].whiteMove.shouldEqual(true)
+        states1[1].whiteMove.shouldEqual(true)
+
+        // P2 does flips in second direction
+        val states2 = states1[0].getLegalNextStates()
+        states2.size.shouldEqual(1)
+        states2[0].at(1, 2).shouldEqual(1)
+        states2[0].at(2, 1).shouldEqual(1)
+        states2[0].at(2, 2).shouldEqual(2)
+        states2[0].whiteMove.shouldEqual(true)
+
+        // P2 does flips in second direction
+        val states3 = states1[1].getLegalNextStates()
+        states3.size.shouldEqual(1)
+        states3[0].at(1, 2).shouldEqual(1)
+        states3[0].at(2, 1).shouldEqual(1)
+        states3[0].at(2, 2).shouldEqual(2)
+        states3[0].whiteMove.shouldEqual(true)
+
+        // Back to P1 and pass
+        val states4 = states2[0].getLegalNextStates()
+        states4.size.shouldEqual(1)
+        states4[0].at(2, 2).shouldEqual(1)
+        states4[0].whiteMove.shouldEqual(false)
+
+        // Back to P1 and pass
+        val states5 = states3[0].getLegalNextStates()
+        states5.size.shouldEqual(1)
+        states5[0].at(2, 2).shouldEqual(1)
+        states5[0].whiteMove.shouldEqual(false)
+    }
+}
+
+
+class TestTicTacToe() {
+    val gameSpec: GameGrammar.GameSpec
+
+    init {
+        val specStr = String(Files.readAllBytes(Paths.get("src/main/data/tictactoe.textproto")))
+        gameSpec = GameGrammar.GameSpec.newBuilder().apply {
+            TextFormat.getParser().merge(specStr, this)
+            addPiece(0, addPieceBuilder()) // hack: inserting null piece at index 0
+        }.build()
+    }
+
+    fun initBoard(white: String, black: String, whiteMove: Boolean = true,
+                  model: MultiLayerNetwork? = null): GameState {
+        val state = GameState(gameSpec, model)
+        state.whiteMove = whiteMove
+        state.gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
+
+        fun place(placement: String, sign: Int) {
+            for (j in placement.split(",")) {
+                val x = j.first() - 'a'
+                val y = j.substring(1).toInt() - 1
+                state.gameBoard[y][x] = sign
+            }
+        }
+        place(white, 1)
+        place(black, -1)
+        return state
+    }
+
+//    @Test
+//    fun modelEval() {
+//        val state = initBoard(
+//                white = "b2,c3", black = "b1", whiteMove = false,
+//                model = ModelSerializer.restoreMultiLayerNetwork("model.tictactoe.21"))
+//        state.printBoard()
+//        state.expand()
+//        state.nextMoves.forEach {
+//            println("${it.description} ${it.prior}")
+//        }
+//    }
+}
