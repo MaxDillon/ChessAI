@@ -101,9 +101,9 @@ data class SlimState(val state: ByteArray,
 fun slim(state: GameState): SlimState {
     val sz = state.gameSpec.boardSize
     val arr = ByteArray(sz * sz) {
-        val row = it / sz
-        val col = it % sz
-        (128 + state.at(row, col)).toByte()
+        val x = it / sz
+        val y = it % sz
+        (state.at(x, y)).toByte()
     }
     val tsr = Array(state.nextMoves.size) {
         val child = state.nextMoves[it]
@@ -124,7 +124,7 @@ fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream) {
     while (state.gameOutcome() == GameOutcome.UNDETERMINED) {
 //        state = if (state.whiteMove) treeSearch(state) else humanInput(state)
         state = treeSearch(state)
-        println(state.description)
+        println("${state.moveDepth}: ${state.description}")
         state.printBoard()
 
         stateArray.add(slim(state))

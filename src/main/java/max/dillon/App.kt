@@ -166,11 +166,12 @@ class GameState {
      */
     fun getMoveIndex(): Int {
         val dim = gameSpec.boardSize
-        val numPieces = gameSpec.pieceCount
-        val src = (
-                if (offBoard(x1, y1)) abs(pieceMoved)
-                else numPieces + y1 + x1 * dim)
         val dst = y2 + dim * x2
+        val src = if (gameSpec.moveSource == MoveSource.ENDS) {
+            abs(pieceMoved) - 1 // subtract out the virtual piece added to all gamespecs
+        } else {
+            y1 + x1 * dim
+        }
         return src * dim * dim + dst
     }
 
@@ -178,7 +179,8 @@ class GameState {
     fun predict(): Pair<Float, FloatArray> {
         val dim = gameSpec.boardSize
         val numPieces = gameSpec.pieceCount
-        return Pair(0.0f, FloatArray((dim * dim + numPieces) * dim * dim, {
+        val srcsz = if (gameSpec.moveSource == MoveSource.ENDS) gameSpec.pieceCount - 1 else dim * dim
+        return Pair(0.0f, FloatArray(srcsz * dim * dim, {
             0.5f + (rand.nextFloat() - 0.5f) / 10
         }))
     }

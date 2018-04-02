@@ -1,184 +1,140 @@
 package max.dillon
 
-import org.deeplearning4j.datasets.iterator.impl.MnistDataSetIterator
+import com.google.protobuf.TextFormat
+import max.dillon.GameGrammar.GameSpec
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.Updater
+import org.deeplearning4j.nn.conf.inputs.InputType
+import org.deeplearning4j.nn.conf.layers.ConvolutionLayer
 import org.deeplearning4j.nn.conf.layers.DenseLayer
 import org.deeplearning4j.nn.conf.layers.OutputLayer
+import org.deeplearning4j.nn.conf.layers.SubsamplingLayer
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.nn.weights.WeightInit
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener
 import org.nd4j.linalg.activations.Activation
-import org.nd4j.linalg.lossfunctions.LossFunctions
-
-import org.deeplearning4j.base.MnistFetcher
-import org.deeplearning4j.eval.Evaluation
-import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize
+import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
-import org.slf4j.LoggerFactory
+import org.nd4j.linalg.lossfunctions.LossFunctions
+import java.io.FileInputStream
+import java.io.InputStream
+import java.lang.Float
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.util.*
 
-class MyMnistFetcher() : MnistFetcher() {
-    override fun getTrainingFilesURL(): String {
-        return "http://deeplearning4j-resources.westus2.cloudapp.azure.com/mnist/train-images-idx3-ubyte.gz"
-    }
-    override fun getTrainingFileLabelsURL(): String {
-        return "http://deeplearning4j-resources.westus2.cloudapp.azure.com/mnist/train-labels-idx1-ubyte.gz"
-    }
-    override fun getTestFilesURL(): String {
-        return "http://deeplearning4j-resources.westus2.cloudapp.azure.com/mnist/t10k-images-idx3-ubyte.gz"
-    }
-    override fun getTestFileLabelsURL(): String {
-        return "http://deeplearning4j-resources.westus2.cloudapp.azure.com/mnist/t10k-labels-idx1-ubyte.gz"
-    }
+fun policySize(gameSpec: GameSpec): Int {
+    val N = gameSpec.boardSize
+    val P = gameSpec.pieceCount - 1
+    val src_dim = (
+            if (gameSpec.moveSource == GameGrammar.MoveSource.ENDS) P
+            else N * N)
+    val dst_dim = N * N
+    return src_dim * dst_dim
 }
 
 fun main(args: Array<String>) {
-    val batchSize = 128
+    val specStr = String(Files.readAllBytes(Paths.get("src/main/data/${args[0]}.textproto")))
+    val builder = GameGrammar.GameSpec.newBuilder()
+    TextFormat.getParser().merge(specStr, builder)
+    val gameSpec = builder.apply {
+        addPiece(0, builder.addPieceBuilder())
+    }.build()
+
+    val N = gameSpec.boardSize
+    val P = gameSpec.pieceCount - 1
+
+    val batchSize = 1000
     val rngSeed = 1
-    val numRows = 28
-    val numColumns = 28
-    val outputNum = 10
-    var numEpochs = 20
+    val numEpochs = 200
 
-    // HACK: the MNIST hosting location has changed and the fetcher we have in the dl4j examples
-    // points to the old location. Further, it's hard-coded in the fetcher. We have to subclass and
-    // override the fetcher's location accessors and then trigger the download ourselves so that the
-    // files will be cached locally in the expected location.
-    val fetcher = MyMnistFetcher()
-    fetcher.downloadAndUntar()
-
-    val mat = Nd4j.create(doubleArrayOf(1.0, 2.0, 3.0, 4.0, 5.0, 6.0), intArrayOf(2, 3))
-
-    val mnistTrain = MnistDataSetIterator(batchSize, true, rngSeed)
-    val mnistTest = MnistDataSetIterator(batchSize, false, rngSeed)
+    val random = Random()
 
     val config: MultiLayerConfiguration = NeuralNetConfiguration.Builder()
             .iterations(1)
             .weightInit(WeightInit.XAVIER)
-            .activation("relu")
+            .activation(Activation.RELU)
             .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
             .updater(Updater.NESTEROVS)
-            .learningRate(0.05)
+            .learningRate(0.01)
             .regularization(true).l2(1e-4)
             .list()
-            .layer(0, DenseLayer.Builder()
-                    .nIn(numRows * numColumns)
-                    .nOut(1000)
+            .layer(0, ConvolutionLayer.Builder(3, 3)
+                    .nIn(2 * P + 1)
+                    .stride(1, 1)
+                    .padding(2, 2)
+                    .nOut(30)
+                    .activation(Activation.IDENTITY)
+                    .weightInit(WeightInit.XAVIER)
+                    .build())
+            .layer(1, SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX)
+                    .kernelSize(2, 2)
+                    .stride(2, 2)
+                    .build())
+            .layer(2, ConvolutionLayer.Builder(3, 3)
+                    .stride(1, 1)
+                    .padding(3, 3)
+                    .nOut(20)
+                    .activation(Activation.IDENTITY)
+                    .build())
+            .layer(3, SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX)
+                    .kernelSize(2, 2)
+                    .stride(2, 2)
+                    .build())
+            .layer(4, DenseLayer.Builder()
                     .activation(Activation.RELU)
-                    .weightInit(WeightInit.XAVIER)
+                    .nOut(500)
                     .build())
-            .layer(1, OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
-                    .nIn(1000)
-                    .nOut(outputNum)
+            .layer(5, OutputLayer.Builder(LossFunctions.LossFunction.SQUARED_LOSS)
+                    .nOut(policySize(gameSpec))
                     .activation(Activation.SOFTMAX)
-                    .weightInit(WeightInit.XAVIER)
                     .build())
-            .pretrain(false)
+            .setInputType(InputType.convolutionalFlat(N, N, 1)) //See note below
             .backprop(true)
+            .pretrain(false)
             .build();
-
 
     val model = MultiLayerNetwork(config)
     model.init()
-    model.setListeners(ScoreIterationListener(1))
+    model.setListeners(ScoreIterationListener(5))
 
+    val instream = FileInputStream(args[1])
     for (i in 1..numEpochs) {
-        model.fit(mnistTrain)
+        val (input, output) = getBatch(gameSpec, instream, batchSize)
+        model.fit(input, output)
     }
 }
 
+fun getBatch(gameSpec: GameSpec, instream: InputStream, batchSize: Int): Pair<INDArray, INDArray> {
+    var sz = gameSpec.boardSize
+    var np = gameSpec.pieceCount - 1
+    var input = Nd4j.zeros(batchSize, 2 * np + 1, sz, sz)
+    var output = Nd4j.zeros(batchSize, policySize(gameSpec))
 
-//private val log = LoggerFactory.getLogger(Test::class.java!!)
-//
-//@JvmStatic
-//fun main(args: Array<String>) {
-//
-//    try {
-//        val boardSize = 8
-//        val numPieceTypes = 6
-//        val player = 0
-//        val piece = 1
-//        val row = 0
-//        val col = 0
-//
-//        // construct an INDArray from a regular java array
-//        val mat = Nd4j.create(doubleArrayOf(1.0, 2.0, 3.0, 4.0, 5.0, 6.0), intArrayOf(2, 3))
-//
-//        // construct an INDArray of zeroes with the given shape and set individual values
-//        val state = Nd4j.zeros(2, numPieceTypes, boardSize, boardSize)
-//        state.putScalar(intArrayOf(player, piece, row, col), 1.0)
-//
-//
-//        //Second: the RecordReaderDataSetIterator handles conversion to DataSet objects, ready for use in neural network
-//        val labelIndex = 4     //5 values in each row of the animals.csv CSV: 4 input features followed by an integer label (class) index. Labels are the 5th value (index 4) in each row
-//        val numClasses = 3     //3 classes (types of animals) in the animals data set. Classes have integer values 0, 1 or 2
-//
-//        val batchSizeTraining = 30    //Iris data set: 150 examples total. We are loading all of them into one DataSet (not recommended for large data sets)
-//        val trainingData = readCSVDataset(
-//                "/DataExamples/animals/animals_train.csv",
-//                batchSizeTraining, labelIndex, numClasses)
-//
-//
-//        // this is the data we want to classify
-//        val batchSizeTest = 44
-//        val testData = readCSVDataset("/DataExamples/animals/animals.csv",
-//                                      batchSizeTest, labelIndex, numClasses)
-//
-//
-//        // make the data model for records prior to normalization, because it
-//        // changes the data.
-//        val animals = makeAnimalsForTesting(testData)
-//
-//
-//        //We need to normalize our data. We'll use NormalizeStandardize (which gives us mean 0, unit variance):
-//        val normalizer = NormalizerStandardize()
-//        normalizer.fit(trainingData)           //Collect the statistics (mean/stdev) from the training data. This does not modify the input data
-//        normalizer.transform(trainingData)     //Apply normalization to the training data
-//        normalizer.transform(testData)         //Apply normalization to the test data. This is using statistics calculated from the *training* set
-//
-//        val numInputs = 4
-//        val outputNum = 3
-//        val iterations = 1000
-//        val seed: Long = 6
-//
-//        log.info("Build model....")
-//        val conf = NeuralNetConfiguration.Builder()
-//                .seed(seed)
-//                .iterations(iterations)
-//                .activation(Activation.TANH)
-//                .weightInit(WeightInit.XAVIER)
-//                .learningRate(0.1)
-//                .regularization(true).l2(1e-4)
-//                .list()
-//                .layer(0, DenseLayer.Builder().nIn(numInputs).nOut(3).build())
-//                .layer(1, DenseLayer.Builder().nIn(3).nOut(3).build())
-//                .layer(2, OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
-//                        .activation(Activation.SOFTMAX).nIn(3).nOut(outputNum).build())
-//                .backprop(true).pretrain(false)
-//                .build()
-//
-//        //run the model
-//        val model = MultiLayerNetwork(conf)
-//        model.init()
-//        model.setListeners(ScoreIterationListener(100))
-//
-//        model.fit(trainingData)
-//
-//        //evaluate the model on the test set
-//        val eval = Evaluation(3)
-//        val output = model.output(testData.getFeatureMatrix())
-//
-//        eval.eval(testData.getLabels(), output)
-//        log.info(eval.stats())
-//
-//        setFittedClassifiers(output, animals)
-//        logAnimals(animals)
-//
-//    } catch (e: Exception) {
-//        e.printStackTrace()
-//    }
-//
-//}
-//
+    for (i in 0 until batchSize) {
+        val inst = Instance.TrainingInstance.parseDelimitedFrom(instream)
+        if (inst == null) {
+            println("Out of data")
+            break
+        }
+        for (i in 0 until inst.boardState.size()) {
+            val x = i / sz
+            val y = i % sz
+            val p = inst.boardState.byteAt(i).toInt()
+            if (p != 0) {
+                val channel = if (p > 0) p else np - p
+                input.putScalar(intArrayOf(i, channel, x, y), 1)
+            }
+        }
+        var turn = if (inst.whiteMove) 0 else 1
+        for (x in 0 until sz) for (y in 0 until sz) input.putScalar(intArrayOf(i, 0, x, y), turn)
+
+        for (i in 0 until inst.treeSearchResultCount) {
+            val tsr = inst.treeSearchResultList[i]
+            output.putScalar(tsr.index, if (Float.isNaN(tsr.meanValue)) 0f else tsr.meanValue) // think this should actually be pi
+        }
+    }
+    return Pair(input, output)
+}
