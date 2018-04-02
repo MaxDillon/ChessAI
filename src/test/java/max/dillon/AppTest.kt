@@ -140,6 +140,30 @@ class TestApp() {
         treeSearch(state)
     }
 
+    @Test
+    fun moveIndexTest() {
+        val spec = getGameSpec()
+        println(spec.pieceCount)
+        for (p in spec.pieceList) println("piece: ${p.name}")
+
+        val state = initBoard(
+                white = Placement(p = "c5"),
+                black = Placement(p = "b5,b6")
+        )
+        val moves = state.nextMoves
+
+        //                     col      row           col      row
+        // a1=>a2: 513  = (8 + (0 * 8) + 0) * 8 * 8 + (0 * 8) + 1
+        // c1=>c2: 1553 = (8 + (2 * 8) + 0) * 8 * 8 + (2 * 8) + 1
+        // c5=>b6: 1805 = (8 + (2 * 8) + 4) * 8 * 8 + (1 * 8) + 5
+        // g3=>e1: 3744 = (8 + (6 * 8) + 2) * 8 * 8 + (4 * 8) + 0
+
+        // g3=>e1: 3232 = ((6 * 8) + 2) * 8 * 8 + (4 * 8) + 0
+
+        val src = 40 + 2 + 6
+        val dst = 40 + 3
+        //moves[0].getMoveIndex().shouldEqual(src * 8 * 8 + dst)
+    }
 
 }
 

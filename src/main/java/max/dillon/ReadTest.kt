@@ -32,5 +32,9 @@ fun main(args: Array<String>) {
         }
 
         state.printBoard()
+        for (tsr in inst.treeSearchResultList) {
+            println("${tsr.index}: ${tsr.meanValue.f3()} ${tsr.numVisits} ${tsr.prior.f3()}")
+        }
+        println("STATE")
     }
 }
