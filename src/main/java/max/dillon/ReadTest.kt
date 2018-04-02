@@ -15,12 +15,14 @@ fun main(args: Array<String>) {
         addPiece(0, builder.addPieceBuilder())
     }.build()
 
+    var count = 0
     val instream = FileInputStream(args[1])
     while (true) {
         val inst = TrainingInstance.parseDelimitedFrom(instream)
         if (inst == null) {
             break
         }
+        count += 1
 
         var state = GameState(gameSpec)
         val sz = gameSpec.boardSize
@@ -37,4 +39,5 @@ fun main(args: Array<String>) {
         }
         println("STATE")
     }
+    println("Read ${count} states.")
 }

@@ -55,6 +55,7 @@ piece {
             own: DISALLOWED
             opponent: CAPTURE
         }
+        priority: 1
         exchange: "*"
         continue: true
     }
@@ -73,6 +74,7 @@ piece {
             own: DISALLOWED
             opponent: CAPTURE
         }
+        priority: 1
         exchange: "K"
     }
 }
@@ -96,7 +98,7 @@ piece {
             opponent: CAPTURE
         }
         continue: true
-        priority: 1
+        priority: 3
     }
     move {
         template: "+cross_2"
@@ -114,7 +116,7 @@ piece {
             opponent: CAPTURE
         }
         exchange: "K"
-        priority: 1
+        priority: 3
     }
     move {
         template: "+pass_0"
@@ -124,7 +126,7 @@ piece {
             opponent: DISALLOWED
         }
         exchange: "P"
-        priority: 1
+        priority: 2
     }
 }
 piece {
@@ -152,6 +154,7 @@ piece {
             own: DISALLOWED
             opponent: CAPTURE
         }
+        priority: 1
         exchange: "#"
         continue: true
     }
@@ -174,7 +177,7 @@ piece {
             opponent: CAPTURE
         }
         continue: true
-        priority: 1
+        priority: 3
     }
     move {
         template: "+pass_0"
@@ -184,10 +187,19 @@ piece {
             opponent: DISALLOWED
         }
         exchange: "K"
-        priority: 1
+        priority: 2
     }
 }
 game_over {
     condition: NO_PIECES_ON_BOARD
     decision: LOSS
+}
+game_over {
+    condition: NO_LEGAL_MOVE
+    decision: LOSS
+}
+game_over {
+    condition: MOVE_LIMIT
+    param: 200
+    decision: DRAW
 }

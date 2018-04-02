@@ -14,10 +14,12 @@ import org.deeplearning4j.nn.conf.layers.SubsamplingLayer
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.nn.weights.WeightInit
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener
+import org.deeplearning4j.util.ModelSerializer
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.lossfunctions.LossFunctions
+import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
 import java.lang.Float
@@ -58,14 +60,14 @@ fun main(args: Array<String>) {
             .activation(Activation.RELU)
             .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
             .updater(Updater.NESTEROVS)
-            .learningRate(0.01)
+            .learningRate(0.005)
             .regularization(true).l2(1e-4)
             .list()
             .layer(0, ConvolutionLayer.Builder(3, 3)
                     .nIn(2 * P + 1)
                     .stride(1, 1)
                     .padding(2, 2)
-                    .nOut(30)
+                    .nOut(25)
                     .activation(Activation.IDENTITY)
                     .weightInit(WeightInit.XAVIER)
                     .build())
@@ -76,7 +78,7 @@ fun main(args: Array<String>) {
             .layer(2, ConvolutionLayer.Builder(3, 3)
                     .stride(1, 1)
                     .padding(3, 3)
-                    .nOut(20)
+                    .nOut(25)
                     .activation(Activation.IDENTITY)
                     .build())
             .layer(3, SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX)
@@ -87,9 +89,9 @@ fun main(args: Array<String>) {
                     .activation(Activation.RELU)
                     .nOut(500)
                     .build())
-            .layer(5, OutputLayer.Builder(LossFunctions.LossFunction.SQUARED_LOSS)
+            .layer(5, OutputLayer.Builder(LossFunctions.LossFunction.MSE)
                     .nOut(policySize(gameSpec))
-                    .activation(Activation.SOFTMAX)
+                    .activation(Activation.TANH)
                     .build())
             .setInputType(InputType.convolutionalFlat(N, N, 1)) //See note below
             .backprop(true)
@@ -100,10 +102,19 @@ fun main(args: Array<String>) {
     model.init()
     model.setListeners(ScoreIterationListener(5))
 
-    val instream = FileInputStream(args[1])
-    for (i in 1..numEpochs) {
-        val (input, output) = getBatch(gameSpec, instream, batchSize)
-        model.fit(input, output)
+    var passCount = 0
+    while (true) {
+        passCount += 1
+        val instream = FileInputStream(args[1])
+        try {
+            while (true) {
+                val (input, output) = getBatch(gameSpec, instream, batchSize)
+                model.fit(input, output)
+            }
+        } catch (e: Exception) {
+            instream.close()
+            ModelSerializer.writeModel(model, "model.${args[0]}.${passCount}", true)
+        }
     }
 }
 
@@ -116,8 +127,7 @@ fun getBatch(gameSpec: GameSpec, instream: InputStream, batchSize: Int): Pair<IN
     for (i in 0 until batchSize) {
         val inst = Instance.TrainingInstance.parseDelimitedFrom(instream)
         if (inst == null) {
-            println("Out of data")
-            break
+            throw RuntimeException("out of data")
         }
         for (i in 0 until inst.boardState.size()) {
             val x = i / sz
