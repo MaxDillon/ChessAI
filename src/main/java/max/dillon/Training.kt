@@ -60,7 +60,7 @@ fun main(args: Array<String>) {
             .activation(Activation.RELU)
             .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
             .updater(Updater.NESTEROVS)
-            .learningRate(0.005)
+            .learningRate(0.002)
             .regularization(true).l2(1e-4)
             .list()
             .layer(0, ConvolutionLayer.Builder(3, 3)

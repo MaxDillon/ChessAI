@@ -1,6 +1,8 @@
 package max.dillon
 
 import com.google.protobuf.ByteString
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
+import org.deeplearning4j.util.ModelSerializer
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.lang.Math.pow
@@ -13,7 +15,7 @@ fun valueFor(player: GameState, node: GameState): Float {
 
 fun Float.f3(): String = String.format("%.3f", this)
 
-fun treeSearch(playerState: GameState): GameState {
+fun treeSearch(playerState: GameState, temperature: Double): GameState {
     assert(playerState.outcome == GameOutcome.UNDETERMINED)
     val parents = ArrayList<GameState>()
     playerState.expand()
@@ -21,7 +23,7 @@ fun treeSearch(playerState: GameState): GameState {
         return playerState.nextMoves[0]
     }
 
-    var maxExpansion = 5000
+    var maxExpansion = if (playerState.model == null) 5000 else 2000
     while (maxExpansion > 0) {
         parents.clear()
         var currentNode = playerState
@@ -49,20 +51,18 @@ fun treeSearch(playerState: GameState): GameState {
         }
 
     }
-    val dist = cumulativeDist(playerState.nextMoves)
+    val dist = cumulativeDist(playerState.nextMoves, temperature)
     val r = rand.nextFloat()
     val idx = dist.filter { it < r }.count()
     return playerState.nextMoves[idx]
 }
 
-val temperature = 3.0
-
-fun cumulativeDist(states: ArrayList<GameState>): DoubleArray {
-    val visits = DoubleArray(states.size, { states[it].visitCount.toDouble() })
-    val raised = DoubleArray(states.size, { pow(visits[it], temperature) })
+fun cumulativeDist(states: ArrayList<GameState>, temperature: Double): DoubleArray {
+    val visits = DoubleArray(states.size) { states[it].visitCount.toDouble() }
+    val raised = DoubleArray(states.size) { pow(visits[it], temperature) }
     val rsum = raised.sum()
     var cuml = 0.0
-    return DoubleArray(states.size, { cuml += raised[it]; cuml / rsum })
+    return DoubleArray(states.size) { cuml += raised[it]; cuml / rsum }
 }
 
 fun recordGame(finalState: GameState, states: ArrayList<SlimState>, outputStream: OutputStream) {
@@ -117,13 +117,17 @@ fun slim(state: GameState): SlimState {
     return SlimState(arr, state.whiteMove, tsr)
 }
 
-fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream) {
-    var state = GameState(spec)
+fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream, modelFile: String?) {
+    var model: MultiLayerNetwork? = null
+    if (modelFile != null) {
+        model = ModelSerializer.restoreMultiLayerNetwork(modelFile)
+    }
+    var state = GameState(spec, model)
     val stateArray: ArrayList<SlimState> = arrayListOf(slim(state))
 
     while (state.gameOutcome() == GameOutcome.UNDETERMINED) {
 //        state = if (state.whiteMove) treeSearch(state) else humanInput(state)
-        state = treeSearch(state)
+        state = treeSearch(state, 3.0)
         println("${state.moveDepth}: ${state.description}")
         state.printBoard()
 
@@ -132,3 +136,46 @@ fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream) {
     recordGame(state, stateArray, outputStream)
 }
 
+fun sync(state: GameState, move: GameState): GameState {
+    for (next in state.nextMoves) {
+        if (next.x1 == move.x1 && next.y1 == move.y1) {
+            if (next.x2 == move.x2 && next.y2 == move.y2) {
+                return next
+            }
+        }
+    }
+    throw RuntimeException("wtf")
+}
+
+fun tournament(spec: GameGrammar.GameSpec, mWhite: String, mBlack: String) {
+    val modelWhite = ModelSerializer.restoreMultiLayerNetwork(mWhite)
+    val modelBlack = ModelSerializer.restoreMultiLayerNetwork(mBlack)
+
+    var nWhite = 0
+    var nBlack = 0
+    var nDraw = 0
+
+    while (true) {
+        var white = GameState(spec, modelWhite)
+        var black = GameState(spec, modelBlack)
+
+        while (white.outcome == GameOutcome.UNDETERMINED) {
+            if (white.whiteMove) {
+                white = treeSearch(white, 1.0)
+                black = sync(black, white)
+            } else {
+                black = treeSearch(black, 1.0)
+                white = sync(white, black)
+            }
+            println("${white.moveDepth}: ${white.description}")
+            white.printBoard()
+        }
+        when (white.outcome) {
+            GameOutcome.WIN_WHITE -> nWhite += 1
+            GameOutcome.WIN_BLACK -> nBlack += 1
+            GameOutcome.DRAW -> nDraw += 1
+        }
+
+        println("White: ${nWhite} Black: ${nBlack} Draw: ${nDraw}")
+    }
+}
