@@ -1,20 +1,10 @@
 package max.dillon
 
-import com.google.protobuf.TextFormat
-import max.dillon.GameGrammar.GameSpec
 import max.dillon.Instance.TrainingInstance
 import java.io.FileInputStream
-import java.nio.file.Files
-import java.nio.file.Paths
 
 fun main(args: Array<String>) {
-    val specStr = String(Files.readAllBytes(Paths.get("src/main/data/${args[0]}.textproto")))
-    val builder = GameSpec.newBuilder()
-    TextFormat.getParser().merge(specStr, builder)
-    val gameSpec = builder.apply {
-        addPiece(0, builder.addPieceBuilder())
-    }.build()
-
+    val gameSpec = loadSpec(args[0])
     var count = 0
     val instream = FileInputStream(args[1])
     while (true) {
@@ -35,7 +25,7 @@ fun main(args: Array<String>) {
 
         state.printBoard()
         for (tsr in inst.treeSearchResultList) {
-            println("${tsr.index}: ${tsr.meanValue.f3()} ${tsr.numVisits} ${tsr.prior.f3()}")
+            println("${tsr.index}: ${tsr.prob.f3()}")
         }
         println("STATE")
     }

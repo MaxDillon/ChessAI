@@ -4,1861 +4,1579 @@
 package max.dillon;
 
 public final class Instance {
-    private Instance() {
+  private Instance() {}
+  public static void registerAllExtensions(
+      com.google.protobuf.ExtensionRegistryLite registry) {
+  }
+
+  public static void registerAllExtensions(
+      com.google.protobuf.ExtensionRegistry registry) {
+    registerAllExtensions(
+        (com.google.protobuf.ExtensionRegistryLite) registry);
+  }
+  public interface TreeSearchResultOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:max.dillon.TreeSearchResult)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>uint32 index = 1;</code>
+     */
+    int getIndex();
+
+    /**
+     * <code>float prob = 2;</code>
+     */
+    float getProb();
+  }
+  /**
+   * Protobuf type {@code max.dillon.TreeSearchResult}
+   */
+  public  static final class TreeSearchResult extends
+      com.google.protobuf.GeneratedMessageV3 implements
+      // @@protoc_insertion_point(message_implements:max.dillon.TreeSearchResult)
+      TreeSearchResultOrBuilder {
+    // Use TreeSearchResult.newBuilder() to construct.
+    private TreeSearchResult(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+      super(builder);
+    }
+    private TreeSearchResult() {
+      index_ = 0;
+      prob_ = 0F;
     }
 
-    public static void registerAllExtensions(
-            com.google.protobuf.ExtensionRegistryLite registry) {
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+    getUnknownFields() {
+      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+    }
+    private TreeSearchResult(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      this();
+      int mutable_bitField0_ = 0;
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!input.skipField(tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 8: {
+
+              index_ = input.readUInt32();
+              break;
+            }
+            case 21: {
+
+              prob_ = input.readFloat();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e).setUnfinishedMessage(this);
+      } finally {
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return max.dillon.Instance.internal_static_max_dillon_TreeSearchResult_descriptor;
     }
 
-    public static void registerAllExtensions(
-            com.google.protobuf.ExtensionRegistry registry) {
-        registerAllExtensions(
-                (com.google.protobuf.ExtensionRegistryLite) registry);
+    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return max.dillon.Instance.internal_static_max_dillon_TreeSearchResult_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              max.dillon.Instance.TreeSearchResult.class, max.dillon.Instance.TreeSearchResult.Builder.class);
     }
 
-    public interface TreeSearchResultOrBuilder extends
-            // @@protoc_insertion_point(interface_extends:max.dillon.TreeSearchResult)
-            com.google.protobuf.MessageOrBuilder {
-
-        /**
-         * <code>uint32 index = 1;</code>
-         */
-        int getIndex();
-
-        /**
-         * <code>float prior = 2;</code>
-         */
-        float getPrior();
-
-        /**
-         * <code>float mean_value = 3;</code>
-         */
-        float getMeanValue();
-
-        /**
-         * <code>float num_visits = 4;</code>
-         */
-        float getNumVisits();
+    public static final int INDEX_FIELD_NUMBER = 1;
+    private int index_;
+    /**
+     * <code>uint32 index = 1;</code>
+     */
+    public int getIndex() {
+      return index_;
     }
 
+    public static final int PROB_FIELD_NUMBER = 2;
+    private float prob_;
+    /**
+     * <code>float prob = 2;</code>
+     */
+    public float getProb() {
+      return prob_;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (index_ != 0) {
+        output.writeUInt32(1, index_);
+      }
+      if (prob_ != 0F) {
+        output.writeFloat(2, prob_);
+      }
+    }
+
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (index_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(1, index_);
+      }
+      if (prob_ != 0F) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeFloatSize(2, prob_);
+      }
+      memoizedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof max.dillon.Instance.TreeSearchResult)) {
+        return super.equals(obj);
+      }
+      max.dillon.Instance.TreeSearchResult other = (max.dillon.Instance.TreeSearchResult) obj;
+
+      boolean result = true;
+      result = result && (getIndex()
+          == other.getIndex());
+      result = result && (
+          java.lang.Float.floatToIntBits(getProb())
+          == java.lang.Float.floatToIntBits(
+              other.getProb()));
+      return result;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + INDEX_FIELD_NUMBER;
+      hash = (53 * hash) + getIndex();
+      hash = (37 * hash) + PROB_FIELD_NUMBER;
+      hash = (53 * hash) + java.lang.Float.floatToIntBits(
+          getProb());
+      hash = (29 * hash) + unknownFields.hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static max.dillon.Instance.TreeSearchResult parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static max.dillon.Instance.TreeSearchResult parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static max.dillon.Instance.TreeSearchResult parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static max.dillon.Instance.TreeSearchResult parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static max.dillon.Instance.TreeSearchResult parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static max.dillon.Instance.TreeSearchResult parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static max.dillon.Instance.TreeSearchResult parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static max.dillon.Instance.TreeSearchResult parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static max.dillon.Instance.TreeSearchResult parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+    public static max.dillon.Instance.TreeSearchResult parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static max.dillon.Instance.TreeSearchResult parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static max.dillon.Instance.TreeSearchResult parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(max.dillon.Instance.TreeSearchResult prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     /**
      * Protobuf type {@code max.dillon.TreeSearchResult}
      */
-    public static final class TreeSearchResult extends
-            com.google.protobuf.GeneratedMessageV3 implements
-            // @@protoc_insertion_point(message_implements:max.dillon.TreeSearchResult)
-            TreeSearchResultOrBuilder {
-        private static final long serialVersionUID = 0L;
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:max.dillon.TreeSearchResult)
+        max.dillon.Instance.TreeSearchResultOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return max.dillon.Instance.internal_static_max_dillon_TreeSearchResult_descriptor;
+      }
 
-        // Use TreeSearchResult.newBuilder() to construct.
-        private TreeSearchResult(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-            super(builder);
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return max.dillon.Instance.internal_static_max_dillon_TreeSearchResult_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                max.dillon.Instance.TreeSearchResult.class, max.dillon.Instance.TreeSearchResult.Builder.class);
+      }
+
+      // Construct using max.dillon.Instance.TreeSearchResult.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessageV3
+                .alwaysUseFieldBuilders) {
         }
+      }
+      public Builder clear() {
+        super.clear();
+        index_ = 0;
 
-        private TreeSearchResult() {
-            index_ = 0;
-            prior_ = 0F;
-            meanValue_ = 0F;
-            numVisits_ = 0F;
+        prob_ = 0F;
+
+        return this;
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return max.dillon.Instance.internal_static_max_dillon_TreeSearchResult_descriptor;
+      }
+
+      public max.dillon.Instance.TreeSearchResult getDefaultInstanceForType() {
+        return max.dillon.Instance.TreeSearchResult.getDefaultInstance();
+      }
+
+      public max.dillon.Instance.TreeSearchResult build() {
+        max.dillon.Instance.TreeSearchResult result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
         }
+        return result;
+      }
 
-        @java.lang.Override
-        public final com.google.protobuf.UnknownFieldSet
-        getUnknownFields() {
-            return this.unknownFields;
+      public max.dillon.Instance.TreeSearchResult buildPartial() {
+        max.dillon.Instance.TreeSearchResult result = new max.dillon.Instance.TreeSearchResult(this);
+        result.index_ = index_;
+        result.prob_ = prob_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder clone() {
+        return (Builder) super.clone();
+      }
+      public Builder setField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.setField(field, value);
+      }
+      public Builder clearField(
+          com.google.protobuf.Descriptors.FieldDescriptor field) {
+        return (Builder) super.clearField(field);
+      }
+      public Builder clearOneof(
+          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+        return (Builder) super.clearOneof(oneof);
+      }
+      public Builder setRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          int index, Object value) {
+        return (Builder) super.setRepeatedField(field, index, value);
+      }
+      public Builder addRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.addRepeatedField(field, value);
+      }
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof max.dillon.Instance.TreeSearchResult) {
+          return mergeFrom((max.dillon.Instance.TreeSearchResult)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
         }
+      }
 
-        private TreeSearchResult(
-                com.google.protobuf.CodedInputStream input,
-                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                throws com.google.protobuf.InvalidProtocolBufferException {
-            this();
-            int mutable_bitField0_ = 0;
-            com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-                    com.google.protobuf.UnknownFieldSet.newBuilder();
-            try {
-                boolean done = false;
-                while (!done) {
-                    int tag = input.readTag();
-                    switch (tag) {
-                        case 0:
-                            done = true;
-                            break;
-                        default: {
-                            if (!parseUnknownFieldProto3(
-                                    input, unknownFields, extensionRegistry, tag)) {
-                                done = true;
-                            }
-                            break;
-                        }
-                        case 8: {
-
-                            index_ = input.readUInt32();
-                            break;
-                        }
-                        case 21: {
-
-                            prior_ = input.readFloat();
-                            break;
-                        }
-                        case 29: {
-
-                            meanValue_ = input.readFloat();
-                            break;
-                        }
-                        case 37: {
-
-                            numVisits_ = input.readFloat();
-                            break;
-                        }
-                    }
-                }
-            } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-                throw e.setUnfinishedMessage(this);
-            } catch (java.io.IOException e) {
-                throw new com.google.protobuf.InvalidProtocolBufferException(
-                        e).setUnfinishedMessage(this);
-            } finally {
-                this.unknownFields = unknownFields.build();
-                makeExtensionsImmutable();
-            }
+      public Builder mergeFrom(max.dillon.Instance.TreeSearchResult other) {
+        if (other == max.dillon.Instance.TreeSearchResult.getDefaultInstance()) return this;
+        if (other.getIndex() != 0) {
+          setIndex(other.getIndex());
         }
-
-        public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-            return max.dillon.Instance.internal_static_max_dillon_TreeSearchResult_descriptor;
+        if (other.getProb() != 0F) {
+          setProb(other.getProb());
         }
+        onChanged();
+        return this;
+      }
 
-        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-            return max.dillon.Instance.internal_static_max_dillon_TreeSearchResult_fieldAccessorTable
-                    .ensureFieldAccessorsInitialized(
-                            max.dillon.Instance.TreeSearchResult.class, max.dillon.Instance.TreeSearchResult.Builder.class);
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        max.dillon.Instance.TreeSearchResult parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (max.dillon.Instance.TreeSearchResult) e.getUnfinishedMessage();
+          throw e.unwrapIOException();
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
         }
-
-        public static final int INDEX_FIELD_NUMBER = 1;
-        private int index_;
-
-        /**
-         * <code>uint32 index = 1;</code>
-         */
-        public int getIndex() {
-            return index_;
-        }
-
-        public static final int PRIOR_FIELD_NUMBER = 2;
-        private float prior_;
-
-        /**
-         * <code>float prior = 2;</code>
-         */
-        public float getPrior() {
-            return prior_;
-        }
-
-        public static final int MEAN_VALUE_FIELD_NUMBER = 3;
-        private float meanValue_;
-
-        /**
-         * <code>float mean_value = 3;</code>
-         */
-        public float getMeanValue() {
-            return meanValue_;
-        }
-
-        public static final int NUM_VISITS_FIELD_NUMBER = 4;
-        private float numVisits_;
-
-        /**
-         * <code>float num_visits = 4;</code>
-         */
-        public float getNumVisits() {
-            return numVisits_;
-        }
-
-        private byte memoizedIsInitialized = -1;
-
-        public final boolean isInitialized() {
-            byte isInitialized = memoizedIsInitialized;
-            if (isInitialized == 1) return true;
-            if (isInitialized == 0) return false;
-
-            memoizedIsInitialized = 1;
-            return true;
-        }
-
-        public void writeTo(com.google.protobuf.CodedOutputStream output)
-                throws java.io.IOException {
-            if (index_ != 0) {
-                output.writeUInt32(1, index_);
-            }
-            if (prior_ != 0F) {
-                output.writeFloat(2, prior_);
-            }
-            if (meanValue_ != 0F) {
-                output.writeFloat(3, meanValue_);
-            }
-            if (numVisits_ != 0F) {
-                output.writeFloat(4, numVisits_);
-            }
-            unknownFields.writeTo(output);
-        }
-
-        public int getSerializedSize() {
-            int size = memoizedSize;
-            if (size != -1) return size;
-
-            size = 0;
-            if (index_ != 0) {
-                size += com.google.protobuf.CodedOutputStream
-                        .computeUInt32Size(1, index_);
-            }
-            if (prior_ != 0F) {
-                size += com.google.protobuf.CodedOutputStream
-                        .computeFloatSize(2, prior_);
-            }
-            if (meanValue_ != 0F) {
-                size += com.google.protobuf.CodedOutputStream
-                        .computeFloatSize(3, meanValue_);
-            }
-            if (numVisits_ != 0F) {
-                size += com.google.protobuf.CodedOutputStream
-                        .computeFloatSize(4, numVisits_);
-            }
-            size += unknownFields.getSerializedSize();
-            memoizedSize = size;
-            return size;
-        }
-
-        @java.lang.Override
-        public boolean equals(final java.lang.Object obj) {
-            if (obj == this) {
-                return true;
-            }
-            if (!(obj instanceof max.dillon.Instance.TreeSearchResult)) {
-                return super.equals(obj);
-            }
-            max.dillon.Instance.TreeSearchResult other = (max.dillon.Instance.TreeSearchResult) obj;
-
-            boolean result = true;
-            result = result && (getIndex()
-                    == other.getIndex());
-            result = result && (
-                    java.lang.Float.floatToIntBits(getPrior())
-                            == java.lang.Float.floatToIntBits(
-                            other.getPrior()));
-            result = result && (
-                    java.lang.Float.floatToIntBits(getMeanValue())
-                            == java.lang.Float.floatToIntBits(
-                            other.getMeanValue()));
-            result = result && (
-                    java.lang.Float.floatToIntBits(getNumVisits())
-                            == java.lang.Float.floatToIntBits(
-                            other.getNumVisits()));
-            result = result && unknownFields.equals(other.unknownFields);
-            return result;
-        }
-
-        @java.lang.Override
-        public int hashCode() {
-            if (memoizedHashCode != 0) {
-                return memoizedHashCode;
-            }
-            int hash = 41;
-            hash = (19 * hash) + getDescriptor().hashCode();
-            hash = (37 * hash) + INDEX_FIELD_NUMBER;
-            hash = (53 * hash) + getIndex();
-            hash = (37 * hash) + PRIOR_FIELD_NUMBER;
-            hash = (53 * hash) + java.lang.Float.floatToIntBits(
-                    getPrior());
-            hash = (37 * hash) + MEAN_VALUE_FIELD_NUMBER;
-            hash = (53 * hash) + java.lang.Float.floatToIntBits(
-                    getMeanValue());
-            hash = (37 * hash) + NUM_VISITS_FIELD_NUMBER;
-            hash = (53 * hash) + java.lang.Float.floatToIntBits(
-                    getNumVisits());
-            hash = (29 * hash) + unknownFields.hashCode();
-            memoizedHashCode = hash;
-            return hash;
-        }
-
-        public static max.dillon.Instance.TreeSearchResult parseFrom(
-                java.nio.ByteBuffer data)
-                throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data);
-        }
-
-        public static max.dillon.Instance.TreeSearchResult parseFrom(
-                java.nio.ByteBuffer data,
-                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data, extensionRegistry);
-        }
-
-        public static max.dillon.Instance.TreeSearchResult parseFrom(
-                com.google.protobuf.ByteString data)
-                throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data);
-        }
-
-        public static max.dillon.Instance.TreeSearchResult parseFrom(
-                com.google.protobuf.ByteString data,
-                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data, extensionRegistry);
-        }
-
-        public static max.dillon.Instance.TreeSearchResult parseFrom(byte[] data)
-                throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data);
-        }
-
-        public static max.dillon.Instance.TreeSearchResult parseFrom(
-                byte[] data,
-                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data, extensionRegistry);
-        }
-
-        public static max.dillon.Instance.TreeSearchResult parseFrom(java.io.InputStream input)
-                throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3
-                    .parseWithIOException(PARSER, input);
-        }
-
-        public static max.dillon.Instance.TreeSearchResult parseFrom(
-                java.io.InputStream input,
-                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3
-                    .parseWithIOException(PARSER, input, extensionRegistry);
-        }
-
-        public static max.dillon.Instance.TreeSearchResult parseDelimitedFrom(java.io.InputStream input)
-                throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3
-                    .parseDelimitedWithIOException(PARSER, input);
-        }
-
-        public static max.dillon.Instance.TreeSearchResult parseDelimitedFrom(
-                java.io.InputStream input,
-                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3
-                    .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-        }
-
-        public static max.dillon.Instance.TreeSearchResult parseFrom(
-                com.google.protobuf.CodedInputStream input)
-                throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3
-                    .parseWithIOException(PARSER, input);
-        }
-
-        public static max.dillon.Instance.TreeSearchResult parseFrom(
-                com.google.protobuf.CodedInputStream input,
-                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3
-                    .parseWithIOException(PARSER, input, extensionRegistry);
-        }
-
-        public Builder newBuilderForType() {
-            return newBuilder();
-        }
-
-        public static Builder newBuilder() {
-            return DEFAULT_INSTANCE.toBuilder();
-        }
-
-        public static Builder newBuilder(max.dillon.Instance.TreeSearchResult prototype) {
-            return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-        }
-
-        public Builder toBuilder() {
-            return this == DEFAULT_INSTANCE
-                    ? new Builder() : new Builder().mergeFrom(this);
-        }
-
-        @java.lang.Override
-        protected Builder newBuilderForType(
-                com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-            Builder builder = new Builder(parent);
-            return builder;
-        }
-
-        /**
-         * Protobuf type {@code max.dillon.TreeSearchResult}
-         */
-        public static final class Builder extends
-                com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-                // @@protoc_insertion_point(builder_implements:max.dillon.TreeSearchResult)
-                max.dillon.Instance.TreeSearchResultOrBuilder {
-            public static final com.google.protobuf.Descriptors.Descriptor
-            getDescriptor() {
-                return max.dillon.Instance.internal_static_max_dillon_TreeSearchResult_descriptor;
-            }
-
-            protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-            internalGetFieldAccessorTable() {
-                return max.dillon.Instance.internal_static_max_dillon_TreeSearchResult_fieldAccessorTable
-                        .ensureFieldAccessorsInitialized(
-                                max.dillon.Instance.TreeSearchResult.class, max.dillon.Instance.TreeSearchResult.Builder.class);
-            }
-
-            // Construct using max.dillon.Instance.TreeSearchResult.newBuilder()
-            private Builder() {
-                maybeForceBuilderInitialization();
-            }
-
-            private Builder(
-                    com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-                super(parent);
-                maybeForceBuilderInitialization();
-            }
-
-            private void maybeForceBuilderInitialization() {
-                if (com.google.protobuf.GeneratedMessageV3
-                        .alwaysUseFieldBuilders) {
-                }
-            }
-
-            public Builder clear() {
-                super.clear();
-                index_ = 0;
-
-                prior_ = 0F;
-
-                meanValue_ = 0F;
-
-                numVisits_ = 0F;
-
-                return this;
-            }
-
-            public com.google.protobuf.Descriptors.Descriptor
-            getDescriptorForType() {
-                return max.dillon.Instance.internal_static_max_dillon_TreeSearchResult_descriptor;
-            }
-
-            public max.dillon.Instance.TreeSearchResult getDefaultInstanceForType() {
-                return max.dillon.Instance.TreeSearchResult.getDefaultInstance();
-            }
-
-            public max.dillon.Instance.TreeSearchResult build() {
-                max.dillon.Instance.TreeSearchResult result = buildPartial();
-                if (!result.isInitialized()) {
-                    throw newUninitializedMessageException(result);
-                }
-                return result;
-            }
-
-            public max.dillon.Instance.TreeSearchResult buildPartial() {
-                max.dillon.Instance.TreeSearchResult result = new max.dillon.Instance.TreeSearchResult(this);
-                result.index_ = index_;
-                result.prior_ = prior_;
-                result.meanValue_ = meanValue_;
-                result.numVisits_ = numVisits_;
-                onBuilt();
-                return result;
-            }
-
-            public Builder clone() {
-                return (Builder) super.clone();
-            }
-
-            public Builder setField(
-                    com.google.protobuf.Descriptors.FieldDescriptor field,
-                    java.lang.Object value) {
-                return (Builder) super.setField(field, value);
-            }
-
-            public Builder clearField(
-                    com.google.protobuf.Descriptors.FieldDescriptor field) {
-                return (Builder) super.clearField(field);
-            }
-
-            public Builder clearOneof(
-                    com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-                return (Builder) super.clearOneof(oneof);
-            }
-
-            public Builder setRepeatedField(
-                    com.google.protobuf.Descriptors.FieldDescriptor field,
-                    int index, java.lang.Object value) {
-                return (Builder) super.setRepeatedField(field, index, value);
-            }
-
-            public Builder addRepeatedField(
-                    com.google.protobuf.Descriptors.FieldDescriptor field,
-                    java.lang.Object value) {
-                return (Builder) super.addRepeatedField(field, value);
-            }
-
-            public Builder mergeFrom(com.google.protobuf.Message other) {
-                if (other instanceof max.dillon.Instance.TreeSearchResult) {
-                    return mergeFrom((max.dillon.Instance.TreeSearchResult) other);
-                } else {
-                    super.mergeFrom(other);
-                    return this;
-                }
-            }
-
-            public Builder mergeFrom(max.dillon.Instance.TreeSearchResult other) {
-                if (other == max.dillon.Instance.TreeSearchResult.getDefaultInstance()) return this;
-                if (other.getIndex() != 0) {
-                    setIndex(other.getIndex());
-                }
-                if (other.getPrior() != 0F) {
-                    setPrior(other.getPrior());
-                }
-                if (other.getMeanValue() != 0F) {
-                    setMeanValue(other.getMeanValue());
-                }
-                if (other.getNumVisits() != 0F) {
-                    setNumVisits(other.getNumVisits());
-                }
-                this.mergeUnknownFields(other.unknownFields);
-                onChanged();
-                return this;
-            }
-
-            public final boolean isInitialized() {
-                return true;
-            }
-
-            public Builder mergeFrom(
-                    com.google.protobuf.CodedInputStream input,
-                    com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                    throws java.io.IOException {
-                max.dillon.Instance.TreeSearchResult parsedMessage = null;
-                try {
-                    parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-                } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-                    parsedMessage = (max.dillon.Instance.TreeSearchResult) e.getUnfinishedMessage();
-                    throw e.unwrapIOException();
-                } finally {
-                    if (parsedMessage != null) {
-                        mergeFrom(parsedMessage);
-                    }
-                }
-                return this;
-            }
-
-            private int index_;
-
-            /**
-             * <code>uint32 index = 1;</code>
-             */
-            public int getIndex() {
-                return index_;
-            }
-
-            /**
-             * <code>uint32 index = 1;</code>
-             */
-            public Builder setIndex(int value) {
-
-                index_ = value;
-                onChanged();
-                return this;
-            }
-
-            /**
-             * <code>uint32 index = 1;</code>
-             */
-            public Builder clearIndex() {
-
-                index_ = 0;
-                onChanged();
-                return this;
-            }
-
-            private float prior_;
-
-            /**
-             * <code>float prior = 2;</code>
-             */
-            public float getPrior() {
-                return prior_;
-            }
-
-            /**
-             * <code>float prior = 2;</code>
-             */
-            public Builder setPrior(float value) {
-
-                prior_ = value;
-                onChanged();
-                return this;
-            }
-
-            /**
-             * <code>float prior = 2;</code>
-             */
-            public Builder clearPrior() {
-
-                prior_ = 0F;
-                onChanged();
-                return this;
-            }
-
-            private float meanValue_;
-
-            /**
-             * <code>float mean_value = 3;</code>
-             */
-            public float getMeanValue() {
-                return meanValue_;
-            }
-
-            /**
-             * <code>float mean_value = 3;</code>
-             */
-            public Builder setMeanValue(float value) {
-
-                meanValue_ = value;
-                onChanged();
-                return this;
-            }
-
-            /**
-             * <code>float mean_value = 3;</code>
-             */
-            public Builder clearMeanValue() {
-
-                meanValue_ = 0F;
-                onChanged();
-                return this;
-            }
-
-            private float numVisits_;
-
-            /**
-             * <code>float num_visits = 4;</code>
-             */
-            public float getNumVisits() {
-                return numVisits_;
-            }
-
-            /**
-             * <code>float num_visits = 4;</code>
-             */
-            public Builder setNumVisits(float value) {
-
-                numVisits_ = value;
-                onChanged();
-                return this;
-            }
-
-            /**
-             * <code>float num_visits = 4;</code>
-             */
-            public Builder clearNumVisits() {
-
-                numVisits_ = 0F;
-                onChanged();
-                return this;
-            }
-
-            public final Builder setUnknownFields(
-                    final com.google.protobuf.UnknownFieldSet unknownFields) {
-                return super.setUnknownFieldsProto3(unknownFields);
-            }
-
-            public final Builder mergeUnknownFields(
-                    final com.google.protobuf.UnknownFieldSet unknownFields) {
-                return super.mergeUnknownFields(unknownFields);
-            }
-
-
-            // @@protoc_insertion_point(builder_scope:max.dillon.TreeSearchResult)
-        }
-
-        // @@protoc_insertion_point(class_scope:max.dillon.TreeSearchResult)
-        private static final max.dillon.Instance.TreeSearchResult DEFAULT_INSTANCE;
-
-        static {
-            DEFAULT_INSTANCE = new max.dillon.Instance.TreeSearchResult();
-        }
-
-        public static max.dillon.Instance.TreeSearchResult getDefaultInstance() {
-            return DEFAULT_INSTANCE;
-        }
-
-        private static final com.google.protobuf.Parser<TreeSearchResult>
-                PARSER = new com.google.protobuf.AbstractParser<TreeSearchResult>() {
-            public TreeSearchResult parsePartialFrom(
-                    com.google.protobuf.CodedInputStream input,
-                    com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                    throws com.google.protobuf.InvalidProtocolBufferException {
-                return new TreeSearchResult(input, extensionRegistry);
-            }
-        };
-
-        public static com.google.protobuf.Parser<TreeSearchResult> parser() {
-            return PARSER;
-        }
-
-        @java.lang.Override
-        public com.google.protobuf.Parser<TreeSearchResult> getParserForType() {
-            return PARSER;
-        }
-
-        public max.dillon.Instance.TreeSearchResult getDefaultInstanceForType() {
-            return DEFAULT_INSTANCE;
-        }
-
+        return this;
+      }
+
+      private int index_ ;
+      /**
+       * <code>uint32 index = 1;</code>
+       */
+      public int getIndex() {
+        return index_;
+      }
+      /**
+       * <code>uint32 index = 1;</code>
+       */
+      public Builder setIndex(int value) {
+        
+        index_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>uint32 index = 1;</code>
+       */
+      public Builder clearIndex() {
+        
+        index_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private float prob_ ;
+      /**
+       * <code>float prob = 2;</code>
+       */
+      public float getProb() {
+        return prob_;
+      }
+      /**
+       * <code>float prob = 2;</code>
+       */
+      public Builder setProb(float value) {
+        
+        prob_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>float prob = 2;</code>
+       */
+      public Builder clearProb() {
+        
+        prob_ = 0F;
+        onChanged();
+        return this;
+      }
+      public final Builder setUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return this;
+      }
+
+      public final Builder mergeUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return this;
+      }
+
+
+      // @@protoc_insertion_point(builder_scope:max.dillon.TreeSearchResult)
     }
 
-    public interface TrainingInstanceOrBuilder extends
-            // @@protoc_insertion_point(interface_extends:max.dillon.TrainingInstance)
-            com.google.protobuf.MessageOrBuilder {
+    // @@protoc_insertion_point(class_scope:max.dillon.TreeSearchResult)
+    private static final max.dillon.Instance.TreeSearchResult DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new max.dillon.Instance.TreeSearchResult();
+    }
 
-        /**
-         * <code>bytes board_state = 1;</code>
-         */
-        com.google.protobuf.ByteString getBoardState();
+    public static max.dillon.Instance.TreeSearchResult getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
 
-        /**
-         * <code>bool white_move = 2;</code>
-         */
-        boolean getWhiteMove();
+    private static final com.google.protobuf.Parser<TreeSearchResult>
+        PARSER = new com.google.protobuf.AbstractParser<TreeSearchResult>() {
+      public TreeSearchResult parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+          return new TreeSearchResult(input, extensionRegistry);
+      }
+    };
 
-        /**
-         * <code>uint32 outcome = 3;</code>
-         */
-        int getOutcome();
+    public static com.google.protobuf.Parser<TreeSearchResult> parser() {
+      return PARSER;
+    }
 
-        /**
-         * <code>uint32 game_length = 4;</code>
-         */
-        int getGameLength();
+    @java.lang.Override
+    public com.google.protobuf.Parser<TreeSearchResult> getParserForType() {
+      return PARSER;
+    }
 
-        /**
-         * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-         */
-        java.util.List<max.dillon.Instance.TreeSearchResult>
+    public max.dillon.Instance.TreeSearchResult getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface TrainingInstanceOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:max.dillon.TrainingInstance)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>bytes board_state = 1;</code>
+     */
+    com.google.protobuf.ByteString getBoardState();
+
+    /**
+     * <code>bool white_move = 2;</code>
+     */
+    boolean getWhiteMove();
+
+    /**
+     * <code>uint32 outcome = 3;</code>
+     */
+    int getOutcome();
+
+    /**
+     * <code>uint32 game_length = 4;</code>
+     */
+    int getGameLength();
+
+    /**
+     * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+     */
+    java.util.List<max.dillon.Instance.TreeSearchResult> 
         getTreeSearchResultList();
-
-        /**
-         * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-         */
-        max.dillon.Instance.TreeSearchResult getTreeSearchResult(int index);
-
-        /**
-         * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-         */
-        int getTreeSearchResultCount();
-
-        /**
-         * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-         */
-        java.util.List<? extends max.dillon.Instance.TreeSearchResultOrBuilder>
+    /**
+     * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+     */
+    max.dillon.Instance.TreeSearchResult getTreeSearchResult(int index);
+    /**
+     * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+     */
+    int getTreeSearchResultCount();
+    /**
+     * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+     */
+    java.util.List<? extends max.dillon.Instance.TreeSearchResultOrBuilder> 
         getTreeSearchResultOrBuilderList();
-
-        /**
-         * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-         */
-        max.dillon.Instance.TreeSearchResultOrBuilder getTreeSearchResultOrBuilder(
-                int index);
+    /**
+     * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+     */
+    max.dillon.Instance.TreeSearchResultOrBuilder getTreeSearchResultOrBuilder(
+        int index);
+  }
+  /**
+   * Protobuf type {@code max.dillon.TrainingInstance}
+   */
+  public  static final class TrainingInstance extends
+      com.google.protobuf.GeneratedMessageV3 implements
+      // @@protoc_insertion_point(message_implements:max.dillon.TrainingInstance)
+      TrainingInstanceOrBuilder {
+    // Use TrainingInstance.newBuilder() to construct.
+    private TrainingInstance(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+      super(builder);
+    }
+    private TrainingInstance() {
+      boardState_ = com.google.protobuf.ByteString.EMPTY;
+      whiteMove_ = false;
+      outcome_ = 0;
+      gameLength_ = 0;
+      treeSearchResult_ = java.util.Collections.emptyList();
     }
 
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+    getUnknownFields() {
+      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+    }
+    private TrainingInstance(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      this();
+      int mutable_bitField0_ = 0;
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!input.skipField(tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+
+              boardState_ = input.readBytes();
+              break;
+            }
+            case 16: {
+
+              whiteMove_ = input.readBool();
+              break;
+            }
+            case 24: {
+
+              outcome_ = input.readUInt32();
+              break;
+            }
+            case 32: {
+
+              gameLength_ = input.readUInt32();
+              break;
+            }
+            case 42: {
+              if (!((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
+                treeSearchResult_ = new java.util.ArrayList<max.dillon.Instance.TreeSearchResult>();
+                mutable_bitField0_ |= 0x00000010;
+              }
+              treeSearchResult_.add(
+                  input.readMessage(max.dillon.Instance.TreeSearchResult.parser(), extensionRegistry));
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e).setUnfinishedMessage(this);
+      } finally {
+        if (((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
+          treeSearchResult_ = java.util.Collections.unmodifiableList(treeSearchResult_);
+        }
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return max.dillon.Instance.internal_static_max_dillon_TrainingInstance_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return max.dillon.Instance.internal_static_max_dillon_TrainingInstance_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              max.dillon.Instance.TrainingInstance.class, max.dillon.Instance.TrainingInstance.Builder.class);
+    }
+
+    private int bitField0_;
+    public static final int BOARD_STATE_FIELD_NUMBER = 1;
+    private com.google.protobuf.ByteString boardState_;
+    /**
+     * <code>bytes board_state = 1;</code>
+     */
+    public com.google.protobuf.ByteString getBoardState() {
+      return boardState_;
+    }
+
+    public static final int WHITE_MOVE_FIELD_NUMBER = 2;
+    private boolean whiteMove_;
+    /**
+     * <code>bool white_move = 2;</code>
+     */
+    public boolean getWhiteMove() {
+      return whiteMove_;
+    }
+
+    public static final int OUTCOME_FIELD_NUMBER = 3;
+    private int outcome_;
+    /**
+     * <code>uint32 outcome = 3;</code>
+     */
+    public int getOutcome() {
+      return outcome_;
+    }
+
+    public static final int GAME_LENGTH_FIELD_NUMBER = 4;
+    private int gameLength_;
+    /**
+     * <code>uint32 game_length = 4;</code>
+     */
+    public int getGameLength() {
+      return gameLength_;
+    }
+
+    public static final int TREE_SEARCH_RESULT_FIELD_NUMBER = 5;
+    private java.util.List<max.dillon.Instance.TreeSearchResult> treeSearchResult_;
+    /**
+     * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+     */
+    public java.util.List<max.dillon.Instance.TreeSearchResult> getTreeSearchResultList() {
+      return treeSearchResult_;
+    }
+    /**
+     * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+     */
+    public java.util.List<? extends max.dillon.Instance.TreeSearchResultOrBuilder> 
+        getTreeSearchResultOrBuilderList() {
+      return treeSearchResult_;
+    }
+    /**
+     * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+     */
+    public int getTreeSearchResultCount() {
+      return treeSearchResult_.size();
+    }
+    /**
+     * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+     */
+    public max.dillon.Instance.TreeSearchResult getTreeSearchResult(int index) {
+      return treeSearchResult_.get(index);
+    }
+    /**
+     * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+     */
+    public max.dillon.Instance.TreeSearchResultOrBuilder getTreeSearchResultOrBuilder(
+        int index) {
+      return treeSearchResult_.get(index);
+    }
+
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!boardState_.isEmpty()) {
+        output.writeBytes(1, boardState_);
+      }
+      if (whiteMove_ != false) {
+        output.writeBool(2, whiteMove_);
+      }
+      if (outcome_ != 0) {
+        output.writeUInt32(3, outcome_);
+      }
+      if (gameLength_ != 0) {
+        output.writeUInt32(4, gameLength_);
+      }
+      for (int i = 0; i < treeSearchResult_.size(); i++) {
+        output.writeMessage(5, treeSearchResult_.get(i));
+      }
+    }
+
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!boardState_.isEmpty()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, boardState_);
+      }
+      if (whiteMove_ != false) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(2, whiteMove_);
+      }
+      if (outcome_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(3, outcome_);
+      }
+      if (gameLength_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(4, gameLength_);
+      }
+      for (int i = 0; i < treeSearchResult_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(5, treeSearchResult_.get(i));
+      }
+      memoizedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof max.dillon.Instance.TrainingInstance)) {
+        return super.equals(obj);
+      }
+      max.dillon.Instance.TrainingInstance other = (max.dillon.Instance.TrainingInstance) obj;
+
+      boolean result = true;
+      result = result && getBoardState()
+          .equals(other.getBoardState());
+      result = result && (getWhiteMove()
+          == other.getWhiteMove());
+      result = result && (getOutcome()
+          == other.getOutcome());
+      result = result && (getGameLength()
+          == other.getGameLength());
+      result = result && getTreeSearchResultList()
+          .equals(other.getTreeSearchResultList());
+      return result;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + BOARD_STATE_FIELD_NUMBER;
+      hash = (53 * hash) + getBoardState().hashCode();
+      hash = (37 * hash) + WHITE_MOVE_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+          getWhiteMove());
+      hash = (37 * hash) + OUTCOME_FIELD_NUMBER;
+      hash = (53 * hash) + getOutcome();
+      hash = (37 * hash) + GAME_LENGTH_FIELD_NUMBER;
+      hash = (53 * hash) + getGameLength();
+      if (getTreeSearchResultCount() > 0) {
+        hash = (37 * hash) + TREE_SEARCH_RESULT_FIELD_NUMBER;
+        hash = (53 * hash) + getTreeSearchResultList().hashCode();
+      }
+      hash = (29 * hash) + unknownFields.hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static max.dillon.Instance.TrainingInstance parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static max.dillon.Instance.TrainingInstance parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static max.dillon.Instance.TrainingInstance parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static max.dillon.Instance.TrainingInstance parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static max.dillon.Instance.TrainingInstance parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static max.dillon.Instance.TrainingInstance parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static max.dillon.Instance.TrainingInstance parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static max.dillon.Instance.TrainingInstance parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static max.dillon.Instance.TrainingInstance parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+    public static max.dillon.Instance.TrainingInstance parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static max.dillon.Instance.TrainingInstance parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static max.dillon.Instance.TrainingInstance parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(max.dillon.Instance.TrainingInstance prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     /**
      * Protobuf type {@code max.dillon.TrainingInstance}
      */
-    public static final class TrainingInstance extends
-            com.google.protobuf.GeneratedMessageV3 implements
-            // @@protoc_insertion_point(message_implements:max.dillon.TrainingInstance)
-            TrainingInstanceOrBuilder {
-        private static final long serialVersionUID = 0L;
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:max.dillon.TrainingInstance)
+        max.dillon.Instance.TrainingInstanceOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return max.dillon.Instance.internal_static_max_dillon_TrainingInstance_descriptor;
+      }
 
-        // Use TrainingInstance.newBuilder() to construct.
-        private TrainingInstance(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-            super(builder);
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return max.dillon.Instance.internal_static_max_dillon_TrainingInstance_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                max.dillon.Instance.TrainingInstance.class, max.dillon.Instance.TrainingInstance.Builder.class);
+      }
+
+      // Construct using max.dillon.Instance.TrainingInstance.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessageV3
+                .alwaysUseFieldBuilders) {
+          getTreeSearchResultFieldBuilder();
         }
+      }
+      public Builder clear() {
+        super.clear();
+        boardState_ = com.google.protobuf.ByteString.EMPTY;
 
-        private TrainingInstance() {
-            boardState_ = com.google.protobuf.ByteString.EMPTY;
-            whiteMove_ = false;
-            outcome_ = 0;
-            gameLength_ = 0;
-            treeSearchResult_ = java.util.Collections.emptyList();
+        whiteMove_ = false;
+
+        outcome_ = 0;
+
+        gameLength_ = 0;
+
+        if (treeSearchResultBuilder_ == null) {
+          treeSearchResult_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000010);
+        } else {
+          treeSearchResultBuilder_.clear();
         }
+        return this;
+      }
 
-        @java.lang.Override
-        public final com.google.protobuf.UnknownFieldSet
-        getUnknownFields() {
-            return this.unknownFields;
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return max.dillon.Instance.internal_static_max_dillon_TrainingInstance_descriptor;
+      }
+
+      public max.dillon.Instance.TrainingInstance getDefaultInstanceForType() {
+        return max.dillon.Instance.TrainingInstance.getDefaultInstance();
+      }
+
+      public max.dillon.Instance.TrainingInstance build() {
+        max.dillon.Instance.TrainingInstance result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
         }
+        return result;
+      }
 
-        private TrainingInstance(
-                com.google.protobuf.CodedInputStream input,
-                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                throws com.google.protobuf.InvalidProtocolBufferException {
-            this();
-            int mutable_bitField0_ = 0;
-            com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-                    com.google.protobuf.UnknownFieldSet.newBuilder();
-            try {
-                boolean done = false;
-                while (!done) {
-                    int tag = input.readTag();
-                    switch (tag) {
-                        case 0:
-                            done = true;
-                            break;
-                        default: {
-                            if (!parseUnknownFieldProto3(
-                                    input, unknownFields, extensionRegistry, tag)) {
-                                done = true;
-                            }
-                            break;
-                        }
-                        case 10: {
-
-                            boardState_ = input.readBytes();
-                            break;
-                        }
-                        case 16: {
-
-                            whiteMove_ = input.readBool();
-                            break;
-                        }
-                        case 24: {
-
-                            outcome_ = input.readUInt32();
-                            break;
-                        }
-                        case 32: {
-
-                            gameLength_ = input.readUInt32();
-                            break;
-                        }
-                        case 42: {
-                            if (!((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
-                                treeSearchResult_ = new java.util.ArrayList<max.dillon.Instance.TreeSearchResult>();
-                                mutable_bitField0_ |= 0x00000010;
-                            }
-                            treeSearchResult_.add(
-                                    input.readMessage(max.dillon.Instance.TreeSearchResult.parser(), extensionRegistry));
-                            break;
-                        }
-                    }
-                }
-            } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-                throw e.setUnfinishedMessage(this);
-            } catch (java.io.IOException e) {
-                throw new com.google.protobuf.InvalidProtocolBufferException(
-                        e).setUnfinishedMessage(this);
-            } finally {
-                if (((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
-                    treeSearchResult_ = java.util.Collections.unmodifiableList(treeSearchResult_);
-                }
-                this.unknownFields = unknownFields.build();
-                makeExtensionsImmutable();
-            }
+      public max.dillon.Instance.TrainingInstance buildPartial() {
+        max.dillon.Instance.TrainingInstance result = new max.dillon.Instance.TrainingInstance(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        result.boardState_ = boardState_;
+        result.whiteMove_ = whiteMove_;
+        result.outcome_ = outcome_;
+        result.gameLength_ = gameLength_;
+        if (treeSearchResultBuilder_ == null) {
+          if (((bitField0_ & 0x00000010) == 0x00000010)) {
+            treeSearchResult_ = java.util.Collections.unmodifiableList(treeSearchResult_);
+            bitField0_ = (bitField0_ & ~0x00000010);
+          }
+          result.treeSearchResult_ = treeSearchResult_;
+        } else {
+          result.treeSearchResult_ = treeSearchResultBuilder_.build();
         }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
 
-        public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-            return max.dillon.Instance.internal_static_max_dillon_TrainingInstance_descriptor;
+      public Builder clone() {
+        return (Builder) super.clone();
+      }
+      public Builder setField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.setField(field, value);
+      }
+      public Builder clearField(
+          com.google.protobuf.Descriptors.FieldDescriptor field) {
+        return (Builder) super.clearField(field);
+      }
+      public Builder clearOneof(
+          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+        return (Builder) super.clearOneof(oneof);
+      }
+      public Builder setRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          int index, Object value) {
+        return (Builder) super.setRepeatedField(field, index, value);
+      }
+      public Builder addRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.addRepeatedField(field, value);
+      }
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof max.dillon.Instance.TrainingInstance) {
+          return mergeFrom((max.dillon.Instance.TrainingInstance)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
         }
+      }
 
-        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-            return max.dillon.Instance.internal_static_max_dillon_TrainingInstance_fieldAccessorTable
-                    .ensureFieldAccessorsInitialized(
-                            max.dillon.Instance.TrainingInstance.class, max.dillon.Instance.TrainingInstance.Builder.class);
+      public Builder mergeFrom(max.dillon.Instance.TrainingInstance other) {
+        if (other == max.dillon.Instance.TrainingInstance.getDefaultInstance()) return this;
+        if (other.getBoardState() != com.google.protobuf.ByteString.EMPTY) {
+          setBoardState(other.getBoardState());
         }
-
-        private int bitField0_;
-        public static final int BOARD_STATE_FIELD_NUMBER = 1;
-        private com.google.protobuf.ByteString boardState_;
-
-        /**
-         * <code>bytes board_state = 1;</code>
-         */
-        public com.google.protobuf.ByteString getBoardState() {
-            return boardState_;
+        if (other.getWhiteMove() != false) {
+          setWhiteMove(other.getWhiteMove());
         }
-
-        public static final int WHITE_MOVE_FIELD_NUMBER = 2;
-        private boolean whiteMove_;
-
-        /**
-         * <code>bool white_move = 2;</code>
-         */
-        public boolean getWhiteMove() {
-            return whiteMove_;
+        if (other.getOutcome() != 0) {
+          setOutcome(other.getOutcome());
         }
-
-        public static final int OUTCOME_FIELD_NUMBER = 3;
-        private int outcome_;
-
-        /**
-         * <code>uint32 outcome = 3;</code>
-         */
-        public int getOutcome() {
-            return outcome_;
+        if (other.getGameLength() != 0) {
+          setGameLength(other.getGameLength());
         }
-
-        public static final int GAME_LENGTH_FIELD_NUMBER = 4;
-        private int gameLength_;
-
-        /**
-         * <code>uint32 game_length = 4;</code>
-         */
-        public int getGameLength() {
-            return gameLength_;
+        if (treeSearchResultBuilder_ == null) {
+          if (!other.treeSearchResult_.isEmpty()) {
+            if (treeSearchResult_.isEmpty()) {
+              treeSearchResult_ = other.treeSearchResult_;
+              bitField0_ = (bitField0_ & ~0x00000010);
+            } else {
+              ensureTreeSearchResultIsMutable();
+              treeSearchResult_.addAll(other.treeSearchResult_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.treeSearchResult_.isEmpty()) {
+            if (treeSearchResultBuilder_.isEmpty()) {
+              treeSearchResultBuilder_.dispose();
+              treeSearchResultBuilder_ = null;
+              treeSearchResult_ = other.treeSearchResult_;
+              bitField0_ = (bitField0_ & ~0x00000010);
+              treeSearchResultBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getTreeSearchResultFieldBuilder() : null;
+            } else {
+              treeSearchResultBuilder_.addAllMessages(other.treeSearchResult_);
+            }
+          }
         }
+        onChanged();
+        return this;
+      }
 
-        public static final int TREE_SEARCH_RESULT_FIELD_NUMBER = 5;
-        private java.util.List<max.dillon.Instance.TreeSearchResult> treeSearchResult_;
+      public final boolean isInitialized() {
+        return true;
+      }
 
-        /**
-         * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-         */
-        public java.util.List<max.dillon.Instance.TreeSearchResult> getTreeSearchResultList() {
-            return treeSearchResult_;
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        max.dillon.Instance.TrainingInstance parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (max.dillon.Instance.TrainingInstance) e.getUnfinishedMessage();
+          throw e.unwrapIOException();
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
         }
+        return this;
+      }
+      private int bitField0_;
 
-        /**
-         * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-         */
-        public java.util.List<? extends max.dillon.Instance.TreeSearchResultOrBuilder>
-        getTreeSearchResultOrBuilderList() {
-            return treeSearchResult_;
+      private com.google.protobuf.ByteString boardState_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>bytes board_state = 1;</code>
+       */
+      public com.google.protobuf.ByteString getBoardState() {
+        return boardState_;
+      }
+      /**
+       * <code>bytes board_state = 1;</code>
+       */
+      public Builder setBoardState(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        boardState_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>bytes board_state = 1;</code>
+       */
+      public Builder clearBoardState() {
+        
+        boardState_ = getDefaultInstance().getBoardState();
+        onChanged();
+        return this;
+      }
+
+      private boolean whiteMove_ ;
+      /**
+       * <code>bool white_move = 2;</code>
+       */
+      public boolean getWhiteMove() {
+        return whiteMove_;
+      }
+      /**
+       * <code>bool white_move = 2;</code>
+       */
+      public Builder setWhiteMove(boolean value) {
+        
+        whiteMove_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>bool white_move = 2;</code>
+       */
+      public Builder clearWhiteMove() {
+        
+        whiteMove_ = false;
+        onChanged();
+        return this;
+      }
+
+      private int outcome_ ;
+      /**
+       * <code>uint32 outcome = 3;</code>
+       */
+      public int getOutcome() {
+        return outcome_;
+      }
+      /**
+       * <code>uint32 outcome = 3;</code>
+       */
+      public Builder setOutcome(int value) {
+        
+        outcome_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>uint32 outcome = 3;</code>
+       */
+      public Builder clearOutcome() {
+        
+        outcome_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int gameLength_ ;
+      /**
+       * <code>uint32 game_length = 4;</code>
+       */
+      public int getGameLength() {
+        return gameLength_;
+      }
+      /**
+       * <code>uint32 game_length = 4;</code>
+       */
+      public Builder setGameLength(int value) {
+        
+        gameLength_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>uint32 game_length = 4;</code>
+       */
+      public Builder clearGameLength() {
+        
+        gameLength_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private java.util.List<max.dillon.Instance.TreeSearchResult> treeSearchResult_ =
+        java.util.Collections.emptyList();
+      private void ensureTreeSearchResultIsMutable() {
+        if (!((bitField0_ & 0x00000010) == 0x00000010)) {
+          treeSearchResult_ = new java.util.ArrayList<max.dillon.Instance.TreeSearchResult>(treeSearchResult_);
+          bitField0_ |= 0x00000010;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          max.dillon.Instance.TreeSearchResult, max.dillon.Instance.TreeSearchResult.Builder, max.dillon.Instance.TreeSearchResultOrBuilder> treeSearchResultBuilder_;
+
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public java.util.List<max.dillon.Instance.TreeSearchResult> getTreeSearchResultList() {
+        if (treeSearchResultBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(treeSearchResult_);
+        } else {
+          return treeSearchResultBuilder_.getMessageList();
         }
-
-        /**
-         * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-         */
-        public int getTreeSearchResultCount() {
-            return treeSearchResult_.size();
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public int getTreeSearchResultCount() {
+        if (treeSearchResultBuilder_ == null) {
+          return treeSearchResult_.size();
+        } else {
+          return treeSearchResultBuilder_.getCount();
         }
-
-        /**
-         * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-         */
-        public max.dillon.Instance.TreeSearchResult getTreeSearchResult(int index) {
-            return treeSearchResult_.get(index);
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public max.dillon.Instance.TreeSearchResult getTreeSearchResult(int index) {
+        if (treeSearchResultBuilder_ == null) {
+          return treeSearchResult_.get(index);
+        } else {
+          return treeSearchResultBuilder_.getMessage(index);
         }
-
-        /**
-         * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-         */
-        public max.dillon.Instance.TreeSearchResultOrBuilder getTreeSearchResultOrBuilder(
-                int index) {
-            return treeSearchResult_.get(index);
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public Builder setTreeSearchResult(
+          int index, max.dillon.Instance.TreeSearchResult value) {
+        if (treeSearchResultBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureTreeSearchResultIsMutable();
+          treeSearchResult_.set(index, value);
+          onChanged();
+        } else {
+          treeSearchResultBuilder_.setMessage(index, value);
         }
-
-        private byte memoizedIsInitialized = -1;
-
-        public final boolean isInitialized() {
-            byte isInitialized = memoizedIsInitialized;
-            if (isInitialized == 1) return true;
-            if (isInitialized == 0) return false;
-
-            memoizedIsInitialized = 1;
-            return true;
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public Builder setTreeSearchResult(
+          int index, max.dillon.Instance.TreeSearchResult.Builder builderForValue) {
+        if (treeSearchResultBuilder_ == null) {
+          ensureTreeSearchResultIsMutable();
+          treeSearchResult_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          treeSearchResultBuilder_.setMessage(index, builderForValue.build());
         }
-
-        public void writeTo(com.google.protobuf.CodedOutputStream output)
-                throws java.io.IOException {
-            if (!boardState_.isEmpty()) {
-                output.writeBytes(1, boardState_);
-            }
-            if (whiteMove_ != false) {
-                output.writeBool(2, whiteMove_);
-            }
-            if (outcome_ != 0) {
-                output.writeUInt32(3, outcome_);
-            }
-            if (gameLength_ != 0) {
-                output.writeUInt32(4, gameLength_);
-            }
-            for (int i = 0; i < treeSearchResult_.size(); i++) {
-                output.writeMessage(5, treeSearchResult_.get(i));
-            }
-            unknownFields.writeTo(output);
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public Builder addTreeSearchResult(max.dillon.Instance.TreeSearchResult value) {
+        if (treeSearchResultBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureTreeSearchResultIsMutable();
+          treeSearchResult_.add(value);
+          onChanged();
+        } else {
+          treeSearchResultBuilder_.addMessage(value);
         }
-
-        public int getSerializedSize() {
-            int size = memoizedSize;
-            if (size != -1) return size;
-
-            size = 0;
-            if (!boardState_.isEmpty()) {
-                size += com.google.protobuf.CodedOutputStream
-                        .computeBytesSize(1, boardState_);
-            }
-            if (whiteMove_ != false) {
-                size += com.google.protobuf.CodedOutputStream
-                        .computeBoolSize(2, whiteMove_);
-            }
-            if (outcome_ != 0) {
-                size += com.google.protobuf.CodedOutputStream
-                        .computeUInt32Size(3, outcome_);
-            }
-            if (gameLength_ != 0) {
-                size += com.google.protobuf.CodedOutputStream
-                        .computeUInt32Size(4, gameLength_);
-            }
-            for (int i = 0; i < treeSearchResult_.size(); i++) {
-                size += com.google.protobuf.CodedOutputStream
-                        .computeMessageSize(5, treeSearchResult_.get(i));
-            }
-            size += unknownFields.getSerializedSize();
-            memoizedSize = size;
-            return size;
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public Builder addTreeSearchResult(
+          int index, max.dillon.Instance.TreeSearchResult value) {
+        if (treeSearchResultBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureTreeSearchResultIsMutable();
+          treeSearchResult_.add(index, value);
+          onChanged();
+        } else {
+          treeSearchResultBuilder_.addMessage(index, value);
         }
-
-        @java.lang.Override
-        public boolean equals(final java.lang.Object obj) {
-            if (obj == this) {
-                return true;
-            }
-            if (!(obj instanceof max.dillon.Instance.TrainingInstance)) {
-                return super.equals(obj);
-            }
-            max.dillon.Instance.TrainingInstance other = (max.dillon.Instance.TrainingInstance) obj;
-
-            boolean result = true;
-            result = result && getBoardState()
-                    .equals(other.getBoardState());
-            result = result && (getWhiteMove()
-                    == other.getWhiteMove());
-            result = result && (getOutcome()
-                    == other.getOutcome());
-            result = result && (getGameLength()
-                    == other.getGameLength());
-            result = result && getTreeSearchResultList()
-                    .equals(other.getTreeSearchResultList());
-            result = result && unknownFields.equals(other.unknownFields);
-            return result;
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public Builder addTreeSearchResult(
+          max.dillon.Instance.TreeSearchResult.Builder builderForValue) {
+        if (treeSearchResultBuilder_ == null) {
+          ensureTreeSearchResultIsMutable();
+          treeSearchResult_.add(builderForValue.build());
+          onChanged();
+        } else {
+          treeSearchResultBuilder_.addMessage(builderForValue.build());
         }
-
-        @java.lang.Override
-        public int hashCode() {
-            if (memoizedHashCode != 0) {
-                return memoizedHashCode;
-            }
-            int hash = 41;
-            hash = (19 * hash) + getDescriptor().hashCode();
-            hash = (37 * hash) + BOARD_STATE_FIELD_NUMBER;
-            hash = (53 * hash) + getBoardState().hashCode();
-            hash = (37 * hash) + WHITE_MOVE_FIELD_NUMBER;
-            hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-                    getWhiteMove());
-            hash = (37 * hash) + OUTCOME_FIELD_NUMBER;
-            hash = (53 * hash) + getOutcome();
-            hash = (37 * hash) + GAME_LENGTH_FIELD_NUMBER;
-            hash = (53 * hash) + getGameLength();
-            if (getTreeSearchResultCount() > 0) {
-                hash = (37 * hash) + TREE_SEARCH_RESULT_FIELD_NUMBER;
-                hash = (53 * hash) + getTreeSearchResultList().hashCode();
-            }
-            hash = (29 * hash) + unknownFields.hashCode();
-            memoizedHashCode = hash;
-            return hash;
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public Builder addTreeSearchResult(
+          int index, max.dillon.Instance.TreeSearchResult.Builder builderForValue) {
+        if (treeSearchResultBuilder_ == null) {
+          ensureTreeSearchResultIsMutable();
+          treeSearchResult_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          treeSearchResultBuilder_.addMessage(index, builderForValue.build());
         }
-
-        public static max.dillon.Instance.TrainingInstance parseFrom(
-                java.nio.ByteBuffer data)
-                throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data);
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public Builder addAllTreeSearchResult(
+          java.lang.Iterable<? extends max.dillon.Instance.TreeSearchResult> values) {
+        if (treeSearchResultBuilder_ == null) {
+          ensureTreeSearchResultIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, treeSearchResult_);
+          onChanged();
+        } else {
+          treeSearchResultBuilder_.addAllMessages(values);
         }
-
-        public static max.dillon.Instance.TrainingInstance parseFrom(
-                java.nio.ByteBuffer data,
-                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data, extensionRegistry);
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public Builder clearTreeSearchResult() {
+        if (treeSearchResultBuilder_ == null) {
+          treeSearchResult_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000010);
+          onChanged();
+        } else {
+          treeSearchResultBuilder_.clear();
         }
-
-        public static max.dillon.Instance.TrainingInstance parseFrom(
-                com.google.protobuf.ByteString data)
-                throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data);
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public Builder removeTreeSearchResult(int index) {
+        if (treeSearchResultBuilder_ == null) {
+          ensureTreeSearchResultIsMutable();
+          treeSearchResult_.remove(index);
+          onChanged();
+        } else {
+          treeSearchResultBuilder_.remove(index);
         }
-
-        public static max.dillon.Instance.TrainingInstance parseFrom(
-                com.google.protobuf.ByteString data,
-                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data, extensionRegistry);
+        return this;
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public max.dillon.Instance.TreeSearchResult.Builder getTreeSearchResultBuilder(
+          int index) {
+        return getTreeSearchResultFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public max.dillon.Instance.TreeSearchResultOrBuilder getTreeSearchResultOrBuilder(
+          int index) {
+        if (treeSearchResultBuilder_ == null) {
+          return treeSearchResult_.get(index);  } else {
+          return treeSearchResultBuilder_.getMessageOrBuilder(index);
         }
-
-        public static max.dillon.Instance.TrainingInstance parseFrom(byte[] data)
-                throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data);
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public java.util.List<? extends max.dillon.Instance.TreeSearchResultOrBuilder> 
+           getTreeSearchResultOrBuilderList() {
+        if (treeSearchResultBuilder_ != null) {
+          return treeSearchResultBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(treeSearchResult_);
         }
-
-        public static max.dillon.Instance.TrainingInstance parseFrom(
-                byte[] data,
-                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data, extensionRegistry);
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public max.dillon.Instance.TreeSearchResult.Builder addTreeSearchResultBuilder() {
+        return getTreeSearchResultFieldBuilder().addBuilder(
+            max.dillon.Instance.TreeSearchResult.getDefaultInstance());
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public max.dillon.Instance.TreeSearchResult.Builder addTreeSearchResultBuilder(
+          int index) {
+        return getTreeSearchResultFieldBuilder().addBuilder(
+            index, max.dillon.Instance.TreeSearchResult.getDefaultInstance());
+      }
+      /**
+       * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
+       */
+      public java.util.List<max.dillon.Instance.TreeSearchResult.Builder> 
+           getTreeSearchResultBuilderList() {
+        return getTreeSearchResultFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          max.dillon.Instance.TreeSearchResult, max.dillon.Instance.TreeSearchResult.Builder, max.dillon.Instance.TreeSearchResultOrBuilder> 
+          getTreeSearchResultFieldBuilder() {
+        if (treeSearchResultBuilder_ == null) {
+          treeSearchResultBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              max.dillon.Instance.TreeSearchResult, max.dillon.Instance.TreeSearchResult.Builder, max.dillon.Instance.TreeSearchResultOrBuilder>(
+                  treeSearchResult_,
+                  ((bitField0_ & 0x00000010) == 0x00000010),
+                  getParentForChildren(),
+                  isClean());
+          treeSearchResult_ = null;
         }
-
-        public static max.dillon.Instance.TrainingInstance parseFrom(java.io.InputStream input)
-                throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3
-                    .parseWithIOException(PARSER, input);
-        }
-
-        public static max.dillon.Instance.TrainingInstance parseFrom(
-                java.io.InputStream input,
-                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3
-                    .parseWithIOException(PARSER, input, extensionRegistry);
-        }
-
-        public static max.dillon.Instance.TrainingInstance parseDelimitedFrom(java.io.InputStream input)
-                throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3
-                    .parseDelimitedWithIOException(PARSER, input);
-        }
-
-        public static max.dillon.Instance.TrainingInstance parseDelimitedFrom(
-                java.io.InputStream input,
-                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3
-                    .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-        }
-
-        public static max.dillon.Instance.TrainingInstance parseFrom(
-                com.google.protobuf.CodedInputStream input)
-                throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3
-                    .parseWithIOException(PARSER, input);
-        }
-
-        public static max.dillon.Instance.TrainingInstance parseFrom(
-                com.google.protobuf.CodedInputStream input,
-                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3
-                    .parseWithIOException(PARSER, input, extensionRegistry);
-        }
-
-        public Builder newBuilderForType() {
-            return newBuilder();
-        }
-
-        public static Builder newBuilder() {
-            return DEFAULT_INSTANCE.toBuilder();
-        }
-
-        public static Builder newBuilder(max.dillon.Instance.TrainingInstance prototype) {
-            return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-        }
-
-        public Builder toBuilder() {
-            return this == DEFAULT_INSTANCE
-                    ? new Builder() : new Builder().mergeFrom(this);
-        }
-
-        @java.lang.Override
-        protected Builder newBuilderForType(
-                com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-            Builder builder = new Builder(parent);
-            return builder;
-        }
-
-        /**
-         * Protobuf type {@code max.dillon.TrainingInstance}
-         */
-        public static final class Builder extends
-                com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-                // @@protoc_insertion_point(builder_implements:max.dillon.TrainingInstance)
-                max.dillon.Instance.TrainingInstanceOrBuilder {
-            public static final com.google.protobuf.Descriptors.Descriptor
-            getDescriptor() {
-                return max.dillon.Instance.internal_static_max_dillon_TrainingInstance_descriptor;
-            }
-
-            protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-            internalGetFieldAccessorTable() {
-                return max.dillon.Instance.internal_static_max_dillon_TrainingInstance_fieldAccessorTable
-                        .ensureFieldAccessorsInitialized(
-                                max.dillon.Instance.TrainingInstance.class, max.dillon.Instance.TrainingInstance.Builder.class);
-            }
-
-            // Construct using max.dillon.Instance.TrainingInstance.newBuilder()
-            private Builder() {
-                maybeForceBuilderInitialization();
-            }
-
-            private Builder(
-                    com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-                super(parent);
-                maybeForceBuilderInitialization();
-            }
-
-            private void maybeForceBuilderInitialization() {
-                if (com.google.protobuf.GeneratedMessageV3
-                        .alwaysUseFieldBuilders) {
-                    getTreeSearchResultFieldBuilder();
-                }
-            }
-
-            public Builder clear() {
-                super.clear();
-                boardState_ = com.google.protobuf.ByteString.EMPTY;
-
-                whiteMove_ = false;
-
-                outcome_ = 0;
-
-                gameLength_ = 0;
-
-                if (treeSearchResultBuilder_ == null) {
-                    treeSearchResult_ = java.util.Collections.emptyList();
-                    bitField0_ = (bitField0_ & ~0x00000010);
-                } else {
-                    treeSearchResultBuilder_.clear();
-                }
-                return this;
-            }
-
-            public com.google.protobuf.Descriptors.Descriptor
-            getDescriptorForType() {
-                return max.dillon.Instance.internal_static_max_dillon_TrainingInstance_descriptor;
-            }
-
-            public max.dillon.Instance.TrainingInstance getDefaultInstanceForType() {
-                return max.dillon.Instance.TrainingInstance.getDefaultInstance();
-            }
-
-            public max.dillon.Instance.TrainingInstance build() {
-                max.dillon.Instance.TrainingInstance result = buildPartial();
-                if (!result.isInitialized()) {
-                    throw newUninitializedMessageException(result);
-                }
-                return result;
-            }
-
-            public max.dillon.Instance.TrainingInstance buildPartial() {
-                max.dillon.Instance.TrainingInstance result = new max.dillon.Instance.TrainingInstance(this);
-                int from_bitField0_ = bitField0_;
-                int to_bitField0_ = 0;
-                result.boardState_ = boardState_;
-                result.whiteMove_ = whiteMove_;
-                result.outcome_ = outcome_;
-                result.gameLength_ = gameLength_;
-                if (treeSearchResultBuilder_ == null) {
-                    if (((bitField0_ & 0x00000010) == 0x00000010)) {
-                        treeSearchResult_ = java.util.Collections.unmodifiableList(treeSearchResult_);
-                        bitField0_ = (bitField0_ & ~0x00000010);
-                    }
-                    result.treeSearchResult_ = treeSearchResult_;
-                } else {
-                    result.treeSearchResult_ = treeSearchResultBuilder_.build();
-                }
-                result.bitField0_ = to_bitField0_;
-                onBuilt();
-                return result;
-            }
-
-            public Builder clone() {
-                return (Builder) super.clone();
-            }
-
-            public Builder setField(
-                    com.google.protobuf.Descriptors.FieldDescriptor field,
-                    java.lang.Object value) {
-                return (Builder) super.setField(field, value);
-            }
-
-            public Builder clearField(
-                    com.google.protobuf.Descriptors.FieldDescriptor field) {
-                return (Builder) super.clearField(field);
-            }
-
-            public Builder clearOneof(
-                    com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-                return (Builder) super.clearOneof(oneof);
-            }
-
-            public Builder setRepeatedField(
-                    com.google.protobuf.Descriptors.FieldDescriptor field,
-                    int index, java.lang.Object value) {
-                return (Builder) super.setRepeatedField(field, index, value);
-            }
-
-            public Builder addRepeatedField(
-                    com.google.protobuf.Descriptors.FieldDescriptor field,
-                    java.lang.Object value) {
-                return (Builder) super.addRepeatedField(field, value);
-            }
-
-            public Builder mergeFrom(com.google.protobuf.Message other) {
-                if (other instanceof max.dillon.Instance.TrainingInstance) {
-                    return mergeFrom((max.dillon.Instance.TrainingInstance) other);
-                } else {
-                    super.mergeFrom(other);
-                    return this;
-                }
-            }
-
-            public Builder mergeFrom(max.dillon.Instance.TrainingInstance other) {
-                if (other == max.dillon.Instance.TrainingInstance.getDefaultInstance()) return this;
-                if (other.getBoardState() != com.google.protobuf.ByteString.EMPTY) {
-                    setBoardState(other.getBoardState());
-                }
-                if (other.getWhiteMove() != false) {
-                    setWhiteMove(other.getWhiteMove());
-                }
-                if (other.getOutcome() != 0) {
-                    setOutcome(other.getOutcome());
-                }
-                if (other.getGameLength() != 0) {
-                    setGameLength(other.getGameLength());
-                }
-                if (treeSearchResultBuilder_ == null) {
-                    if (!other.treeSearchResult_.isEmpty()) {
-                        if (treeSearchResult_.isEmpty()) {
-                            treeSearchResult_ = other.treeSearchResult_;
-                            bitField0_ = (bitField0_ & ~0x00000010);
-                        } else {
-                            ensureTreeSearchResultIsMutable();
-                            treeSearchResult_.addAll(other.treeSearchResult_);
-                        }
-                        onChanged();
-                    }
-                } else {
-                    if (!other.treeSearchResult_.isEmpty()) {
-                        if (treeSearchResultBuilder_.isEmpty()) {
-                            treeSearchResultBuilder_.dispose();
-                            treeSearchResultBuilder_ = null;
-                            treeSearchResult_ = other.treeSearchResult_;
-                            bitField0_ = (bitField0_ & ~0x00000010);
-                            treeSearchResultBuilder_ =
-                                    com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                                            getTreeSearchResultFieldBuilder() : null;
-                        } else {
-                            treeSearchResultBuilder_.addAllMessages(other.treeSearchResult_);
-                        }
-                    }
-                }
-                this.mergeUnknownFields(other.unknownFields);
-                onChanged();
-                return this;
-            }
-
-            public final boolean isInitialized() {
-                return true;
-            }
-
-            public Builder mergeFrom(
-                    com.google.protobuf.CodedInputStream input,
-                    com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                    throws java.io.IOException {
-                max.dillon.Instance.TrainingInstance parsedMessage = null;
-                try {
-                    parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-                } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-                    parsedMessage = (max.dillon.Instance.TrainingInstance) e.getUnfinishedMessage();
-                    throw e.unwrapIOException();
-                } finally {
-                    if (parsedMessage != null) {
-                        mergeFrom(parsedMessage);
-                    }
-                }
-                return this;
-            }
-
-            private int bitField0_;
-
-            private com.google.protobuf.ByteString boardState_ = com.google.protobuf.ByteString.EMPTY;
-
-            /**
-             * <code>bytes board_state = 1;</code>
-             */
-            public com.google.protobuf.ByteString getBoardState() {
-                return boardState_;
-            }
-
-            /**
-             * <code>bytes board_state = 1;</code>
-             */
-            public Builder setBoardState(com.google.protobuf.ByteString value) {
-                if (value == null) {
-                    throw new NullPointerException();
-                }
-
-                boardState_ = value;
-                onChanged();
-                return this;
-            }
-
-            /**
-             * <code>bytes board_state = 1;</code>
-             */
-            public Builder clearBoardState() {
-
-                boardState_ = getDefaultInstance().getBoardState();
-                onChanged();
-                return this;
-            }
-
-            private boolean whiteMove_;
-
-            /**
-             * <code>bool white_move = 2;</code>
-             */
-            public boolean getWhiteMove() {
-                return whiteMove_;
-            }
-
-            /**
-             * <code>bool white_move = 2;</code>
-             */
-            public Builder setWhiteMove(boolean value) {
-
-                whiteMove_ = value;
-                onChanged();
-                return this;
-            }
-
-            /**
-             * <code>bool white_move = 2;</code>
-             */
-            public Builder clearWhiteMove() {
-
-                whiteMove_ = false;
-                onChanged();
-                return this;
-            }
-
-            private int outcome_;
-
-            /**
-             * <code>uint32 outcome = 3;</code>
-             */
-            public int getOutcome() {
-                return outcome_;
-            }
-
-            /**
-             * <code>uint32 outcome = 3;</code>
-             */
-            public Builder setOutcome(int value) {
-
-                outcome_ = value;
-                onChanged();
-                return this;
-            }
-
-            /**
-             * <code>uint32 outcome = 3;</code>
-             */
-            public Builder clearOutcome() {
-
-                outcome_ = 0;
-                onChanged();
-                return this;
-            }
-
-            private int gameLength_;
-
-            /**
-             * <code>uint32 game_length = 4;</code>
-             */
-            public int getGameLength() {
-                return gameLength_;
-            }
-
-            /**
-             * <code>uint32 game_length = 4;</code>
-             */
-            public Builder setGameLength(int value) {
-
-                gameLength_ = value;
-                onChanged();
-                return this;
-            }
-
-            /**
-             * <code>uint32 game_length = 4;</code>
-             */
-            public Builder clearGameLength() {
-
-                gameLength_ = 0;
-                onChanged();
-                return this;
-            }
-
-            private java.util.List<max.dillon.Instance.TreeSearchResult> treeSearchResult_ =
-                    java.util.Collections.emptyList();
-
-            private void ensureTreeSearchResultIsMutable() {
-                if (!((bitField0_ & 0x00000010) == 0x00000010)) {
-                    treeSearchResult_ = new java.util.ArrayList<max.dillon.Instance.TreeSearchResult>(treeSearchResult_);
-                    bitField0_ |= 0x00000010;
-                }
-            }
-
-            private com.google.protobuf.RepeatedFieldBuilderV3<
-                    max.dillon.Instance.TreeSearchResult, max.dillon.Instance.TreeSearchResult.Builder, max.dillon.Instance.TreeSearchResultOrBuilder> treeSearchResultBuilder_;
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public java.util.List<max.dillon.Instance.TreeSearchResult> getTreeSearchResultList() {
-                if (treeSearchResultBuilder_ == null) {
-                    return java.util.Collections.unmodifiableList(treeSearchResult_);
-                } else {
-                    return treeSearchResultBuilder_.getMessageList();
-                }
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public int getTreeSearchResultCount() {
-                if (treeSearchResultBuilder_ == null) {
-                    return treeSearchResult_.size();
-                } else {
-                    return treeSearchResultBuilder_.getCount();
-                }
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public max.dillon.Instance.TreeSearchResult getTreeSearchResult(int index) {
-                if (treeSearchResultBuilder_ == null) {
-                    return treeSearchResult_.get(index);
-                } else {
-                    return treeSearchResultBuilder_.getMessage(index);
-                }
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public Builder setTreeSearchResult(
-                    int index, max.dillon.Instance.TreeSearchResult value) {
-                if (treeSearchResultBuilder_ == null) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    ensureTreeSearchResultIsMutable();
-                    treeSearchResult_.set(index, value);
-                    onChanged();
-                } else {
-                    treeSearchResultBuilder_.setMessage(index, value);
-                }
-                return this;
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public Builder setTreeSearchResult(
-                    int index, max.dillon.Instance.TreeSearchResult.Builder builderForValue) {
-                if (treeSearchResultBuilder_ == null) {
-                    ensureTreeSearchResultIsMutable();
-                    treeSearchResult_.set(index, builderForValue.build());
-                    onChanged();
-                } else {
-                    treeSearchResultBuilder_.setMessage(index, builderForValue.build());
-                }
-                return this;
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public Builder addTreeSearchResult(max.dillon.Instance.TreeSearchResult value) {
-                if (treeSearchResultBuilder_ == null) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    ensureTreeSearchResultIsMutable();
-                    treeSearchResult_.add(value);
-                    onChanged();
-                } else {
-                    treeSearchResultBuilder_.addMessage(value);
-                }
-                return this;
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public Builder addTreeSearchResult(
-                    int index, max.dillon.Instance.TreeSearchResult value) {
-                if (treeSearchResultBuilder_ == null) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    ensureTreeSearchResultIsMutable();
-                    treeSearchResult_.add(index, value);
-                    onChanged();
-                } else {
-                    treeSearchResultBuilder_.addMessage(index, value);
-                }
-                return this;
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public Builder addTreeSearchResult(
-                    max.dillon.Instance.TreeSearchResult.Builder builderForValue) {
-                if (treeSearchResultBuilder_ == null) {
-                    ensureTreeSearchResultIsMutable();
-                    treeSearchResult_.add(builderForValue.build());
-                    onChanged();
-                } else {
-                    treeSearchResultBuilder_.addMessage(builderForValue.build());
-                }
-                return this;
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public Builder addTreeSearchResult(
-                    int index, max.dillon.Instance.TreeSearchResult.Builder builderForValue) {
-                if (treeSearchResultBuilder_ == null) {
-                    ensureTreeSearchResultIsMutable();
-                    treeSearchResult_.add(index, builderForValue.build());
-                    onChanged();
-                } else {
-                    treeSearchResultBuilder_.addMessage(index, builderForValue.build());
-                }
-                return this;
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public Builder addAllTreeSearchResult(
-                    java.lang.Iterable<? extends max.dillon.Instance.TreeSearchResult> values) {
-                if (treeSearchResultBuilder_ == null) {
-                    ensureTreeSearchResultIsMutable();
-                    com.google.protobuf.AbstractMessageLite.Builder.addAll(
-                            values, treeSearchResult_);
-                    onChanged();
-                } else {
-                    treeSearchResultBuilder_.addAllMessages(values);
-                }
-                return this;
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public Builder clearTreeSearchResult() {
-                if (treeSearchResultBuilder_ == null) {
-                    treeSearchResult_ = java.util.Collections.emptyList();
-                    bitField0_ = (bitField0_ & ~0x00000010);
-                    onChanged();
-                } else {
-                    treeSearchResultBuilder_.clear();
-                }
-                return this;
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public Builder removeTreeSearchResult(int index) {
-                if (treeSearchResultBuilder_ == null) {
-                    ensureTreeSearchResultIsMutable();
-                    treeSearchResult_.remove(index);
-                    onChanged();
-                } else {
-                    treeSearchResultBuilder_.remove(index);
-                }
-                return this;
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public max.dillon.Instance.TreeSearchResult.Builder getTreeSearchResultBuilder(
-                    int index) {
-                return getTreeSearchResultFieldBuilder().getBuilder(index);
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public max.dillon.Instance.TreeSearchResultOrBuilder getTreeSearchResultOrBuilder(
-                    int index) {
-                if (treeSearchResultBuilder_ == null) {
-                    return treeSearchResult_.get(index);
-                } else {
-                    return treeSearchResultBuilder_.getMessageOrBuilder(index);
-                }
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public java.util.List<? extends max.dillon.Instance.TreeSearchResultOrBuilder>
-            getTreeSearchResultOrBuilderList() {
-                if (treeSearchResultBuilder_ != null) {
-                    return treeSearchResultBuilder_.getMessageOrBuilderList();
-                } else {
-                    return java.util.Collections.unmodifiableList(treeSearchResult_);
-                }
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public max.dillon.Instance.TreeSearchResult.Builder addTreeSearchResultBuilder() {
-                return getTreeSearchResultFieldBuilder().addBuilder(
-                        max.dillon.Instance.TreeSearchResult.getDefaultInstance());
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public max.dillon.Instance.TreeSearchResult.Builder addTreeSearchResultBuilder(
-                    int index) {
-                return getTreeSearchResultFieldBuilder().addBuilder(
-                        index, max.dillon.Instance.TreeSearchResult.getDefaultInstance());
-            }
-
-            /**
-             * <code>repeated .max.dillon.TreeSearchResult tree_search_result = 5;</code>
-             */
-            public java.util.List<max.dillon.Instance.TreeSearchResult.Builder>
-            getTreeSearchResultBuilderList() {
-                return getTreeSearchResultFieldBuilder().getBuilderList();
-            }
-
-            private com.google.protobuf.RepeatedFieldBuilderV3<
-                    max.dillon.Instance.TreeSearchResult, max.dillon.Instance.TreeSearchResult.Builder, max.dillon.Instance.TreeSearchResultOrBuilder>
-            getTreeSearchResultFieldBuilder() {
-                if (treeSearchResultBuilder_ == null) {
-                    treeSearchResultBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
-                            max.dillon.Instance.TreeSearchResult, max.dillon.Instance.TreeSearchResult.Builder, max.dillon.Instance.TreeSearchResultOrBuilder>(
-                            treeSearchResult_,
-                            ((bitField0_ & 0x00000010) == 0x00000010),
-                            getParentForChildren(),
-                            isClean());
-                    treeSearchResult_ = null;
-                }
-                return treeSearchResultBuilder_;
-            }
-
-            public final Builder setUnknownFields(
-                    final com.google.protobuf.UnknownFieldSet unknownFields) {
-                return super.setUnknownFieldsProto3(unknownFields);
-            }
-
-            public final Builder mergeUnknownFields(
-                    final com.google.protobuf.UnknownFieldSet unknownFields) {
-                return super.mergeUnknownFields(unknownFields);
-            }
-
-
-            // @@protoc_insertion_point(builder_scope:max.dillon.TrainingInstance)
-        }
-
-        // @@protoc_insertion_point(class_scope:max.dillon.TrainingInstance)
-        private static final max.dillon.Instance.TrainingInstance DEFAULT_INSTANCE;
-
-        static {
-            DEFAULT_INSTANCE = new max.dillon.Instance.TrainingInstance();
-        }
-
-        public static max.dillon.Instance.TrainingInstance getDefaultInstance() {
-            return DEFAULT_INSTANCE;
-        }
-
-        private static final com.google.protobuf.Parser<TrainingInstance>
-                PARSER = new com.google.protobuf.AbstractParser<TrainingInstance>() {
-            public TrainingInstance parsePartialFrom(
-                    com.google.protobuf.CodedInputStream input,
-                    com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                    throws com.google.protobuf.InvalidProtocolBufferException {
-                return new TrainingInstance(input, extensionRegistry);
-            }
-        };
-
-        public static com.google.protobuf.Parser<TrainingInstance> parser() {
-            return PARSER;
-        }
-
-        @java.lang.Override
-        public com.google.protobuf.Parser<TrainingInstance> getParserForType() {
-            return PARSER;
-        }
-
-        public max.dillon.Instance.TrainingInstance getDefaultInstanceForType() {
-            return DEFAULT_INSTANCE;
-        }
-
+        return treeSearchResultBuilder_;
+      }
+      public final Builder setUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return this;
+      }
+
+      public final Builder mergeUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return this;
+      }
+
+
+      // @@protoc_insertion_point(builder_scope:max.dillon.TrainingInstance)
     }
 
-    private static final com.google.protobuf.Descriptors.Descriptor
-            internal_static_max_dillon_TreeSearchResult_descriptor;
-    private static final
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-            internal_static_max_dillon_TreeSearchResult_fieldAccessorTable;
-    private static final com.google.protobuf.Descriptors.Descriptor
-            internal_static_max_dillon_TrainingInstance_descriptor;
-    private static final
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-            internal_static_max_dillon_TrainingInstance_fieldAccessorTable;
-
-    public static com.google.protobuf.Descriptors.FileDescriptor
-    getDescriptor() {
-        return descriptor;
-    }
-
-    private static com.google.protobuf.Descriptors.FileDescriptor
-            descriptor;
-
+    // @@protoc_insertion_point(class_scope:max.dillon.TrainingInstance)
+    private static final max.dillon.Instance.TrainingInstance DEFAULT_INSTANCE;
     static {
-        java.lang.String[] descriptorData = {
-                "\n\035src/main/proto/instance.proto\022\nmax.dil" +
-                        "lon\"X\n\020TreeSearchResult\022\r\n\005index\030\001 \001(\r\022\r" +
-                        "\n\005prior\030\002 \001(\002\022\022\n\nmean_value\030\003 \001(\002\022\022\n\nnum" +
-                        "_visits\030\004 \001(\002\"\233\001\n\020TrainingInstance\022\023\n\013bo" +
-                        "ard_state\030\001 \001(\014\022\022\n\nwhite_move\030\002 \001(\010\022\017\n\007o" +
-                        "utcome\030\003 \001(\r\022\023\n\013game_length\030\004 \001(\r\0228\n\022tre" +
-                        "e_search_result\030\005 \003(\0132\034.max.dillon.TreeS" +
-                        "earchResultb\006proto3"
-        };
-        com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
-                new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
-                    public com.google.protobuf.ExtensionRegistry assignDescriptors(
-                            com.google.protobuf.Descriptors.FileDescriptor root) {
-                        descriptor = root;
-                        return null;
-                    }
-                };
-        com.google.protobuf.Descriptors.FileDescriptor
-                .internalBuildGeneratedFileFrom(descriptorData,
-                        new com.google.protobuf.Descriptors.FileDescriptor[]{
-                        }, assigner);
-        internal_static_max_dillon_TreeSearchResult_descriptor =
-                getDescriptor().getMessageTypes().get(0);
-        internal_static_max_dillon_TreeSearchResult_fieldAccessorTable = new
-                com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-                internal_static_max_dillon_TreeSearchResult_descriptor,
-                new java.lang.String[]{"Index", "Prior", "MeanValue", "NumVisits",});
-        internal_static_max_dillon_TrainingInstance_descriptor =
-                getDescriptor().getMessageTypes().get(1);
-        internal_static_max_dillon_TrainingInstance_fieldAccessorTable = new
-                com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-                internal_static_max_dillon_TrainingInstance_descriptor,
-                new java.lang.String[]{"BoardState", "WhiteMove", "Outcome", "GameLength", "TreeSearchResult",});
+      DEFAULT_INSTANCE = new max.dillon.Instance.TrainingInstance();
     }
 
-    // @@protoc_insertion_point(outer_class_scope)
+    public static max.dillon.Instance.TrainingInstance getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<TrainingInstance>
+        PARSER = new com.google.protobuf.AbstractParser<TrainingInstance>() {
+      public TrainingInstance parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+          return new TrainingInstance(input, extensionRegistry);
+      }
+    };
+
+    public static com.google.protobuf.Parser<TrainingInstance> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<TrainingInstance> getParserForType() {
+      return PARSER;
+    }
+
+    public max.dillon.Instance.TrainingInstance getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_max_dillon_TreeSearchResult_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_max_dillon_TreeSearchResult_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_max_dillon_TrainingInstance_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_max_dillon_TrainingInstance_fieldAccessorTable;
+
+  public static com.google.protobuf.Descriptors.FileDescriptor
+      getDescriptor() {
+    return descriptor;
+  }
+  private static  com.google.protobuf.Descriptors.FileDescriptor
+      descriptor;
+  static {
+    java.lang.String[] descriptorData = {
+      "\n\035src/main/proto/instance.proto\022\nmax.dil" +
+      "lon\"/\n\020TreeSearchResult\022\r\n\005index\030\001 \001(\r\022\014" +
+      "\n\004prob\030\002 \001(\002\"\233\001\n\020TrainingInstance\022\023\n\013boa" +
+      "rd_state\030\001 \001(\014\022\022\n\nwhite_move\030\002 \001(\010\022\017\n\007ou" +
+      "tcome\030\003 \001(\r\022\023\n\013game_length\030\004 \001(\r\0228\n\022tree" +
+      "_search_result\030\005 \003(\0132\034.max.dillon.TreeSe" +
+      "archResultb\006proto3"
+    };
+    com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
+        new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
+          public com.google.protobuf.ExtensionRegistry assignDescriptors(
+              com.google.protobuf.Descriptors.FileDescriptor root) {
+            descriptor = root;
+            return null;
+          }
+        };
+    com.google.protobuf.Descriptors.FileDescriptor
+      .internalBuildGeneratedFileFrom(descriptorData,
+        new com.google.protobuf.Descriptors.FileDescriptor[] {
+        }, assigner);
+    internal_static_max_dillon_TreeSearchResult_descriptor =
+      getDescriptor().getMessageTypes().get(0);
+    internal_static_max_dillon_TreeSearchResult_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_max_dillon_TreeSearchResult_descriptor,
+        new java.lang.String[] { "Index", "Prob", });
+    internal_static_max_dillon_TrainingInstance_descriptor =
+      getDescriptor().getMessageTypes().get(1);
+    internal_static_max_dillon_TrainingInstance_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_max_dillon_TrainingInstance_descriptor,
+        new java.lang.String[] { "BoardState", "WhiteMove", "Outcome", "GameLength", "TreeSearchResult", });
+  }
+
+  // @@protoc_insertion_point(outer_class_scope)
 }
