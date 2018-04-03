@@ -5,6 +5,9 @@ import max.dillon.GameGrammar.*
 import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.Symmetry.NONE
 import max.dillon.GameGrammar.Symmetry.ROTATE
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
+import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.factory.Nd4j
 import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.NoSuchFileException
@@ -77,9 +80,11 @@ class GameState {
     var prior = 0f
     var visitCount = 0
     var totalValue = 0.0f
+    val model: MultiLayerNetwork?
 
-    constructor(gameSpec: GameSpec) {
+    constructor(gameSpec: GameSpec, model: MultiLayerNetwork? = null) {
         this.gameSpec = gameSpec
+        this.model = model
         gameBoard = Array(gameSpec.boardSize) { IntArray(gameSpec.boardSize) { 0 } }
         rowOwned = BooleanArray(gameSpec.boardSize) { true }
         gameSpec.pieceList.forEachIndexed { pieceType, piece ->
@@ -99,6 +104,7 @@ class GameState {
 
     constructor(prev: GameState, x1: Int, y1: Int, x2: Int, y2: Int, piece: Int) {
         this.gameSpec = prev.gameSpec
+        this.model = prev.model
         this.gameBoard = Array(prev.gameBoard.size) { prev.gameBoard[it] }
         this.rowOwned = BooleanArray(gameSpec.boardSize) { false }
         this.whiteMove = !prev.whiteMove
@@ -116,12 +122,19 @@ class GameState {
     fun scoreFor(parent: GameState): Float {
         val tempScore: Float = when (outcome) {
             GameOutcome.UNDETERMINED -> {
-                // See https://en.wikipedia.org/wiki/Monte_Carlo_tree_search for formula balancing exploitation/exploration
-                val expectedValue = totalValue / (visitCount + 1)
-                val explorationValue = sqrt(5f * log(parent.visitCount.toFloat() + 1f, E.toFloat()) /
-                                                    (visitCount.toFloat() + 1f))
+                // See https://en.wikipedia.org/wiki/Monte_Carlo_tree_search for
+                // formula balancing exploitation/exploration
+                // exploration value is independent of prior or mcts estimate
+                // and just depends on visit counts
+                val explorationValue = sqrt(
+                        2f * log(parent.visitCount.toFloat() + 1f, E.toFloat()) /
+                                (visitCount.toFloat() + 1f))
+                val mctsEstValue = totalValue / (visitCount + 1)
+                val priorEstValue = prior
+                // TODO: Not sure exactly how to combine these:
+                val estValue = (mctsEstValue + priorEstValue) / 2
                 val sign = if (parent.whiteMove == whiteMove) 1 else -1
-                return (sign * expectedValue) + explorationValue + prior
+                return (sign * estValue) + explorationValue
             }
             GameOutcome.WIN_WHITE -> {
                 if (parent.whiteMove) 10f else -10f
@@ -152,6 +165,7 @@ class GameState {
             gameBoard[y] = gameBoard[y].clone()
             rowOwned[y] = true
         }
+        // y is row, x is column
         gameBoard[y][x] = state
     }
 
@@ -160,9 +174,10 @@ class GameState {
 
     /**
      * A method to map a GameState for a given legal move into an output space
-     * of size srcSize * dstSize = (N x N + P) * (N x N) where N is the board
-     * size and P is the number piece classes (to deal with cases where we place
-     * a new piece on the board and need to identify its class).
+     * of size srcSize * dstSize where dstSize = (N x N) where N is the board
+     * size and srcSize is either (N x N) or P where P is the number piece
+     * classes (to deal with cases where we place a new piece on the board and
+     * need to identify its class).
      */
     fun getMoveIndex(): Int {
         val dim = gameSpec.boardSize
@@ -175,14 +190,41 @@ class GameState {
         return src * dim * dim + dst
     }
 
-    // actual call out ot model goes here
+    fun toModelInput(): INDArray {
+        var sz = gameSpec.boardSize
+        var np = gameSpec.pieceCount - 1
+        var input = Nd4j.zeros(1, 2 * np + 1, sz, sz)
+        for (x in 0 until sz) {
+            for (y in 0 until sz) {
+                val p = at(x,y)
+                if (p != 0) {
+                    val channel = if (p > 0) p else np - p
+                    input.putScalar(intArrayOf(0, channel, x, y), 1)
+                }
+            }
+        }
+        var turn = if (whiteMove) 0 else 1
+        for (x in 0 until sz) for (y in 0 until sz) input.putScalar(intArrayOf(0, 0, x, y), turn)
+        return input
+    }
+
+    fun modelPredict(network: MultiLayerNetwork): Pair<Float, FloatArray> {
+        val policy = network.output(toModelInput())
+        return Pair(0f, FloatArray(policy.shape()[1]) {
+            policy.getFloat(intArrayOf(0, it))
+        })
+    }
+
     fun predict(): Pair<Float, FloatArray> {
-        val dim = gameSpec.boardSize
-        val numPieces = gameSpec.pieceCount
-        val srcsz = if (gameSpec.moveSource == MoveSource.ENDS) gameSpec.pieceCount - 1 else dim * dim
-        return Pair(0.0f, FloatArray(srcsz * dim * dim, {
-            0.5f + (rand.nextFloat() - 0.5f) / 10
-        }))
+        if (model == null) {
+            val dim = gameSpec.boardSize
+            val srcsz = if (gameSpec.moveSource == MoveSource.ENDS) gameSpec.pieceCount - 1 else dim * dim
+            return Pair(0.0f, FloatArray(srcsz * dim * dim, {
+                0.5f + (rand.nextFloat() - 0.5f) / 10
+            }))
+        } else {
+            return modelPredict(model)
+        }
     }
 
     fun checkLandingConstraints(dest: Int, piece: Int, move: Move): Boolean {
@@ -626,52 +668,13 @@ fun main(args: Array<String>) {
     }.build()
 
 
-//    var instance = TrainingInstance.newBuilder().build()
-//    // set its various files copying from a gamestate
-//    instance.treeSearchResultList.add()
-//
-//
-//
-//    val outputStream = FileOutputStream("foosb")
-//    gameSpec.writeDelimitedTo(outputStream)
-//    gameSpec.writeDelimitedTo(outputStream)
-//    gameSpec.writeDelimitedTo(outputStream)
-//    outputStream.close()
-//
-//    val inputStream = FileInputStream("foosb")
-//    val g1 = GameSpec.parseDelimitedFrom(inputStream)
-//    val g2 = GameSpec.parseDelimitedFrom(inputStream)
-//    val g3 = GameSpec.parseDelimitedFrom(inputStream)
-//    println("${g1.name} ${g2.name} ${g3.name}")
-//    return
-//
-    val outputStream = FileOutputStream("${gameSpec.name}.${System.currentTimeMillis()}")
-    while (true) play(gameSpec, outputStream)
-
-
-//    val rand = Random()
-//    var state = GameState(gameSpec)
-//    var count = 0
-//
-//    var result: GameOutcome
-//    while (true) {
-//        count++
-//        result = state.outcome
-//        val gameOver = result != GameOutcome.UNDETERMINED
-//        val color = if (state.whiteMove) "white" else "black"
-//        val msg = if (gameOver) "Game Over" else "now $color's move"
-//
-//        println("${state.pieceMoved} ${state.description}, \n$msg\n")
-//
-//        state.printBoardLarge()
-//
-//        if (gameOver) break
-//        val nextStates = state.nextMoves
-//        if (nextStates.size == 0) break
-//        state = nextStates[rand.nextInt(nextStates.size)]
-//    }
-//    println("$count moves")
-//    println(result)
+    if (args.size == 3) {
+        tournament(gameSpec, args[1], args[2])
+    } else {
+        val modelFile: String? = if (args.size == 2) args[1] else null
+        val outputStream = FileOutputStream("${gameSpec.name}.${System.currentTimeMillis()}")
+        while (true) play(gameSpec, outputStream, modelFile)
+    }
 }
 
 
