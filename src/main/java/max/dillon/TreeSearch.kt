@@ -44,6 +44,9 @@ fun treeSearchSelfValue(state: GameState, counter: () -> Unit): Float {
     return v_next
 }
 
+var sum_inner = 0.0
+var num_inner = 0
+
 fun treeSearchMove(state: GameState, temperature: Double): GameState {
     assert(state.outcome == GameOutcome.UNDETERMINED)
 
@@ -51,20 +54,24 @@ fun treeSearchMove(state: GameState, temperature: Double): GameState {
         return state.nextMoves[0]
     }
 
-    var i = 500
+    var i = 1500
     while (i > 0) {
         treeSearchSelfValue(state, { i-- })
     }
 
+    // compute vector of counts raised to power 1/temp
     var sum_raised = 0.0
     val raised = DoubleArray(state.nextMoves.size) {
         pow(state.mcts_N[it].toDouble(), 1 / temperature).also { sum_raised += it }
     }
+    // normalize to a probability distribution, and sample a choice from it
     val r = rand.nextFloat()
     var sum_normed = 0.0
     var idx = raised.mapIndexed { j, v ->
         val norm = v / sum_raised
         sum_normed += norm
+        sum_inner += state.mcts_P[j] * norm // also keep track of similarity to prior
+        num_inner += 1
         state.mcts_Pi[j] = norm.toFloat()
         sum_normed
     }.filter { it < r }.count()
@@ -130,7 +137,6 @@ fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream, modelFile: Stri
     val stateArray: ArrayList<SlimState> = arrayListOf(slim(state))
 
     while (state.gameOutcome() == GameOutcome.UNDETERMINED) {
-//        state = if (state.whiteMove) treeSearch(state) else humanInput(state)
         var next = treeSearchMove(state, 1.0)
 
         for (i in 0 until state.nextMoves.size) {
@@ -145,6 +151,7 @@ fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream, modelFile: Stri
     }
     println(state.outcome)
     recordGame(state, stateArray, outputStream)
+    println("Inner Product Stats: ${num_inner} ${sum_inner} ${sum_inner/num_inner}")
 }
 
 fun sync(state: GameState, move: GameState): GameState {
@@ -158,9 +165,9 @@ fun sync(state: GameState, move: GameState): GameState {
     throw RuntimeException("wtf")
 }
 
-fun tournament(spec: GameGrammar.GameSpec, mWhite: String, mBlack: String) {
-    val modelWhite = ModelSerializer.restoreComputationGraph(mWhite)
-    val modelBlack = ModelSerializer.restoreComputationGraph(mBlack)
+fun tournament(spec: GameGrammar.GameSpec, mWhite: String?, mBlack: String?) {
+    val modelWhite = mWhite?.let { ModelSerializer.restoreComputationGraph(it) }
+    val modelBlack = mBlack?.let { ModelSerializer.restoreComputationGraph(it) }
 
     var nWhite = 0
     var nBlack = 0

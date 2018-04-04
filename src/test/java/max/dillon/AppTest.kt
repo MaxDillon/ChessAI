@@ -39,6 +39,22 @@ class TestChess() {
     }
 
     @Test
+    fun modelEval() {
+        val state = initBoard(white=Placement(k="g1",r="d4",n="f6",b="b7",p="c6"),
+                              black=Placement(k="d8",q="g3"),
+                              whiteMove = false,
+                              model=ModelSerializer.restoreComputationGraph("model.chess.2140"))
+        state.printBoard()
+        println(state.toModelInput())
+        treeSearchMove(state, 1.0)
+        println(state.value)
+
+        for (next in state.nextMoves) {
+            println("${next.description} ${next.prior} ${next.pi}")
+        }
+    }
+
+    @Test
     fun pawnMoves() {
         initBoard(white = Placement(p = "a2"),
                   black = Placement())
@@ -161,8 +177,8 @@ open class TwoColorSetup(name: String) {
                 state.gameBoard[y][x] = sign
             }
         }
-        place(white, 1)
-        place(black, -1)
+        if (white != "") place(white, 1)
+        if (black != "") place(black, -1)
         return state
     }
 }
@@ -234,8 +250,8 @@ class TestOthello() : TwoColorSetup("othello") {
 class TestTicTacToe() : TwoColorSetup("tictactoe") {
     @Test
     fun instanceSerialization() {
-        val current = initBoard(white = "a2,a3", black = "b2", whiteMove = false)
-        val final = initBoard(white = "a1,a2,a3", black = "b1,b2", whiteMove = false)
+        val current = initBoard(white = "b2", black = "a1", whiteMove = true)
+        val final = initBoard(white = "b2,b1,b3", black = "a1", whiteMove = true)
         treeSearchMove(current, 1.0)
 
         val bos = ByteArrayOutputStream()
@@ -246,59 +262,59 @@ class TestTicTacToe() : TwoColorSetup("tictactoe") {
 
         println("toModelInput")
         println(current.toModelInput())
-        println("serizlized/deserialized")
-        println(dataset.features)
+        println("serialized/deserialized")
+        println(dataset.features[0])
         println("pHat")
-        println(dataset.labels)
+        println(dataset.labels[0])
+//        println(dataset.labels[1])
+//        println(dataset.labels[2])
     }
 
     @Test
     fun modelEval() {
         val m0 = initBoard(
-                white = "b1,c3", black = "a1,c1", whiteMove = true,
-                model = ModelSerializer.restoreComputationGraph("model.tictactoe.3000"))
-        println(m0.whiteMove)
+                white = "a2", black = "", whiteMove = false,
+                model = ModelSerializer.restoreComputationGraph("model.tictactoe.4000"))
+
+        val m1 = treeSearchMove(m0, 1.0)
+        val m2 = treeSearchMove(m1, 1.0)
+        val m3 = treeSearchMove(m2, 1.0)
+
+        println("WhiteMove: ${m0.whiteMove} Value: ${m0.value}")
         m0.printBoard()
-
-        val m1 = treeSearchMove(m0, 0.5)
-        println(m0.value)
         for (next in m0.nextMoves) println("${next.description} ${next.prior} ${next.pi}")
-        println(m1.whiteMove)
+
+        println("WhiteMove: ${m1.whiteMove} Value: ${m1.value}")
         m1.printBoard()
-
-        val m2 = treeSearchMove(m1, 0.5)
-        println(m1.value)
         for (next in m1.nextMoves) println("${next.description} ${next.prior} ${next.pi}")
-        println(m2.whiteMove)
+
+        println("WhiteMove: ${m2.whiteMove} Value: ${m2.value}")
         m2.printBoard()
-
-        val m3 = treeSearchMove(m2, 0.5)
-        println(m2.value)
         for (next in m2.nextMoves) println("${next.description} ${next.prior} ${next.pi}")
-        println(m3.whiteMove)
-        m3.printBoard()
 
-        println(m3.predict().first)
+        println("WhiteMove: ${m3.whiteMove} Value: ${m3.predict().first}")
+        m3.printBoard()
     }
 
 }
 
-//class TestConnect4() : TwoColorSetup("connect4") {
-//    @Test
-//    fun modelEval() {
-//        val state = initBoard(white="c1,d1,d2,d3,f1,e2,g1",
-//                              black="c2,e1,a1,d4,g1,e3,b1",
-//                              whiteMove = true,
-//                              model=ModelSerializer.restoreComputationGraph("model.connect4.3940"))
-//        state.printBoard()
-//        println(state.toModelInput())
-//
-//        treeSearchMove(state, 0.5)
-//        for (next in state.nextMoves) {
-//            println("${next.description} ${next.prior} ${next.pi}")
-//        }
-//    }
-//}
+class TestConnect4() : TwoColorSetup("connect4") {
+    @Test
+    fun modelEval() {
+        val state = initBoard(white="c1,d1",
+                              black="c2",
+                              whiteMove = false,
+                              model=ModelSerializer.restoreComputationGraph("model.connect4.3000"))
+        state.printBoard()
+        println(state.toModelInput())
+        treeSearchMove(state, 1.0)
+        println(state.value)
+
+        for (next in state.nextMoves) {
+            println("${next.description} ${next.prior} ${next.pi}")
+        }
+    }
+}
 
 
 
