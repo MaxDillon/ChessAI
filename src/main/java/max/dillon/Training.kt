@@ -5,10 +5,7 @@ import org.deeplearning4j.nn.api.OptimizationAlgorithm
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.Updater
 import org.deeplearning4j.nn.conf.inputs.InputType
-import org.deeplearning4j.nn.conf.layers.ConvolutionLayer
-import org.deeplearning4j.nn.conf.layers.DenseLayer
-import org.deeplearning4j.nn.conf.layers.OutputLayer
-import org.deeplearning4j.nn.conf.layers.SubsamplingLayer
+import org.deeplearning4j.nn.conf.layers.*
 import org.deeplearning4j.nn.graph.ComputationGraph
 import org.deeplearning4j.nn.weights.WeightInit
 import org.deeplearning4j.ui.api.UIServer
@@ -37,56 +34,72 @@ fun main(args: Array<String>) {
     val gameSpec = loadSpec(args[0])
     val N = gameSpec.boardSize
     val P = gameSpec.pieceCount - 1
-    val batchSize = 5000
+    val batchSize = 1500
 
     val mconfig = NeuralNetConfiguration.Builder()
-            .learningRate(0.01)
+            .learningRate(0.005)
             .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
             .updater(Updater.NESTEROVS)
-            .regularization(false)
+            .regularization(true).l2(1e-6)
             .graphBuilder()
             .addInputs("input")
-            .addLayer("conv1", ConvolutionLayer.Builder(5, 5)
+            .setInputTypes(InputType.convolutional(N, N,3))
+            .addLayer("conv1", ConvolutionLayer.Builder(3, 3)
                     .nIn(2 * P + 1)
                     .stride(1, 1)
-                    .padding(2, 2)
-                    .nOut(30)
+                    .padding(1, 1)
+                    .nOut(40)
                     .activation(Activation.IDENTITY)
                     .weightInit(WeightInit.XAVIER)
                     .build(), "input")
-            .addLayer("pool", SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX)
-                    .kernelSize(2, 2)
-                    .stride(2, 2)
-                    .build(), "conv1")
+            .addLayer("batch1", BatchNormalization(),
+                      "conv1")
+            .addLayer("rect1", ActivationLayer.Builder()
+                    .activation(Activation.RELU)
+                    .build(), "batch1")
             .addLayer("conv2", ConvolutionLayer.Builder(3, 3)
                     .stride(1, 1)
                     .padding(1, 1)
-                    .nOut(30)
+                    .nOut(40)
                     .activation(Activation.IDENTITY)
                     .weightInit(WeightInit.XAVIER)
-                    .build(), "pool")
-            .addLayer("rect", DenseLayer.Builder()
+                    .build(), "rect1")
+            .addLayer("batch2", BatchNormalization(),
+                      "conv2")
+            .addLayer("rect2", ActivationLayer.Builder()
+                    .activation(Activation.RELU)
+                    .build(), "batch2", "input")
+            .addLayer("dense1", DenseLayer.Builder()
                     .activation(Activation.LEAKYRELU)
                     .weightInit(WeightInit.XAVIER)
-                    .nOut(40)
-                    .build(), "conv2")
-            .addLayer("policy", OutputLayer.Builder(
-                    LossFunctions.LossFunction.RECONSTRUCTION_CROSSENTROPY)
-                    .nOut(policySize(gameSpec))
-                    .activation(Activation.SOFTMAX)
+                    .nOut(50)
+                    .build(), "rect2")
+            .addLayer("dense2", DenseLayer.Builder()
+                    .activation(Activation.LEAKYRELU)
                     .weightInit(WeightInit.XAVIER)
-                    .build(), "rect")
+                    .nOut(30)
+                    .build(), "dense1")
             .addLayer("value", OutputLayer.Builder(LossFunctions.LossFunction.L2)
                     .nOut(1)
                     .activation(Activation.TANH)
                     .weightInit(WeightInit.XAVIER)
-                    .build(), "rect")
-            .setInputTypes(InputType.convolutionalFlat(N, N, 1))
-            .setOutputs("value", "policy")
+                    .build(), "dense2")
+            .addLayer("policy", OutputLayer.Builder(LossFunctions.LossFunction.KL_DIVERGENCE)
+                    .nOut(policySize(gameSpec))
+                    .activation(Activation.SOFTMAX)
+                    .weightInit(WeightInit.XAVIER)
+                    .build(), "dense2")
+            .addLayer("legal", OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+                    .nOut(policySize(gameSpec))
+                    .activation(Activation.TANH)
+                    .weightInit(WeightInit.XAVIER)
+                    .build(), "dense2")
+            .setOutputs( "value", "policy", "legal")
             .build()
     val model = ComputationGraph(mconfig)
     model.init()
 
+    //model.setListeners(ScoreIterationListener())
     val uiServer = UIServer.getInstance()
     val statsStorage = InMemoryStatsStorage()
     uiServer.attach(statsStorage)
@@ -97,7 +110,7 @@ fun main(args: Array<String>) {
     while (true) {
         model.fit(getBatch(gameSpec, reader, batchSize))
         batchCount++
-        if (batchCount % 20 == 0) {
+        if (batchCount % 1000 == 0) {
             ModelSerializer.writeModel(model, "model.${args[0]}.${batchCount}", true)
         }
     }
@@ -132,12 +145,13 @@ class FileInstanceReader(val prob: Double, val file: String) : InstanceReader {
 }
 
 fun parseBatch(gameSpec: GameSpec, instances: Array<Instance.TrainingInstance>): MultiDataSet {
-    var sz = gameSpec.boardSize
-    var np = gameSpec.pieceCount - 1
-    var batchSize = instances.size
-    var input = Nd4j.zeros(batchSize, 2 * np + 1, sz, sz)
-    var policy = Nd4j.zeros(batchSize, policySize(gameSpec))
-    var value = Nd4j.zeros(batchSize, 1)
+    val sz = gameSpec.boardSize
+    val np = gameSpec.pieceCount - 1
+    val batchSize = instances.size
+    val input = Nd4j.zeros(batchSize, 2 * np + 1, sz, sz)
+    val value = Nd4j.zeros(batchSize, 1)
+    val policy = Nd4j.zeros(batchSize, policySize(gameSpec))
+    val legal = Nd4j.ones(batchSize, policySize(gameSpec)).mul(-1)
 
     for (i in 0 until batchSize) {
         for (j in 0 until instances[i].boardState.size()) {
@@ -149,16 +163,17 @@ fun parseBatch(gameSpec: GameSpec, instances: Array<Instance.TrainingInstance>):
                 input.putScalar(intArrayOf(i, channel, x, y), 1)
             }
         }
-        var turn = if (instances[i].whiteMove) 1 else -1
+        val turn = if (instances[i].whiteMove) 1 else -1
         for (x in 0 until sz) for (y in 0 until sz) input.putScalar(intArrayOf(i, 0, x, y), turn)
 
         for (j in 0 until instances[i].treeSearchResultCount) {
             val tsr = instances[i].treeSearchResultList[j]
             policy.putScalar(tsr.index, tsr.prob)
+            legal.putScalar(tsr.index, 1f)
         }
         value.putScalar(i, instances[i].outcome)
     }
-    return MultiDataSet(arrayOf(input), arrayOf(value, policy))
+    return MultiDataSet(arrayOf(input), arrayOf(value, policy, legal))
 }
 
 fun getBatch(gameSpec: GameSpec, reader: InstanceReader, batchSize: Int): MultiDataSet {
