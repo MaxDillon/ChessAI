@@ -1,10 +1,7 @@
 package max.dillon
 
-import com.google.protobuf.TextFormat
 import max.dillon.GameGrammar.GameSpec
-import org.deeplearning4j.api.storage.StatsStorage
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
-import org.deeplearning4j.nn.conf.MultiLayerConfiguration
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.Updater
 import org.deeplearning4j.nn.conf.inputs.InputType
@@ -12,21 +9,18 @@ import org.deeplearning4j.nn.conf.layers.ConvolutionLayer
 import org.deeplearning4j.nn.conf.layers.DenseLayer
 import org.deeplearning4j.nn.conf.layers.OutputLayer
 import org.deeplearning4j.nn.conf.layers.SubsamplingLayer
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
+import org.deeplearning4j.nn.graph.ComputationGraph
 import org.deeplearning4j.nn.weights.WeightInit
-import org.deeplearning4j.optimize.listeners.ScoreIterationListener
 import org.deeplearning4j.ui.api.UIServer
 import org.deeplearning4j.ui.stats.StatsListener
 import org.deeplearning4j.ui.storage.InMemoryStatsStorage
 import org.deeplearning4j.util.ModelSerializer
 import org.nd4j.linalg.activations.Activation
-import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.dataset.MultiDataSet
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.lossfunctions.LossFunctions
 import java.io.FileInputStream
 import java.io.InputStream
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.util.*
 
 fun policySize(gameSpec: GameSpec): Int {
@@ -45,60 +39,53 @@ fun main(args: Array<String>) {
     val P = gameSpec.pieceCount - 1
     val batchSize = 5000
 
-    val config: MultiLayerConfiguration = NeuralNetConfiguration.Builder()
-            .iterations(1)
-            .weightInit(WeightInit.XAVIER)
-            .activation(Activation.RELU)
+    val mconfig = NeuralNetConfiguration.Builder()
+            .learningRate(0.01)
             .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
             .updater(Updater.NESTEROVS)
-            .learningRate(0.01)
-            .regularization(false).l2(1e-5)
-            .list()
-            .layer(0, ConvolutionLayer.Builder(3, 3)
+            .regularization(false)
+            .graphBuilder()
+            .addInputs("input")
+            .addLayer("conv1", ConvolutionLayer.Builder(5, 5)
                     .nIn(2 * P + 1)
                     .stride(1, 1)
-                    .padding(1, 1)
-                    .nOut(15)
+                    .padding(2, 2)
+                    .nOut(30)
                     .activation(Activation.IDENTITY)
                     .weightInit(WeightInit.XAVIER)
-                    .build())
-//            .layer(1, SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX)
-//                    .kernelSize(2, 2)
-//                    .stride(2, 2)
-//                    .build())
-//            .layer(1, ConvolutionLayer.Builder(3, 3)
-//                    .stride(1, 1)
-//                    .padding(1, 1)
-//                    .nOut(25)
-//                    .activation(Activation.IDENTITY)
-//                    .weightInit(WeightInit.XAVIER)
-//                    .build())
-//            .layer(3, SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX)
-//                    .kernelSize(2, 2)
-//                    .stride(2, 2)
-//                    .build())
-            .layer(1, DenseLayer.Builder()
-                    .activation(Activation.TANH)
+                    .build(), "input")
+            .addLayer("pool", SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX)
+                    .kernelSize(2, 2)
+                    .stride(2, 2)
+                    .build(), "conv1")
+            .addLayer("conv2", ConvolutionLayer.Builder(3, 3)
+                    .stride(1, 1)
+                    .padding(1, 1)
+                    .nOut(30)
+                    .activation(Activation.IDENTITY)
                     .weightInit(WeightInit.XAVIER)
-                    .nOut(20)
-                    .build())
-//            .layer(2, DenseLayer.Builder()
-//                    .activation(Activation.ELU)
-//                    .weightInit(WeightInit.XAVIER)
-//                    .nOut(20)
-//                    .build())
-            .layer(2, OutputLayer.Builder(LossFunctions.LossFunction.RECONSTRUCTION_CROSSENTROPY)
+                    .build(), "pool")
+            .addLayer("rect", DenseLayer.Builder()
+                    .activation(Activation.LEAKYRELU)
+                    .weightInit(WeightInit.XAVIER)
+                    .nOut(40)
+                    .build(), "conv2")
+            .addLayer("policy", OutputLayer.Builder(
+                    LossFunctions.LossFunction.RECONSTRUCTION_CROSSENTROPY)
                     .nOut(policySize(gameSpec))
                     .activation(Activation.SOFTMAX)
-                    .build())
-            .setInputType(InputType.convolutionalFlat(N, N, 1)) //See note below
-            .backprop(true)
-            .pretrain(false)
+                    .weightInit(WeightInit.XAVIER)
+                    .build(), "rect")
+            .addLayer("value", OutputLayer.Builder(LossFunctions.LossFunction.L2)
+                    .nOut(1)
+                    .activation(Activation.TANH)
+                    .weightInit(WeightInit.XAVIER)
+                    .build(), "rect")
+            .setInputTypes(InputType.convolutionalFlat(N, N, 1))
+            .setOutputs("value", "policy")
             .build()
-
-    val model = MultiLayerNetwork(config)
+    val model = ComputationGraph(mconfig)
     model.init()
-    model.setListeners(ScoreIterationListener(1))
 
     val uiServer = UIServer.getInstance()
     val statsStorage = InMemoryStatsStorage()
@@ -108,11 +95,8 @@ fun main(args: Array<String>) {
     var batchCount = 0
     val reader = FileInstanceReader(0.1, args[1])
     while (true) {
-
-        val (input, output) = getBatch(gameSpec, reader, batchSize)
+        model.fit(getBatch(gameSpec, reader, batchSize))
         batchCount++
-        model.fit(input, output)
-
         if (batchCount % 20 == 0) {
             ModelSerializer.writeModel(model, "model.${args[0]}.${batchCount}", true)
         }
@@ -147,12 +131,13 @@ class FileInstanceReader(val prob: Double, val file: String) : InstanceReader {
     }
 }
 
-fun parseBatch(gameSpec: GameSpec,  instances: Array<Instance.TrainingInstance>): Pair<INDArray,INDArray> {
+fun parseBatch(gameSpec: GameSpec, instances: Array<Instance.TrainingInstance>): MultiDataSet {
     var sz = gameSpec.boardSize
     var np = gameSpec.pieceCount - 1
     var batchSize = instances.size
     var input = Nd4j.zeros(batchSize, 2 * np + 1, sz, sz)
-    var output = Nd4j.zeros(batchSize, policySize(gameSpec))
+    var policy = Nd4j.zeros(batchSize, policySize(gameSpec))
+    var value = Nd4j.zeros(batchSize, 1)
 
     for (i in 0 until batchSize) {
         for (j in 0 until instances[i].boardState.size()) {
@@ -169,13 +154,15 @@ fun parseBatch(gameSpec: GameSpec,  instances: Array<Instance.TrainingInstance>)
 
         for (j in 0 until instances[i].treeSearchResultCount) {
             val tsr = instances[i].treeSearchResultList[j]
-            output.putScalar(tsr.index, tsr.prob)
+            policy.putScalar(tsr.index, tsr.prob)
         }
+        value.putScalar(i, instances[i].outcome)
     }
-    return Pair(input,output)
+    return MultiDataSet(arrayOf(input), arrayOf(value, policy))
 }
 
-fun getBatch(gameSpec: GameSpec, reader: InstanceReader, batchSize: Int): Pair<INDArray, INDArray> {
+fun getBatch(gameSpec: GameSpec, reader: InstanceReader, batchSize: Int): MultiDataSet {
     var instances = Array(batchSize) { reader.next() }
     return parseBatch(gameSpec, instances)
 }
+

@@ -1,19 +1,17 @@
 package max.dillon
 
 import com.google.protobuf.ByteString
-import org.amshove.kluent.`should be in`
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
+import org.deeplearning4j.nn.graph.ComputationGraph
 import org.deeplearning4j.util.ModelSerializer
-import java.io.FileOutputStream
 import java.io.OutputStream
 import java.lang.Math.pow
-import kotlin.math.sqrt
 import java.util.*
+import kotlin.math.sqrt
 
 fun Float.f3(): String = String.format("%.3f", this)
 
 // returns the value of the state *TO ITSELF*
-fun treeSearchSelfValue(state: GameState, counter: ()->Unit): Float {
+fun treeSearchSelfValue(state: GameState, counter: () -> Unit): Float {
     if (state.outcome != GameOutcome.UNDETERMINED) {
         counter()
         return state.selfValue()
@@ -21,8 +19,9 @@ fun treeSearchSelfValue(state: GameState, counter: ()->Unit): Float {
     if (!state.visited) {
         state.visited = true
         val (selfValue, policy) = state.predict()
-        val policySum = state.nextMoves.fold(0f) {
-            a, b -> a + policy[b.getMoveIndex()]
+        state.value = selfValue
+        val policySum = state.nextMoves.fold(0f) { a, b ->
+            a + policy[b.getMoveIndex()]
         }
         for (i in 0 until state.nextMoves.size) {
             state.mcts_P[i] = policy[state.nextMoves[i].getMoveIndex()] / policySum
@@ -52,14 +51,14 @@ fun treeSearchMove(state: GameState, temperature: Double): GameState {
         return state.nextMoves[0]
     }
 
-    var i = 5000
+    var i = 500
     while (i > 0) {
         treeSearchSelfValue(state, { i-- })
     }
 
     var sum_raised = 0.0
     val raised = DoubleArray(state.nextMoves.size) {
-        pow(state.mcts_N[it].toDouble(), 1/temperature).also { sum_raised += it }
+        pow(state.mcts_N[it].toDouble(), 1 / temperature).also { sum_raised += it }
     }
     val r = rand.nextFloat()
     var sum_normed = 0.0
@@ -123,9 +122,9 @@ fun slim(state: GameState): SlimState {
 }
 
 fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream, modelFile: String?) {
-    var model: MultiLayerNetwork? = null
+    var model: ComputationGraph? = null
     if (modelFile != null) {
-        model = ModelSerializer.restoreMultiLayerNetwork(modelFile)
+        model = ModelSerializer.restoreComputationGraph(modelFile)
     }
     var state = GameState(spec, model)
     val stateArray: ArrayList<SlimState> = arrayListOf(slim(state))
@@ -160,8 +159,8 @@ fun sync(state: GameState, move: GameState): GameState {
 }
 
 fun tournament(spec: GameGrammar.GameSpec, mWhite: String, mBlack: String) {
-    val modelWhite = ModelSerializer.restoreMultiLayerNetwork(mWhite)
-    val modelBlack = ModelSerializer.restoreMultiLayerNetwork(mBlack)
+    val modelWhite = ModelSerializer.restoreComputationGraph(mWhite)
+    val modelBlack = ModelSerializer.restoreComputationGraph(mBlack)
 
     var nWhite = 0
     var nBlack = 0
@@ -186,7 +185,8 @@ fun tournament(spec: GameGrammar.GameSpec, mWhite: String, mBlack: String) {
             GameOutcome.WIN_WHITE -> nWhite += 1
             GameOutcome.WIN_BLACK -> nBlack += 1
             GameOutcome.DRAW -> nDraw += 1
-            else -> {}
+            else -> {
+            }
         }
 
         println("White: ${nWhite} Black: ${nBlack} Draw: ${nDraw}")

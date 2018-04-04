@@ -5,7 +5,7 @@ import max.dillon.GameGrammar.*
 import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.Symmetry.NONE
 import max.dillon.GameGrammar.Symmetry.ROTATE
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
+import org.deeplearning4j.nn.graph.ComputationGraph
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import java.io.FileOutputStream
@@ -79,8 +79,9 @@ class GameState {
     val outcome: GameOutcome by lazy {
         gameOutcome()
     }
-    var prior = 0f
-    var pi = 0f
+    var value = 0f // output of the value network
+    var prior = 0f // output of policy network
+    var pi = 0f // estimate of mcts
     var visitCount = 0
     var totalValue = 0.0f
 
@@ -124,9 +125,9 @@ class GameState {
 
     val mcts_Pi = MctsPi()
 
-    val model: MultiLayerNetwork?
+    val model: ComputationGraph?
 
-    constructor(gameSpec: GameSpec, model: MultiLayerNetwork? = null) {
+    constructor(gameSpec: GameSpec, model: ComputationGraph? = null) {
         this.gameSpec = gameSpec
         this.model = model
         gameBoard = Array(gameSpec.boardSize) { IntArray(gameSpec.boardSize) { 0 } }
@@ -234,9 +235,11 @@ class GameState {
         return input
     }
 
-    fun modelPredict(network: MultiLayerNetwork): Pair<Float, FloatArray> {
-        val policy = network.output(toModelInput())
-        return Pair(0f, FloatArray(policy.shape()[1]) {
+    fun modelPredict(network: ComputationGraph): Pair<Float, FloatArray> {
+        val outputs = network.output(toModelInput())
+        val value = outputs[0].getFloat(0, 0)
+        val policy = outputs[1]
+        return Pair(value, FloatArray(policy.shape()[1]) {
             policy.getFloat(intArrayOf(0, it))
         })
     }

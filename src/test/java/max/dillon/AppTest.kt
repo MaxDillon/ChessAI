@@ -1,6 +1,7 @@
 package max.dillon
 
 import org.amshove.kluent.shouldEqual
+import org.deeplearning4j.nn.graph.ComputationGraph
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.util.ModelSerializer
 import org.junit.Test
@@ -15,7 +16,7 @@ class TestChess() {
             val r: String = "", val q: String = "", val k: String = "")
 
     fun initBoard(white: Placement, black: Placement, whiteMove: Boolean = true,
-                  model: MultiLayerNetwork? = null): GameState {
+                  model: ComputationGraph? = null): GameState {
         val state = GameState(gameSpec, model)
         state.whiteMove = whiteMove
         state.gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
@@ -148,7 +149,7 @@ open class TwoColorSetup(name: String) {
     val gameSpec = loadSpec(name)
 
     fun initBoard(white: String, black: String, whiteMove: Boolean = true,
-                  model: MultiLayerNetwork? = null): GameState {
+                  model: ComputationGraph? = null): GameState {
         val state = GameState(gameSpec, model)
         state.whiteMove = whiteMove
         state.gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
@@ -241,62 +242,63 @@ class TestTicTacToe() : TwoColorSetup("tictactoe") {
         recordGame(final, arrayListOf(slim(current)), bos)
 
         val bis = ByteArrayInputStream(bos.toByteArray())
-        val (input, output) = getBatch(gameSpec, StreamInstanceReader(bis), 1)
+        val dataset = getBatch(gameSpec, StreamInstanceReader(bis), 1)
 
         println("toModelInput")
         println(current.toModelInput())
         println("serizlized/deserialized")
-        println(input)
+        println(dataset.features)
         println("pHat")
-        println(output)
+        println(dataset.labels)
     }
 
-//    @Test
-//    fun modelEval() {
-//        val m0 = initBoard(
-//                white = "b1,c3", black = "a1,c1", whiteMove = true,
-//                model = ModelSerializer.restoreMultiLayerNetwork("model.tictactoe.290"))
-//        println(m0.whiteMove)
-//        m0.printBoard()
-//
-//
-//        val m1 = treeSearchMove(m0, 0.5)
-//        for (next in m0.nextMoves) println("${next.description} ${next.prior} ${next.pi}")
-//        println(m1.whiteMove)
-//        m1.printBoard()
-//
-//        val m2 = treeSearchMove(m1, 0.5)
-//        for (next in m1.nextMoves) println("${next.description} ${next.prior} ${next.pi}")
-//        println(m2.whiteMove)
-//        m2.printBoard()
-//
-//        for (next in m2.nextMoves) println("${next.description} ${next.prior} ${next.pi}")
-//        println()
-//
-//        val m3 = treeSearchMove(m2, 0.5)
-//        for (next in m2.nextMoves) println("${next.description} ${next.prior} ${next.pi}")
-//        println(m3.whiteMove)
-//        m3.printBoard()
-//    }
-
-}
-
-class TestConnect4() : TwoColorSetup("connect4") {
     @Test
     fun modelEval() {
-        val state = initBoard(white="c1,d1,d2,d3,f1,e2,g1",
-                              black="c2,e1,a1,d4,g1,e3,b1",
-                              whiteMove = true,
-                              model=ModelSerializer.restoreMultiLayerNetwork("model.connect4.3940"))
-        state.printBoard()
-        println(state.toModelInput())
+        val m0 = initBoard(
+                white = "b1,c3", black = "a1,c1", whiteMove = true,
+                model = ModelSerializer.restoreComputationGraph("model.tictactoe.3000"))
+        println(m0.whiteMove)
+        m0.printBoard()
 
-        treeSearchMove(state, 0.5)
-        for (next in state.nextMoves) {
-            println("${next.description} ${next.prior} ${next.pi}")
-        }
+        val m1 = treeSearchMove(m0, 0.5)
+        println(m0.value)
+        for (next in m0.nextMoves) println("${next.description} ${next.prior} ${next.pi}")
+        println(m1.whiteMove)
+        m1.printBoard()
+
+        val m2 = treeSearchMove(m1, 0.5)
+        println(m1.value)
+        for (next in m1.nextMoves) println("${next.description} ${next.prior} ${next.pi}")
+        println(m2.whiteMove)
+        m2.printBoard()
+
+        val m3 = treeSearchMove(m2, 0.5)
+        println(m2.value)
+        for (next in m2.nextMoves) println("${next.description} ${next.prior} ${next.pi}")
+        println(m3.whiteMove)
+        m3.printBoard()
+
+        println(m3.predict().first)
     }
+
 }
+
+//class TestConnect4() : TwoColorSetup("connect4") {
+//    @Test
+//    fun modelEval() {
+//        val state = initBoard(white="c1,d1,d2,d3,f1,e2,g1",
+//                              black="c2,e1,a1,d4,g1,e3,b1",
+//                              whiteMove = true,
+//                              model=ModelSerializer.restoreComputationGraph("model.connect4.3940"))
+//        state.printBoard()
+//        println(state.toModelInput())
+//
+//        treeSearchMove(state, 0.5)
+//        for (next in state.nextMoves) {
+//            println("${next.description} ${next.prior} ${next.pi}")
+//        }
+//    }
+//}
 
 
 
