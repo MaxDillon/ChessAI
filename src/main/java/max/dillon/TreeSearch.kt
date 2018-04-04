@@ -1,68 +1,74 @@
 package max.dillon
 
 import com.google.protobuf.ByteString
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
+import org.deeplearning4j.nn.graph.ComputationGraph
 import org.deeplearning4j.util.ModelSerializer
-import java.io.FileOutputStream
 import java.io.OutputStream
 import java.lang.Math.pow
 import java.util.*
-
-fun valueFor(player: GameState, node: GameState): Float {
-    val sign = if (player.whiteMove == node.whiteMove) 1 else -1
-    return sign * node.totalValue
-}
+import kotlin.math.sqrt
 
 fun Float.f3(): String = String.format("%.3f", this)
 
-fun treeSearch(playerState: GameState, temperature: Double): GameState {
-    assert(playerState.outcome == GameOutcome.UNDETERMINED)
-    val parents = ArrayList<GameState>()
-    playerState.expand()
-    if (playerState.nextMoves.size == 1) {
-        return playerState.nextMoves[0]
+// returns the value of the state *TO ITSELF*
+fun treeSearchSelfValue(state: GameState, counter: () -> Unit): Float {
+    if (state.outcome != GameOutcome.UNDETERMINED) {
+        counter()
+        return state.selfValue()
     }
-
-    var maxExpansion = if (playerState.model == null) 5000 else 2000
-    while (maxExpansion > 0) {
-        parents.clear()
-        var currentNode = playerState
-
-        while (true) {
-            parents.add(currentNode)
-            currentNode = currentNode.nextMoves.maxBy {
-                it.scoreFor(currentNode)
-            } ?: throw RuntimeException("wtf")
-            if (!currentNode.leaf && currentNode.outcome == GameOutcome.UNDETERMINED) {
-                continue
-            }
-            maxExpansion--
-            currentNode.expand() // make sure we have node value evaluated
-            if (currentNode.outcome != GameOutcome.UNDETERMINED) {
-                parents.forEach { it.updateValue(valueFor(it, currentNode)) }
-                break
-            }
-            if (currentNode.totalValue == 0f) {
-                continue
-            } else {
-                parents.forEach { it.updateValue(valueFor(it, currentNode)) }
-                break
-            }
+    if (!state.visited) {
+        state.visited = true
+        val (selfValue, policy) = state.predict()
+        state.value = selfValue
+        val policySum = state.nextMoves.fold(0f) { a, b ->
+            a + policy[b.getMoveIndex()]
         }
-
+        for (i in 0 until state.nextMoves.size) {
+            state.mcts_P[i] = policy[state.nextMoves[i].getMoveIndex()] / policySum
+        }
+        counter()
+        if (selfValue != 0f) return selfValue
     }
-    val dist = cumulativeDist(playerState.nextMoves, temperature)
-    val r = rand.nextFloat()
-    val idx = dist.filter { it < r }.count()
-    return playerState.nextMoves[idx]
+    val n_sum = state.mcts_N.sum().toDouble() // maybe track as a property
+    val next_i = state.nextMoves.indices.maxBy {
+        val q = if (state.mcts_N[it] > 0) state.mcts_V[it] / state.mcts_N[it] else 0f
+        val u = 2f * state.mcts_P[it] * sqrt(n_sum).toFloat() / (1f + state.mcts_N[it])
+        q + u
+    } ?: 0
+    val next = state.nextMoves[next_i]
+
+    val sign = if (state.whiteMove == next.whiteMove) 1 else -1
+    val v_next = treeSearchSelfValue(next, counter) * sign
+    state.mcts_V[next_i] += v_next
+    state.mcts_N[next_i] += 1
+    return v_next
 }
 
-fun cumulativeDist(states: ArrayList<GameState>, temperature: Double): DoubleArray {
-    val visits = DoubleArray(states.size) { states[it].visitCount.toDouble() }
-    val raised = DoubleArray(states.size) { pow(visits[it], temperature) }
-    val rsum = raised.sum()
-    var cuml = 0.0
-    return DoubleArray(states.size) { cuml += raised[it]; cuml / rsum }
+fun treeSearchMove(state: GameState, temperature: Double): GameState {
+    assert(state.outcome == GameOutcome.UNDETERMINED)
+
+    if (state.nextMoves.size == 1) {
+        return state.nextMoves[0]
+    }
+
+    var i = 500
+    while (i > 0) {
+        treeSearchSelfValue(state, { i-- })
+    }
+
+    var sum_raised = 0.0
+    val raised = DoubleArray(state.nextMoves.size) {
+        pow(state.mcts_N[it].toDouble(), 1 / temperature).also { sum_raised += it }
+    }
+    val r = rand.nextFloat()
+    var sum_normed = 0.0
+    var idx = raised.mapIndexed { j, v ->
+        val norm = v / sum_raised
+        sum_normed += norm
+        state.mcts_Pi[j] = norm.toFloat()
+        sum_normed
+    }.filter { it < r }.count()
+    return state.nextMoves[idx]
 }
 
 fun recordGame(finalState: GameState, states: ArrayList<SlimState>, outputStream: OutputStream) {
@@ -109,30 +115,35 @@ fun slim(state: GameState): SlimState {
         val child = state.nextMoves[it]
         Instance.TreeSearchResult.newBuilder().apply {
             index = child.getMoveIndex()
-            prior = child.prior
-            meanValue = child.totalValue / child.visitCount
-            numVisits = child.visitCount.toFloat()
+            prob = child.pi
         }.build()
     }
     return SlimState(arr, state.whiteMove, tsr)
 }
 
 fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream, modelFile: String?) {
-    var model: MultiLayerNetwork? = null
+    var model: ComputationGraph? = null
     if (modelFile != null) {
-        model = ModelSerializer.restoreMultiLayerNetwork(modelFile)
+        model = ModelSerializer.restoreComputationGraph(modelFile)
     }
     var state = GameState(spec, model)
     val stateArray: ArrayList<SlimState> = arrayListOf(slim(state))
 
     while (state.gameOutcome() == GameOutcome.UNDETERMINED) {
 //        state = if (state.whiteMove) treeSearch(state) else humanInput(state)
-        state = treeSearch(state, 3.0)
+        var next = treeSearchMove(state, 1.0)
+
+        for (i in 0 until state.nextMoves.size) {
+            println("${state.nextMoves[i].description} ${state.mcts_P[i]} ${state.mcts_N[i]} ${state.mcts_V[i]} ${state.mcts_Pi[i]}")
+        }
+
+        if (state.nextMoves.size > 0 && state.nextMoves[0].pi > 0) stateArray.add(slim(state))
+        state = next
+
         println("${state.moveDepth}: ${state.description}")
         state.printBoard()
-
-        stateArray.add(slim(state))
     }
+    println(state.outcome)
     recordGame(state, stateArray, outputStream)
 }
 
@@ -148,8 +159,8 @@ fun sync(state: GameState, move: GameState): GameState {
 }
 
 fun tournament(spec: GameGrammar.GameSpec, mWhite: String, mBlack: String) {
-    val modelWhite = ModelSerializer.restoreMultiLayerNetwork(mWhite)
-    val modelBlack = ModelSerializer.restoreMultiLayerNetwork(mBlack)
+    val modelWhite = ModelSerializer.restoreComputationGraph(mWhite)
+    val modelBlack = ModelSerializer.restoreComputationGraph(mBlack)
 
     var nWhite = 0
     var nBlack = 0
@@ -161,10 +172,10 @@ fun tournament(spec: GameGrammar.GameSpec, mWhite: String, mBlack: String) {
 
         while (white.outcome == GameOutcome.UNDETERMINED) {
             if (white.whiteMove) {
-                white = treeSearch(white, 1.0)
+                white = treeSearchMove(white, 1.0)
                 black = sync(black, white)
             } else {
-                black = treeSearch(black, 1.0)
+                black = treeSearchMove(black, 1.0)
                 white = sync(white, black)
             }
             println("${white.moveDepth}: ${white.description}")
@@ -174,6 +185,8 @@ fun tournament(spec: GameGrammar.GameSpec, mWhite: String, mBlack: String) {
             GameOutcome.WIN_WHITE -> nWhite += 1
             GameOutcome.WIN_BLACK -> nBlack += 1
             GameOutcome.DRAW -> nDraw += 1
+            else -> {
+            }
         }
 
         println("White: ${nWhite} Black: ${nBlack} Draw: ${nDraw}")

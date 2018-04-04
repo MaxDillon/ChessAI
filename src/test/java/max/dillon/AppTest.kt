@@ -1,30 +1,22 @@
 package max.dillon
 
-import com.google.protobuf.TextFormat
 import org.amshove.kluent.shouldEqual
+import org.deeplearning4j.nn.graph.ComputationGraph
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.util.ModelSerializer
 import org.junit.Test
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 
 class TestChess() {
-    val gameSpec: GameGrammar.GameSpec
-
-    init {
-        val specStr = String(Files.readAllBytes(Paths.get("src/main/data/chess.textproto")))
-        gameSpec = GameGrammar.GameSpec.newBuilder().apply {
-            TextFormat.getParser().merge(specStr, this)
-            addPiece(0, addPieceBuilder()) // hack: inserting null piece at index 0
-        }.build()
-    }
+    val gameSpec = loadSpec("chess")
 
     data class Placement(
             val p: String = "", val n: String = "", val b: String = "",
             val r: String = "", val q: String = "", val k: String = "")
 
     fun initBoard(white: Placement, black: Placement, whiteMove: Boolean = true,
-                  model: MultiLayerNetwork? = null): GameState {
+                  model: ComputationGraph? = null): GameState {
         val state = GameState(gameSpec, model)
         state.whiteMove = whiteMove
         state.gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
@@ -139,7 +131,7 @@ class TestChess() {
                         p = "a7,b7,f7,g7",
                         n = "c6"
                 ))
-        treeSearch(state, 3.0)
+        treeSearchSelfValue(state, {})
     }
 
     @Test
@@ -153,19 +145,12 @@ class TestChess() {
     }
 }
 
-class TestOthello() {
-    val gameSpec: GameGrammar.GameSpec
+open class TwoColorSetup(name: String) {
+    val gameSpec = loadSpec(name)
 
-    init {
-        val specStr = String(Files.readAllBytes(Paths.get("src/main/data/othello.textproto")))
-        gameSpec = GameGrammar.GameSpec.newBuilder().apply {
-            TextFormat.getParser().merge(specStr, this)
-            addPiece(0, addPieceBuilder()) // hack: inserting null piece at index 0
-        }.build()
-    }
-
-    fun initBoard(white: String, black: String, whiteMove: Boolean = true): GameState {
-        val state = GameState(gameSpec)
+    fun initBoard(white: String, black: String, whiteMove: Boolean = true,
+                  model: ComputationGraph? = null): GameState {
+        val state = GameState(gameSpec, model)
         state.whiteMove = whiteMove
         state.gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
 
@@ -180,7 +165,9 @@ class TestOthello() {
         place(black, -1)
         return state
     }
+}
 
+class TestOthello() : TwoColorSetup("othello") {
     @Test
     fun moves() {
         initBoard(white = "d4,e5",
@@ -244,44 +231,74 @@ class TestOthello() {
 }
 
 
-class TestTicTacToe() {
-    val gameSpec: GameGrammar.GameSpec
+class TestTicTacToe() : TwoColorSetup("tictactoe") {
+    @Test
+    fun instanceSerialization() {
+        val current = initBoard(white = "a2,a3", black = "b2", whiteMove = false)
+        val final = initBoard(white = "a1,a2,a3", black = "b1,b2", whiteMove = false)
+        treeSearchMove(current, 1.0)
 
-    init {
-        val specStr = String(Files.readAllBytes(Paths.get("src/main/data/tictactoe.textproto")))
-        gameSpec = GameGrammar.GameSpec.newBuilder().apply {
-            TextFormat.getParser().merge(specStr, this)
-            addPiece(0, addPieceBuilder()) // hack: inserting null piece at index 0
-        }.build()
+        val bos = ByteArrayOutputStream()
+        recordGame(final, arrayListOf(slim(current)), bos)
+
+        val bis = ByteArrayInputStream(bos.toByteArray())
+        val dataset = getBatch(gameSpec, StreamInstanceReader(bis), 1)
+
+        println("toModelInput")
+        println(current.toModelInput())
+        println("serizlized/deserialized")
+        println(dataset.features)
+        println("pHat")
+        println(dataset.labels)
     }
 
-    fun initBoard(white: String, black: String, whiteMove: Boolean = true,
-                  model: MultiLayerNetwork? = null): GameState {
-        val state = GameState(gameSpec, model)
-        state.whiteMove = whiteMove
-        state.gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
+    @Test
+    fun modelEval() {
+        val m0 = initBoard(
+                white = "b1,c3", black = "a1,c1", whiteMove = true,
+                model = ModelSerializer.restoreComputationGraph("model.tictactoe.3000"))
+        println(m0.whiteMove)
+        m0.printBoard()
 
-        fun place(placement: String, sign: Int) {
-            for (j in placement.split(",")) {
-                val x = j.first() - 'a'
-                val y = j.substring(1).toInt() - 1
-                state.gameBoard[y][x] = sign
-            }
-        }
-        place(white, 1)
-        place(black, -1)
-        return state
+        val m1 = treeSearchMove(m0, 0.5)
+        println(m0.value)
+        for (next in m0.nextMoves) println("${next.description} ${next.prior} ${next.pi}")
+        println(m1.whiteMove)
+        m1.printBoard()
+
+        val m2 = treeSearchMove(m1, 0.5)
+        println(m1.value)
+        for (next in m1.nextMoves) println("${next.description} ${next.prior} ${next.pi}")
+        println(m2.whiteMove)
+        m2.printBoard()
+
+        val m3 = treeSearchMove(m2, 0.5)
+        println(m2.value)
+        for (next in m2.nextMoves) println("${next.description} ${next.prior} ${next.pi}")
+        println(m3.whiteMove)
+        m3.printBoard()
+
+        println(m3.predict().first)
     }
 
+}
+
+//class TestConnect4() : TwoColorSetup("connect4") {
 //    @Test
 //    fun modelEval() {
-//        val state = initBoard(
-//                white = "b2,c3", black = "b1", whiteMove = false,
-//                model = ModelSerializer.restoreMultiLayerNetwork("model.tictactoe.21"))
+//        val state = initBoard(white="c1,d1,d2,d3,f1,e2,g1",
+//                              black="c2,e1,a1,d4,g1,e3,b1",
+//                              whiteMove = true,
+//                              model=ModelSerializer.restoreComputationGraph("model.connect4.3940"))
 //        state.printBoard()
-//        state.expand()
-//        state.nextMoves.forEach {
-//            println("${it.description} ${it.prior}")
+//        println(state.toModelInput())
+//
+//        treeSearchMove(state, 0.5)
+//        for (next in state.nextMoves) {
+//            println("${next.description} ${next.prior} ${next.pi}")
 //        }
 //    }
-}
+//}
+
+
+

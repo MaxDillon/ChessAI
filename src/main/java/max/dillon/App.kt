@@ -5,16 +5,18 @@ import max.dillon.GameGrammar.*
 import max.dillon.GameGrammar.Outcome.*
 import max.dillon.GameGrammar.Symmetry.NONE
 import max.dillon.GameGrammar.Symmetry.ROTATE
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
+import org.deeplearning4j.nn.graph.ComputationGraph
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import java.io.FileOutputStream
 import java.nio.file.Files
-import java.nio.file.NoSuchFileException
 import java.nio.file.Paths
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.math.*
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.sign
 
 enum class GameOutcome {
     UNDETERMINED, WIN_WHITE, WIN_BLACK, DRAW
@@ -58,6 +60,7 @@ val cross_m = ::cross.memoize()
 
 val rand = Random()
 
+
 class GameState {
     var gameBoard: Array<IntArray>
     var rowOwned: BooleanArray
@@ -76,13 +79,55 @@ class GameState {
     val outcome: GameOutcome by lazy {
         gameOutcome()
     }
-    var leaf = true
-    var prior = 0f
+    var value = 0f // output of the value network
+    var prior = 0f // output of policy network
+    var pi = 0f // estimate of mcts
     var visitCount = 0
     var totalValue = 0.0f
-    val model: MultiLayerNetwork?
 
-    constructor(gameSpec: GameSpec, model: MultiLayerNetwork? = null) {
+    var visited = false
+
+    inner class MctsV {
+        operator fun get(i: Int) = nextMoves[i].totalValue
+        operator fun set(i: Int, v: Float) {
+            nextMoves[i].totalValue = v
+        }
+    }
+
+    val mcts_V = MctsV()
+
+    inner class MctsN {
+        operator fun get(i: Int) = nextMoves[i].visitCount
+        operator fun set(i: Int, v: Int) {
+            nextMoves[i].visitCount = v
+        }
+
+        fun sum() = nextMoves.sumBy { it.visitCount }
+    }
+
+    val mcts_N = MctsN()
+
+    inner class MctsP {
+        operator fun get(i: Int) = nextMoves[i].prior
+        operator fun set(i: Int, v: Float) {
+            nextMoves[i].prior = v
+        }
+    }
+
+    val mcts_P = MctsP()
+
+    inner class MctsPi {
+        operator fun get(i: Int) = nextMoves[i].pi
+        operator fun set(i: Int, v: Float) {
+            nextMoves[i].pi = v
+        }
+    }
+
+    val mcts_Pi = MctsPi()
+
+    val model: ComputationGraph?
+
+    constructor(gameSpec: GameSpec, model: ComputationGraph? = null) {
         this.gameSpec = gameSpec
         this.model = model
         gameBoard = Array(gameSpec.boardSize) { IntArray(gameSpec.boardSize) { 0 } }
@@ -119,39 +164,21 @@ class GameState {
 
     override fun toString(): String = "${moveDepth}: after ${description} whitemove: ${whiteMove}"
 
-    fun scoreFor(parent: GameState): Float {
-        val tempScore: Float = when (outcome) {
-            GameOutcome.UNDETERMINED -> {
-                // See https://en.wikipedia.org/wiki/Monte_Carlo_tree_search for
-                // formula balancing exploitation/exploration
-                // exploration value is independent of prior or mcts estimate
-                // and just depends on visit counts
-                val explorationValue = sqrt(
-                        2f * log(parent.visitCount.toFloat() + 1f, E.toFloat()) /
-                                (visitCount.toFloat() + 1f))
-                val mctsEstValue = totalValue / (visitCount + 1)
-                val priorEstValue = prior
-                // TODO: Not sure exactly how to combine these:
-                val estValue = (mctsEstValue + priorEstValue) / 2
-                val sign = if (parent.whiteMove == whiteMove) 1 else -1
-                return (sign * estValue) + explorationValue
-            }
+    fun selfValue(): Float {
+        return when (outcome) {
             GameOutcome.WIN_WHITE -> {
-                if (parent.whiteMove) 10f else -10f
+                if (whiteMove) 1f else -1f
             }
             GameOutcome.WIN_BLACK -> {
-                if (parent.whiteMove) -10f else 10f
+                if (whiteMove) -1f else 1f
             }
             GameOutcome.DRAW -> {
                 0f
             }
+            GameOutcome.UNDETERMINED -> {
+                throw RuntimeException("wtf")
+            }
         }
-        return tempScore
-    }
-
-    fun updateValue(value: Float) {
-        totalValue += value
-        visitCount += 1
     }
 
     fun at(x: Int, y: Int): Int {
@@ -196,21 +223,23 @@ class GameState {
         var input = Nd4j.zeros(1, 2 * np + 1, sz, sz)
         for (x in 0 until sz) {
             for (y in 0 until sz) {
-                val p = at(x,y)
+                val p = at(x, y)
                 if (p != 0) {
                     val channel = if (p > 0) p else np - p
                     input.putScalar(intArrayOf(0, channel, x, y), 1)
                 }
             }
         }
-        var turn = if (whiteMove) 0 else 1
+        var turn = if (whiteMove) 1 else -1
         for (x in 0 until sz) for (y in 0 until sz) input.putScalar(intArrayOf(0, 0, x, y), turn)
         return input
     }
 
-    fun modelPredict(network: MultiLayerNetwork): Pair<Float, FloatArray> {
-        val policy = network.output(toModelInput())
-        return Pair(0f, FloatArray(policy.shape()[1]) {
+    fun modelPredict(network: ComputationGraph): Pair<Float, FloatArray> {
+        val outputs = network.output(toModelInput())
+        val value = outputs[0].getFloat(0, 0)
+        val policy = outputs[1]
+        return Pair(value, FloatArray(policy.shape()[1]) {
             policy.getFloat(intArrayOf(0, it))
         })
     }
@@ -450,32 +479,6 @@ class GameState {
         return states.lastEntry()?.component2() ?: ArrayList()
     }
 
-    fun expand() {
-        if (!leaf) {
-            return
-        }
-        totalValue = when (outcome) {
-            GameOutcome.UNDETERMINED -> {
-                val (value, priors) = predict()
-                for (move in nextMoves) {
-                    move.prior = priors[move.getMoveIndex()]
-                }
-                value
-            }
-            GameOutcome.WIN_BLACK -> {
-                if (whiteMove) -1f else 1f
-            }
-            GameOutcome.WIN_WHITE -> {
-                if (whiteMove) 1f else -1f
-            }
-            GameOutcome.DRAW -> {
-                0f
-            }
-        }
-        visitCount = 1
-        leaf = false
-    }
-
     fun pieceCounts(): Pair<IntArray, IntArray> {
         val p1Counts = IntArray(gameSpec.pieceList.size, { 0 })
         val p2Counts = IntArray(gameSpec.pieceList.size, { 0 })
@@ -589,16 +592,6 @@ class GameState {
     }
 
 
-    /**
-     * print statements for board
-     *
-     *  small board
-     *  reg board
-     *  large board
-     *
-     * **/
-
-
     private fun getRow(row: IntArray, i: Int) {
         val h_ = "\u001B[47m"
         val _h = "\u001B[0m"
@@ -609,10 +602,7 @@ class GameState {
         }.also { println("\u001B[37m\u001B[40m    \u001B[0m") }
     }
 
-
     fun printBoard() {
-
-
         print("\u001B[40m        ")
         for (index in 0 until gameSpec.boardSize) print("       ")
         println("\u001B[0m")
@@ -645,28 +635,21 @@ class GameState {
         for (index in 0 until gameSpec.boardSize) print("   " + ('a' + index) + "   ")
         print("    \u001B[0m")
         println("\n\n")
-
     }
-
-
 }
 
+fun loadSpec(game: String): GameSpec {
+    val file = "src/main/data/${game}.textproto"
+    val specStr = String(Files.readAllBytes(Paths.get(file)))
+    return GameSpec.newBuilder().apply {
+        TextFormat.getParser().merge(specStr, this)
+        addPieceBuilder(0) // hack: inserting null piece at index 0
+    }.build()
+}
 
 fun main(args: Array<String>) {
     val game: String = if (args.size > 0) args[0] else readLine() ?: "chess"
-    val specStr: String
-    try {
-        specStr = String(Files.readAllBytes(Paths.get("src/main/data/$game.textproto")))
-    } catch (e: NoSuchFileException) {
-        println("No game spec found for '${game}'.")
-        return
-    }
-    val builder = GameSpec.newBuilder()
-    TextFormat.getParser().merge(specStr, builder)
-    val gameSpec = builder.apply {
-        addPiece(0, builder.addPieceBuilder())
-    }.build()
-
+    val gameSpec = loadSpec(game)
 
     if (args.size == 3) {
         tournament(gameSpec, args[1], args[2])

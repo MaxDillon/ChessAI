@@ -9,12 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 fun main(args: Array<String>) {
-    val specStr = String(Files.readAllBytes(Paths.get("src/main/data/${args[0]}.textproto")))
-    val builder = GameSpec.newBuilder()
-    TextFormat.getParser().merge(specStr, builder)
-    val gameSpec = builder.apply {
-        addPiece(0, builder.addPieceBuilder())
-    }.build()
+    val gameSpec = loadSpec(args[0])
 
     // needs to applied to cases where we have computed the source index as <piece> + <position>
     // where position is in NxN and we've done this for games like chess where we never move a
@@ -52,9 +47,7 @@ fun main(args: Array<String>) {
             for (tsr in inst.treeSearchResultList) {
                 addTreeSearchResultBuilder().apply {
                     index = fixIndex(tsr.index)
-                    meanValue = tsr.meanValue
-                    numVisits = tsr.numVisits
-                    prior = tsr.prior
+                    prob = tsr.prob
                 }
             }
         }.build().writeDelimitedTo(outstream)

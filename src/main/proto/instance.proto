@@ -4,9 +4,7 @@ package max.dillon;
 
 message TreeSearchResult {
     uint32 index = 1;
-    float prior = 2;
-    float mean_value = 3;
-    float num_visits = 4;
+    float prob = 2;
 }
 
 message TrainingInstance {
