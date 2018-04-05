@@ -30,12 +30,7 @@ fun policySize(gameSpec: GameSpec): Int {
     return src_dim * dst_dim
 }
 
-fun main(args: Array<String>) {
-    val gameSpec = loadSpec(args[0])
-    val N = gameSpec.boardSize
-    val P = gameSpec.pieceCount - 1
-    val batchSize = 1500
-
+fun newModel(gameSpec: GameSpec, N: Int, P: Int): ComputationGraph {
     val mconfig = NeuralNetConfiguration.Builder()
             .learningRate(0.005)
             .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
@@ -98,6 +93,23 @@ fun main(args: Array<String>) {
             .build()
     val model = ComputationGraph(mconfig)
     model.init()
+    return model
+}
+
+fun main(args: Array<String>) {
+    var baseName = args[0]
+    val gameSpec = loadSpec(baseName)
+    val dataFile = args[1]
+    val N = gameSpec.boardSize
+    val P = gameSpec.pieceCount - 1
+    val batchSize = 1500
+
+    val model = if (args.size < 3) {
+        newModel(gameSpec, N, P)
+    } else {
+        baseName = args[2]
+        ModelSerializer.restoreComputationGraph(args[2])
+    }
 
     //model.setListeners(ScoreIterationListener())
     val uiServer = UIServer.getInstance()
@@ -106,12 +118,12 @@ fun main(args: Array<String>) {
     model.setListeners(StatsListener(statsStorage))
 
     var batchCount = 0
-    val reader = FileInstanceReader(0.1, args[1])
+    val reader = FileInstanceReader(0.1, dataFile)
     while (true) {
         model.fit(getBatch(gameSpec, reader, batchSize))
         batchCount++
         if (batchCount % 1000 == 0) {
-            ModelSerializer.writeModel(model, "model.${args[0]}.${batchCount}", true)
+            ModelSerializer.writeModel(model, "model.${baseName}.${batchCount}", true)
         }
     }
 }
