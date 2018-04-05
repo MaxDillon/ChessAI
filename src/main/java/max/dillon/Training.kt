@@ -168,8 +168,8 @@ fun parseBatch(gameSpec: GameSpec, instances: Array<Instance.TrainingInstance>):
 
         for (j in 0 until instances[i].treeSearchResultCount) {
             val tsr = instances[i].treeSearchResultList[j]
-            policy.putScalar(tsr.index, tsr.prob)
-            legal.putScalar(tsr.index, 1f)
+            policy.putScalar(intArrayOf(i, tsr.index), tsr.prob)
+            legal.putScalar(intArrayOf(i, tsr.index), 1f)
         }
         value.putScalar(i, instances[i].outcome)
     }

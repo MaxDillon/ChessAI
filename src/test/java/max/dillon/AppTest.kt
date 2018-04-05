@@ -301,17 +301,20 @@ class TestTicTacToe() : TwoColorSetup("tictactoe") {
 class TestConnect4() : TwoColorSetup("connect4") {
     @Test
     fun modelEval() {
-        val state = initBoard(white="c1,d1",
-                              black="c2",
+        var state = initBoard(white = "c1,d1",
+                              black = "c2",
                               whiteMove = false,
-                              model=ModelSerializer.restoreComputationGraph("model.connect4.3000"))
-        state.printBoard()
-        println(state.toModelInput())
-        treeSearchMove(state, 1.0)
-        println(state.value)
+                              model = ModelSerializer.restoreComputationGraph("model.connect4.1000"))
 
-        for (next in state.nextMoves) {
-            println("${next.description} ${next.prior} ${next.pi}")
+        while (state.outcome == GameOutcome.UNDETERMINED) {
+            state.printBoard()
+            //println(state.toModelInput())
+            val next = treeSearchMove(state, 0.5)
+            println(state.value)
+            for (next in state.nextMoves) {
+                println("${next.description} ${next.prior} ${next.pi}")
+            }
+            state = next
         }
     }
 }
