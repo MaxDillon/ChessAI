@@ -165,37 +165,74 @@ fun sync(state: GameState, move: GameState): GameState {
     throw RuntimeException("wtf")
 }
 
-fun tournament(spec: GameGrammar.GameSpec, mWhite: String?, mBlack: String?) {
-    val modelWhite = mWhite?.let { ModelSerializer.restoreComputationGraph(it) }
-    val modelBlack = mBlack?.let { ModelSerializer.restoreComputationGraph(it) }
+fun choose(state: GameState): GameState {
+    fun parse(s: String) = Pair(s.first() - 'a', s.substring(1).toInt() - 1)
+    while (true) {
+        println("Enter move (e.g., 'a1' to place or 'a1:b1' to move):")
+        val str = readLine()
+        if (str == null || str == "") continue
+        val tokens = str.split(":")
+        if (tokens.size > 2) continue
+        val (x1, y1) = if (tokens.size == 1) Pair(-1,-1) else parse(tokens[0])
+        val (x2, y2) = parse(tokens[tokens.size - 1])
+        for (move in state.nextMoves) {
+            if (move.x2 == x2 && move.y2 == y2 &&
+                    (move.x1 == x1 || x1 < 0) && (move.y1 == y1 || y1 < 0)) {
+                return move
+            }
+        }
+        println("Try again")
+    }
+}
+
+fun tournament(spec: GameGrammar.GameSpec, white: String, black: String) {
+    var modelWhite: ComputationGraph? = null
+    var modelBlack: ComputationGraph? = null
+
+    if (white != "human" && white != "none") {
+        modelWhite = ModelSerializer.restoreComputationGraph(white)
+    }
+    if (black != "human" && black != "none") {
+        modelBlack = ModelSerializer.restoreComputationGraph(black)
+    }
 
     var nWhite = 0
     var nBlack = 0
     var nDraw = 0
 
     while (true) {
-        var white = GameState(spec, modelWhite)
-        var black = GameState(spec, modelBlack)
+        var whiteState = GameState(spec, modelWhite)
+        var blackState = GameState(spec, modelBlack)
 
-        while (white.outcome == GameOutcome.UNDETERMINED) {
-            if (white.whiteMove) {
-                white = treeSearchMove(white, 1.0)
-                black = sync(black, white)
-            } else {
-                black = treeSearchMove(black, 1.0)
-                white = sync(white, black)
-            }
-            println("${white.moveDepth}: ${white.description}")
-            white.printBoard()
+        if (white == "human" || black == "human") {
+            whiteState.printBoard()
         }
-        when (white.outcome) {
+        while (whiteState.outcome == GameOutcome.UNDETERMINED) {
+            if (whiteState.whiteMove) {
+                whiteState = if (white == "human") {
+                    choose(whiteState)
+                } else {
+                    treeSearchMove(whiteState, 1.0)
+                }
+                blackState = sync(blackState, whiteState)
+            } else {
+                blackState = if (black == "human") {
+                    choose(blackState)
+                } else {
+                    treeSearchMove(blackState, 1.0)
+                }
+                whiteState = sync(whiteState, blackState)
+            }
+            println("${whiteState.moveDepth}: ${whiteState.description}")
+            whiteState.printBoard()
+        }
+        when (whiteState.outcome) {
             GameOutcome.WIN_WHITE -> nWhite += 1
             GameOutcome.WIN_BLACK -> nBlack += 1
             GameOutcome.DRAW -> nDraw += 1
             else -> {
             }
         }
-
         println("White: ${nWhite} Black: ${nBlack} Draw: ${nDraw}")
     }
 }

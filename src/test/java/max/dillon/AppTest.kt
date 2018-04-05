@@ -304,18 +304,18 @@ class TestConnect4() : TwoColorSetup("connect4") {
         var state = initBoard(white = "c1,d1",
                               black = "c2",
                               whiteMove = false,
-                              model = ModelSerializer.restoreComputationGraph("model.connect4.1000"))
+                              model = ModelSerializer.restoreComputationGraph("model.connect4.5000"))
 
-        while (state.outcome == GameOutcome.UNDETERMINED) {
-            state.printBoard()
-            //println(state.toModelInput())
-            val next = treeSearchMove(state, 0.5)
-            println(state.value)
-            for (next in state.nextMoves) {
-                println("${next.description} ${next.prior} ${next.pi}")
-            }
-            state = next
-        }
+//        while (state.outcome == GameOutcome.UNDETERMINED) {
+//            state.printBoard()
+//            //println(state.toModelInput())
+//            val next = treeSearchMove(state, 0.5)
+//            println(state.value)
+//            for (next in state.nextMoves) {
+//                println("${next.description} ${next.prior} ${next.pi}")
+//            }
+//            state = next
+//        }
     }
 }
 

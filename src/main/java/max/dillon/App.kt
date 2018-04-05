@@ -652,9 +652,7 @@ fun main(args: Array<String>) {
     val gameSpec = loadSpec(game)
 
     if (args.size == 3) {
-        val mWhite = if (args[1] != "NONE") args[1] else null
-        val mBlack = if (args[2] != "NONE") args[2] else null
-        tournament(gameSpec, mWhite, mBlack)
+        tournament(gameSpec, args[1], args[2])
     } else {
         val modelFile: String? = if (args.size == 2) args[1] else null
         val outputStream = FileOutputStream("${gameSpec.name}.${System.currentTimeMillis()}")
