@@ -36,17 +36,18 @@ fun policySize(gameSpec: GameSpec): Int {
     return src_dim * dst_dim
 }
 
-fun newModel(gameSpec: GameSpec, N: Int, P: Int): ComputationGraph {
+fun newModel(gameSpec: GameSpec, N: Int, P: Int, rate: Double): ComputationGraph {
+    val inChannels = 2 * P + 1
     val mconfig = NeuralNetConfiguration.Builder()
-            .learningRate(0.005)
+            .learningRate(rate)
             .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
             .updater(Updater.NESTEROVS)
             .regularization(true).l2(1e-6)
             .graphBuilder()
             .addInputs("input")
-            .setInputTypes(InputType.convolutional(N, N,3))
+            .setInputTypes(InputType.convolutional(N, N, inChannels))
             .addLayer("conv1", ConvolutionLayer.Builder(3, 3)
-                    .nIn(2 * P + 1)
+                    .nIn(inChannels)
                     .stride(1, 1)
                     .padding(1, 1)
                     .nOut(40)
@@ -118,6 +119,7 @@ fun trainUsage() {
         |        [-lastn <n>]          The number of recent files to train on. Default is 10.
         |        [-model <model>]      An optional saved model to continue training.
         |        [-saveas <name>]      A name pattern for saved models. Default is <game>
+        |        [-rate <rate>]        Learning rate (for new models)
         """.trimMargin())
 }
 
@@ -130,14 +132,15 @@ fun main(args: Array<String>) {
     val lastN = getArg(args, "lastn")?.toInt() ?: 10
     val modelName = getArg(args, "model")
     val outName = getArg(args, "saveas") ?: game
+    val rate = getArg(args, "rate")?.toDouble() ?: 0.001
 
     val gameSpec = loadSpec(game)
     val N = gameSpec.boardSize
     val P = gameSpec.pieceCount - 1
-    val batchSize = 1500
+    val batchSize = 100
 
     val model = if (modelName == null) {
-        newModel(gameSpec, N, P)
+        newModel(gameSpec, N, P, rate)
     } else {
         ModelSerializer.restoreComputationGraph(modelName)
     }

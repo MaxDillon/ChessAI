@@ -682,12 +682,13 @@ fun main(args: Array<String>) {
     val white = getArg(args, "white") ?: "mcts"
     val black = getArg(args, "black") ?: "mcts"
     val n = getArg(args, "n")?.toInt() ?: 100
+    val iter = getArg(args, "iter")?.toInt() ?: 1600
     val saveas = getArg(args, "saveas") ?: game
 
     val gameSpec = loadSpec(game)
 
     if (white == "human" || black == "human" || white != black) {
-        tournament(gameSpec, white, black)
+        tournament(gameSpec, white, black, iter)
     } else {
         var model = white
         if (model.endsWith(".*")) {
@@ -697,7 +698,7 @@ fun main(args: Array<String>) {
         val workFile = "${baseName}.work"
         val doneFile = "${baseName}.done"
         val outputStream = FileOutputStream(workFile)
-        for (i in 1..n) play(gameSpec, outputStream, model)
+        for (i in 1..n) play(gameSpec, outputStream, model, iter)
         Files.move(Paths.get(workFile), Paths.get(doneFile))
     }
 }

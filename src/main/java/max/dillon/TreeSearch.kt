@@ -47,17 +47,18 @@ fun treeSearchSelfValue(state: GameState, counter: () -> Unit): Float {
 var sum_inner = 0.0
 var num_inner = 0
 
-fun treeSearchMove(state: GameState, temperature: Double): GameState {
+fun treeSearchMove(state: GameState, temperature: Double, iter: Int = 1600): GameState {
     assert(state.outcome == GameOutcome.UNDETERMINED)
 
     if (state.nextMoves.size == 1) {
         return state.nextMoves[0]
     }
 
-    var i = 1500
+    var i = iter
     while (i > 0) {
         treeSearchSelfValue(state, { i-- })
     }
+
 
     // compute vector of counts raised to power 1/temp
     var sum_raised = 0.0
@@ -118,7 +119,7 @@ fun slim(state: GameState): SlimState {
     return SlimState(arr, state.whiteMove, tsr)
 }
 
-fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream, modelFile: String?) {
+fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream, modelFile: String?, iter: Int) {
     var model: ComputationGraph? = null
     if (modelFile != null && modelFile != "mcts") {
         model = ModelSerializer.restoreComputationGraph(modelFile)
@@ -127,10 +128,10 @@ fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream, modelFile: Stri
     val stateArray: ArrayList<SlimState> = arrayListOf(slim(state))
 
     while (state.gameOutcome() == GameOutcome.UNDETERMINED) {
-        var next = treeSearchMove(state, 1.0)
+        var next = treeSearchMove(state, 1.0, iter)
 
         for (i in 0 until state.nextMoves.size) {
-            println("${state.nextMoves[i].description} ${state.mcts_P[i]} ${state.mcts_N[i]} ${state.mcts_V[i]} ${state.mcts_Pi[i]}")
+            println("${state.nextMoves[i].description} ${state.mcts_P[i]} ${state.mcts_N[i]} ${state.mcts_Pi[i]}")
         }
 
         if (state.nextMoves.size > 0 && state.nextMoves[0].pi > 0) stateArray.add(slim(state))
@@ -175,7 +176,7 @@ fun choose(state: GameState): GameState {
     }
 }
 
-fun tournament(spec: GameGrammar.GameSpec, white: String, black: String) {
+fun tournament(spec: GameGrammar.GameSpec, white: String, black: String, iter: Int) {
     var modelWhite: ComputationGraph? = null
     var modelBlack: ComputationGraph? = null
 
@@ -202,14 +203,14 @@ fun tournament(spec: GameGrammar.GameSpec, white: String, black: String) {
                 whiteState = if (white == "human") {
                     choose(whiteState)
                 } else {
-                    treeSearchMove(whiteState, 0.3)
+                    treeSearchMove(whiteState, 0.3, iter)
                 }
                 blackState = sync(blackState, whiteState)
             } else {
                 blackState = if (black == "human") {
                     choose(blackState)
                 } else {
-                    treeSearchMove(blackState, 0.3)
+                    treeSearchMove(blackState, 0.3, iter)
                 }
                 whiteState = sync(whiteState, blackState)
             }
