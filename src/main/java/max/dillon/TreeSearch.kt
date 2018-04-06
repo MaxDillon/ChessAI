@@ -97,16 +97,6 @@ fun recordGame(finalState: GameState, states: ArrayList<SlimState>, outputStream
     }
 }
 
-fun humanInput(state: GameState): GameState {
-    while (true) {
-        print("Enter your move in the same form as description: ")
-        val input = readLine()
-        state.nextMoves.forEach { if (it.description == input) return it }
-        println("that move does not fit the correct form")
-    }
-
-}
-
 data class SlimState(val state: ByteArray,
                      val whiteMove: Boolean,
                      val treeSearchResults: Array<Instance.TreeSearchResult>)
@@ -130,7 +120,7 @@ fun slim(state: GameState): SlimState {
 
 fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream, modelFile: String?) {
     var model: ComputationGraph? = null
-    if (modelFile != null) {
+    if (modelFile != null && modelFile != "mcts") {
         model = ModelSerializer.restoreComputationGraph(modelFile)
     }
     var state = GameState(spec, model)
@@ -189,10 +179,10 @@ fun tournament(spec: GameGrammar.GameSpec, white: String, black: String) {
     var modelWhite: ComputationGraph? = null
     var modelBlack: ComputationGraph? = null
 
-    if (white != "human" && white != "none") {
+    if (white != "human" && white != "mcts") {
         modelWhite = ModelSerializer.restoreComputationGraph(white)
     }
-    if (black != "human" && black != "none") {
+    if (black != "human" && black != "mcts") {
         modelBlack = ModelSerializer.restoreComputationGraph(black)
     }
 
@@ -212,14 +202,14 @@ fun tournament(spec: GameGrammar.GameSpec, white: String, black: String) {
                 whiteState = if (white == "human") {
                     choose(whiteState)
                 } else {
-                    treeSearchMove(whiteState, 1.0)
+                    treeSearchMove(whiteState, 0.3)
                 }
                 blackState = sync(blackState, whiteState)
             } else {
                 blackState = if (black == "human") {
                     choose(blackState)
                 } else {
-                    treeSearchMove(blackState, 1.0)
+                    treeSearchMove(blackState, 0.3)
                 }
                 whiteState = sync(whiteState, blackState)
             }

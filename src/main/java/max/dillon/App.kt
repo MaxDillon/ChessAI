@@ -1,5 +1,6 @@
 package max.dillon
 
+import ch.qos.logback.core.pattern.color.BlackCompositeConverter
 import com.google.protobuf.TextFormat
 import max.dillon.GameGrammar.*
 import max.dillon.GameGrammar.Outcome.*
@@ -10,8 +11,11 @@ import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import java.io.FileOutputStream
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.*
+import java.util.function.BiPredicate
 import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.math.max
@@ -647,17 +651,53 @@ fun loadSpec(game: String): GameSpec {
     }.build()
 }
 
-fun main(args: Array<String>) {
-    val game: String = if (args.size > 0) args[0] else readLine() ?: "chess"
-    val gameSpec = loadSpec(game)
-
-    if (args.size == 3) {
-        tournament(gameSpec, args[1], args[2])
-    } else {
-        val modelFile: String? = if (args.size == 2) args[1] else null
-        val outputStream = FileOutputStream("${gameSpec.name}.${System.currentTimeMillis()}")
-        while (true) play(gameSpec, outputStream, modelFile)
+fun getLatest(modelFile: String): String {
+    val matcher = BiPredicate<Path, BasicFileAttributes> { file, _ ->
+        file.fileName.toString().matches(Regex(modelFile))
     }
+    val paths = java.util.ArrayList<Path>()
+    for (path in Files.find(Paths.get("."), 1, matcher).iterator()) paths.add(path)
+    return paths.sortedBy { it.fileName }.last().toString()
 }
 
+fun appUsage() {
+    println("""
+        |java AppKt <game>
+        |        [-white <model>]      Model for the white player. Default is mcts.
+        |        [-black <model>]      Model for the black player. Default is mcts.
+        |        [-saveas <name>]      A name pattern for saved games. Default is <game>
+        |        [-n <n>]              The number of games to play. Default=10.
+        |<model> may be 'mcts' to run with Monte Carlo tree search only,
+        |            or 'human' to enter moves manually
+        |            or a model filename.
+        |If the mode filename ends in .* then it will run against the latest version.
+        """.trimMargin())
+}
 
+fun main(args: Array<String>) {
+    if (args.contains("-h")) {
+        return appUsage()
+    }
+    val game = args[0]
+    val white = getArg(args, "white") ?: "mcts"
+    val black = getArg(args, "black") ?: "mcts"
+    val n = getArg(args, "n")?.toInt() ?: 100
+    val saveas = getArg(args, "saveas") ?: game
+
+    val gameSpec = loadSpec(game)
+
+    if (white == "human" || black == "human" || white != black) {
+        tournament(gameSpec, white, black)
+    } else {
+        var model = white
+        if (model.endsWith(".*")) {
+            model = getLatest(model)
+        }
+        val baseName = "data.${saveas}.${System.currentTimeMillis()}"
+        val workFile = "${baseName}.work"
+        val doneFile = "${baseName}.done"
+        val outputStream = FileOutputStream(workFile)
+        for (i in 1..n) play(gameSpec, outputStream, model)
+        Files.move(Paths.get(workFile), Paths.get(doneFile))
+    }
+}
