@@ -43,7 +43,7 @@ class TestChess() {
         val state = initBoard(white=Placement(k="g1",r="d4",n="f6",b="b7",p="c6"),
                               black=Placement(k="d8",q="g3"),
                               whiteMove = false,
-                              model=ModelSerializer.restoreComputationGraph("model.chess.2140"))
+                              model=ModelSerializer.restoreComputationGraph("prod_model.chess"))
         state.printBoard()
         println(state.toModelInput())
         treeSearchMove(state, 1.0)
@@ -266,15 +266,15 @@ class TestTicTacToe() : TwoColorSetup("tictactoe") {
         println(dataset.features[0])
         println("pHat")
         println(dataset.labels[0])
-//        println(dataset.labels[1])
-//        println(dataset.labels[2])
+        println(dataset.labels[1])
+        println(dataset.labels[2])
     }
 
     @Test
     fun modelEval() {
         val m0 = initBoard(
                 white = "a2", black = "", whiteMove = false,
-                model = ModelSerializer.restoreComputationGraph("model.tictactoe.4000"))
+                model = ModelSerializer.restoreComputationGraph("prod_model.tictactoe"))
 
         val m1 = treeSearchMove(m0, 1.0)
         val m2 = treeSearchMove(m1, 1.0)
@@ -304,18 +304,15 @@ class TestConnect4() : TwoColorSetup("connect4") {
         var state = initBoard(white = "c1,d1",
                               black = "c2",
                               whiteMove = false,
-                              model = ModelSerializer.restoreComputationGraph("model.connect4.5000"))
+                              model = ModelSerializer.restoreComputationGraph("prod_model.connect4"))
 
-//        while (state.outcome == GameOutcome.UNDETERMINED) {
-//            state.printBoard()
-//            //println(state.toModelInput())
-//            val next = treeSearchMove(state, 0.5)
-//            println(state.value)
-//            for (next in state.nextMoves) {
-//                println("${next.description} ${next.prior} ${next.pi}")
-//            }
-//            state = next
-//        }
+        state.printBoard()
+        println(state.toModelInput())
+        val next = treeSearchMove(state, 0.5)
+        println(state.value)
+        for (next in state.nextMoves) {
+            println("${next.description} ${next.prior} ${next.pi}")
+        }
     }
 }
 

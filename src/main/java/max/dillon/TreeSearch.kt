@@ -47,18 +47,23 @@ fun treeSearchSelfValue(state: GameState, counter: () -> Unit): Float {
 var sum_inner = 0.0
 var num_inner = 0
 
-fun treeSearchMove(state: GameState, temperature: Double): GameState {
+fun treeSearchMove(state: GameState, temperature: Double, iter: Int = 1600): GameState {
     assert(state.outcome == GameOutcome.UNDETERMINED)
-
     if (state.nextMoves.size == 1) {
         return state.nextMoves[0]
     }
-
-    var i = 1500
+    var i = iter
     while (i > 0) {
         treeSearchSelfValue(state, { i-- })
     }
-
+    // if there's a winning move always take it
+    for (next in state.nextMoves) {
+        var outcome = next.outcome
+        if ((state.whiteMove && outcome == GameOutcome.WIN_WHITE) ||
+                (!state.whiteMove && outcome == GameOutcome.WIN_BLACK)) {
+            return next
+        }
+    }
     // compute vector of counts raised to power 1/temp
     var sum_raised = 0.0
     val raised = DoubleArray(state.nextMoves.size) {
@@ -97,16 +102,6 @@ fun recordGame(finalState: GameState, states: ArrayList<SlimState>, outputStream
     }
 }
 
-fun humanInput(state: GameState): GameState {
-    while (true) {
-        print("Enter your move in the same form as description: ")
-        val input = readLine()
-        state.nextMoves.forEach { if (it.description == input) return it }
-        println("that move does not fit the correct form")
-    }
-
-}
-
 data class SlimState(val state: ByteArray,
                      val whiteMove: Boolean,
                      val treeSearchResults: Array<Instance.TreeSearchResult>)
@@ -128,19 +123,19 @@ fun slim(state: GameState): SlimState {
     return SlimState(arr, state.whiteMove, tsr)
 }
 
-fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream, modelFile: String?) {
+fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream, modelFile: String?, iter: Int) {
     var model: ComputationGraph? = null
-    if (modelFile != null) {
+    if (modelFile != null && modelFile != "mcts") {
         model = ModelSerializer.restoreComputationGraph(modelFile)
     }
     var state = GameState(spec, model)
     val stateArray: ArrayList<SlimState> = arrayListOf(slim(state))
 
     while (state.gameOutcome() == GameOutcome.UNDETERMINED) {
-        var next = treeSearchMove(state, 1.0)
+        var next = treeSearchMove(state, 1.0, iter)
 
         for (i in 0 until state.nextMoves.size) {
-            println("${state.nextMoves[i].description} ${state.mcts_P[i]} ${state.mcts_N[i]} ${state.mcts_V[i]} ${state.mcts_Pi[i]}")
+            println("${state.nextMoves[i].description} ${state.mcts_P[i]} ${state.mcts_N[i]} ${state.mcts_Pi[i]}")
         }
 
         if (state.nextMoves.size > 0 && state.nextMoves[0].pi > 0) stateArray.add(slim(state))
@@ -151,7 +146,7 @@ fun play(spec: GameGrammar.GameSpec, outputStream: OutputStream, modelFile: Stri
     }
     println(state.outcome)
     recordGame(state, stateArray, outputStream)
-    println("Inner Product Stats: ${num_inner} ${sum_inner} ${sum_inner/num_inner}")
+    println("Inner Product Stats: ${num_inner} ${sum_inner} ${sum_inner / num_inner}")
 }
 
 fun sync(state: GameState, move: GameState): GameState {
@@ -173,7 +168,7 @@ fun choose(state: GameState): GameState {
         if (str == null || str == "") continue
         val tokens = str.split(":")
         if (tokens.size > 2) continue
-        val (x1, y1) = if (tokens.size == 1) Pair(-1,-1) else parse(tokens[0])
+        val (x1, y1) = if (tokens.size == 1) Pair(-1, -1) else parse(tokens[0])
         val (x2, y2) = parse(tokens[tokens.size - 1])
         for (move in state.nextMoves) {
             if (move.x2 == x2 && move.y2 == y2 &&
@@ -185,14 +180,15 @@ fun choose(state: GameState): GameState {
     }
 }
 
-fun tournament(spec: GameGrammar.GameSpec, white: String, black: String) {
+fun tournament(spec: GameGrammar.GameSpec, white: String, black: String, iter: Int,
+               outputStream: OutputStream) {
     var modelWhite: ComputationGraph? = null
     var modelBlack: ComputationGraph? = null
 
-    if (white != "human" && white != "none") {
+    if (white != "human" && white != "mcts") {
         modelWhite = ModelSerializer.restoreComputationGraph(white)
     }
-    if (black != "human" && black != "none") {
+    if (black != "human" && black != "mcts") {
         modelBlack = ModelSerializer.restoreComputationGraph(black)
     }
 
@@ -203,6 +199,7 @@ fun tournament(spec: GameGrammar.GameSpec, white: String, black: String) {
     while (true) {
         var whiteState = GameState(spec, modelWhite)
         var blackState = GameState(spec, modelBlack)
+        val stateArray: ArrayList<SlimState> = arrayListOf(slim(whiteState))
 
         if (white == "human" || black == "human") {
             whiteState.printBoard()
@@ -212,14 +209,22 @@ fun tournament(spec: GameGrammar.GameSpec, white: String, black: String) {
                 whiteState = if (white == "human") {
                     choose(whiteState)
                 } else {
-                    treeSearchMove(whiteState, 1.0)
+                    var next = treeSearchMove(whiteState, 0.8, iter)
+                    if (whiteState.nextMoves.size > 0 && whiteState.nextMoves[0].pi > 0) {
+                        stateArray.add(slim(whiteState))
+                    }
+                    next
                 }
                 blackState = sync(blackState, whiteState)
             } else {
                 blackState = if (black == "human") {
                     choose(blackState)
                 } else {
-                    treeSearchMove(blackState, 1.0)
+                    var next = treeSearchMove(blackState, 0.8, iter)
+                    if (blackState.nextMoves.size > 0 && blackState.nextMoves[0].pi > 0) {
+                        stateArray.add(slim(blackState))
+                    }
+                    next
                 }
                 whiteState = sync(whiteState, blackState)
             }
@@ -234,5 +239,6 @@ fun tournament(spec: GameGrammar.GameSpec, white: String, black: String) {
             }
         }
         println("White: ${nWhite} Black: ${nBlack} Draw: ${nDraw}")
+        recordGame(whiteState, stateArray, outputStream)
     }
 }

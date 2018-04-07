@@ -49,3 +49,88 @@ Grammar considerations
   -- representation of move chaining (to help with pawn moves, or queening, or checkers)
   -- representation of special rows
 
+
+
+
+
+
+
+Bottleneck seems to be generation of training data with self-play games.
+MCTS is expensive on its own. Especially when we are calling out to predict() a lot.
+-- make sure we don't do this more than necessary (e.g., duplication, or for nodes we won't expand).
+-- make sure we aren't re-expanding things or recomputing possible moves
+-- profile.
+
+But due to the cost of data generation, we should consider all possible augmentations.
+-- exploit game symmetries to add flips, rotations, etc. where possible.  specify what is possible in grammar.
+
+Consider whether we can do with simpler models. Not sure how to estimate how large a model we need other than
+by experiemnting. But if the model can be smaller it will train faster and we'll be able to use more
+parallel instances due to using less memory  on the GPU
+
+Diagnostics:
+-- standard deviation of activations or weights. is this a likely indicator of overfitting?
+
+regularization
+-- weight decay / l2
+-- dropout
+
+posible that newer optimizers than stochastic gradient descent will converge faster.
+may help give a quick idea of the capability of a given network topology
+
+early stopping ... monitor performance on test set and stop training when perf degrades.
+likely that we've overtrained connect4 model.
+
+
+
+
+Diagnostics.
+Weight Initialization.
+Learning Rate.
+Activation Functions.
+Network Topology.
+Batches and Epochs.
+Regularization.
+Optimization and Loss.
+Early Stopping.
+
+How To Improve Deep Learning Performance
+by Jason Brownlee on September 21, 2016 in Deep Learning
+20 Tips, Tricks and Techniques That You Can Use To
+Fight Overfitting and Get Better Generalization
+How can you get better performance from your deep learning model?
+
+
+How many layers and how many neurons do you need?
+No one knows. No one. Don’t ask.
+You must discover a good configuration for your problem. Experiment.
+
+Try one hidden layer with a lot of neurons (wide).
+Try a deep network with few neurons per layer (deep).
+Try combinations of the above.
+Try architectures from recent papers on problems similar to yours.
+Try topology patterns (fan out then in) and rules of thumb from books and papers (see links below).
+
+It’s hard. Larger networks have a greater representational capability, and maybe you need it.
+More layers offer more opportunity for hierarchical re-composition of abstract features learned from the data. Maybe you need that.
+
+Small batch sizes with large epoch size and a large number of training epochs are common in modern deep learning implementations.
+
+
+
+
+// TODO: we are unnecessarily reloading the model and restoring the graph with every new game.
+// TODO: we are unnecessarily printing the board when in data generation mode.
+// TODO: that said, 90% of the time is spent in predict().  (i.e., computationgraph.output)
+// TODO: we do *not* appear to be hitting max GPU usage, though we are using all of its memory.
+// TODO: possible that we could re-use a computationgraph for multiple threads and get higher
+// TODO: CPU/GPU utilization at same GPM memory footprint.
+
+// TODO: reduce calls to predict()
+//       -- cache results by state hash?
+//       -- change number of MCTS calls?
+
+// TODO: we go to much greater expense rolling out simulations than by training. cheap to
+//       apply an example to traing. much more expensive in model evals to produce the example.
+// TODO: leverage the training examples we *do* generate by rotating and reflecting them.
+

@@ -180,6 +180,6 @@ game_over {
 }
 game_over {
     condition: MOVE_LIMIT
-    param: 150
+    param: 200
     decision: DRAW
 }
