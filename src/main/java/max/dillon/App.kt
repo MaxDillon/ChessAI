@@ -62,8 +62,7 @@ private fun cross(size: Int): List<Pair<Int, Int>> {
 
 val cross_m = ::cross.memoize()
 
-val rand = Random()
-
+val rand = Random(System.currentTimeMillis())
 
 class GameState {
     var gameBoard: Array<IntArray>
@@ -686,19 +685,19 @@ fun main(args: Array<String>) {
     val saveas = getArg(args, "saveas") ?: game
 
     val gameSpec = loadSpec(game)
+    val baseName = "data.${saveas}.${System.currentTimeMillis()}"
+    val workFile = "${baseName}.work"
+    val doneFile = "${baseName}.done"
+    val outputStream = FileOutputStream(workFile)
 
     if (white == "human" || black == "human" || white != black) {
-        tournament(gameSpec, white, black, iter)
+        tournament(gameSpec, white, black, iter, outputStream)
     } else {
         var model = white
         if (model.endsWith(".*")) {
             model = getLatest(model)
         }
-        val baseName = "data.${saveas}.${System.currentTimeMillis()}"
-        val workFile = "${baseName}.work"
-        val doneFile = "${baseName}.done"
-        val outputStream = FileOutputStream(workFile)
         for (i in 1..n) play(gameSpec, outputStream, model, iter)
-        Files.move(Paths.get(workFile), Paths.get(doneFile))
     }
+    Files.move(Paths.get(workFile), Paths.get(doneFile))
 }
