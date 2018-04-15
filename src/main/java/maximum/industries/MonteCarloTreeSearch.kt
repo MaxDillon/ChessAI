@@ -14,6 +14,7 @@ val rand = Random(System.currentTimeMillis())
 
 interface GameSearchAlgo {
     fun next(state: GameState): Pair<GameState, SlimState?>
+    fun gameOver()
 }
 
 class MonteCarloTreeSearch(val strategy: MctsStrategy,
@@ -36,6 +37,10 @@ class MonteCarloTreeSearch(val strategy: MctsStrategy,
             stack.clear()
         }
         return strategy.pickMove(state)
+    }
+
+    override fun gameOver() {
+        strategy.gameOver()
     }
 }
 
@@ -77,6 +82,9 @@ interface MctsStrategy {
 
     // Picks a move according to accumulated mcts stats & prunes cache
     fun pickMove(state: GameState): Pair<GameState, SlimState>
+
+    // Clear any caches
+    fun gameOver()
 }
 
 open class VanillaMctsStrategy(val exploration: Double, val temperature: Double) : MctsStrategy {
@@ -128,28 +136,26 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
     }
 
     // picks a child node, first taking a win if one exists, then taking non-loss
-    // moves according to the given probabilities, then taking a loss if necessary.
-    fun pickChildByProbs(state: GameState, probs: DoubleArray): GameState {
+    // moves according to the given weights, then taking a loss if necessary.
+    fun pickChildByProbs(state: GameState, weights: DoubleArray): GameState {
         val wins = state.nextMoves.filter { it.winFor(state) }
         if (wins.isNotEmpty()) {
             // if there's a terminal win choose one
             return wins[rand.nextInt(wins.size)]
         } else {
             val sz = state.nextMoves.size
-            val nonLossProbs = DoubleArray(sz) {
-                if (state.nextMoves[it].lossFor(state)) 0.0 else probs[it]
+            val nonLossCumls = DoubleArray(sz) {
+                if (state.nextMoves[it].lossFor(state)) 0.0 else weights[it]
             }
-            val nonLossCumls = nonLossProbs.clone()
             for (i in 1 until sz) nonLossCumls[i] += nonLossCumls[i - 1]
             if (nonLossCumls[sz - 1] == 0.0) {
                 // there are no non-loss moves. return a random loss.
                 return state.nextMoves[rand.nextInt(sz)]
             }
-            for (i in 0 until sz) {
-                nonLossCumls[i] /= nonLossCumls[sz - 1]
-            }
-            val point = rand.nextFloat()
-            return state.nextMoves[nonLossCumls.filter { it < point }.count()]
+            val point = rand.nextFloat() * nonLossCumls[sz - 1]
+            var count = 0;
+            for (i in 0 until sz) if (nonLossCumls[i] < point) count++
+            return state.nextMoves[count]
         }
     }
 
@@ -163,7 +169,8 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
             }
             var rollout = state
             while (rollout.outcome == Outcome.UNDETERMINED) {
-                rollout = pickChildByProbs(rollout, DoubleArray(rollout.nextMoves.size) { 0.0 })
+                // use uniform probability for non-loss moves
+                rollout = pickChildByProbs(rollout, DoubleArray(rollout.nextMoves.size) { 1.0 })
             }
             sInfo.Q = sign(state, rollout) * rollout.initialSelfValue()
         }
@@ -208,17 +215,21 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
             println("$next:\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
         }
         val sz = state.nextMoves.size
-        val probs = DoubleArray(sz) {
-            pow(info(state.nextMoves[it]).N.toDouble(), 1 / temperature)
-        }
-        val next = pickChildByProbs(state, probs)
-        val probsum = probs.sum()
-        for (i in 0 until sz) {
-            probs[i] /= probsum
-        }
-        val slim = slimState(state) { i, tsr -> tsr.prob = probs[i].toFloat() }
+        val policy = DoubleArray(sz) { info(state.nextMoves[it]).N.toDouble() }
+        val policySum = policy.sum()
+        for (i in 0 until sz) policy[i] /= policySum
+        // record non-exponentiated normalized policy in slim state. we don't want
+        // model inputs to depend on temperature, or have most values driven to zero.
+        val slim = slimState(state) { i, tsr -> tsr.prob = policy[i].toFloat() }
+        // now exponentiate to get weights for picking actual move
+        for (i in 0 until sz) policy[i] = pow(policy[i], 1 / temperature)
+        val next = pickChildByProbs(state, policy)
         allInfo.remove(state.moveDepth) // won't be needing these anymore
         return Pair(next, slim)
+    }
+
+    override fun gameOver() {
+        allInfo.clear()
     }
 }
 

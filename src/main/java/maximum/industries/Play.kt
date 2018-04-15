@@ -34,6 +34,7 @@ class HumanInput : GameSearchAlgo {
             println("Try again")
         }
     }
+    override fun gameOver() {}
 }
 
 fun recordGame(finalState: GameState, slimStates: ArrayList<SlimState>, outputStream: OutputStream) {
@@ -73,6 +74,8 @@ fun play(gameSpec: GameGrammar.GameSpec,
         if (slim != null) history.add(slim)
     }
     recordGame(state, history, stream)
+    white.gameOver()
+    black.gameOver()
 
     state.printBoard()
     val outcome: Any = when (state.outcome) {
@@ -152,12 +155,12 @@ fun main(args: Array<String>) {
     val temperature = getArg(args, "temperature")?.toDouble() ?: 0.2
     val exploration = getArg(args, "exploration")?.toDouble() ?: 1.0
     val saveas = getArg(args, "saveas") ?: game
-
-    val gameSpec = loadSpec(game)
     val baseName = "data.$saveas.${System.currentTimeMillis()}"
     val workFile = "$baseName.work"
     val doneFile = "$baseName.done"
     val outputStream = FileOutputStream(workFile)
+
+    val gameSpec = loadSpec(game)
 
     val whiteAlgo = getAlgo(white, iter, exploration, temperature)
     val blackAlgo =
