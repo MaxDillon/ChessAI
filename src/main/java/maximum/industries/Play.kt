@@ -44,8 +44,8 @@ fun recordGame(finalState: GameState, slimStates: ArrayList<SlimState>, outputSt
             player = slim.player
             gameLength = finalState.moveDepth
             outcome = when (finalState.outcome) {
-                Outcome.WIN -> 1
-                Outcome.LOSE -> -1
+                Outcome.WIN -> if (slim.player == finalState.player) 1 else -1
+                Outcome.LOSE -> if (slim.player == finalState.player) -1 else 1
                 Outcome.DRAW -> 0
                 else -> throw(RuntimeException("undetermined state at end of game"))
             }
@@ -158,6 +158,8 @@ fun main(args: Array<String>) {
     val baseName = "data.$saveas.${System.currentTimeMillis()}"
     val workFile = "$baseName.work"
     val doneFile = "$baseName.done"
+
+    println("Log file: $workFile")
     val outputStream = FileOutputStream(workFile)
 
     val gameSpec = loadSpec(game)

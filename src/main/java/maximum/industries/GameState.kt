@@ -119,6 +119,14 @@ class GameState {
         return gameBoard[y][x]
     }
 
+    fun winFor(parent: GameState): Boolean {
+        return if (player == parent.player) outcome == Outcome.WIN else outcome == Outcome.LOSE
+    }
+
+    fun lossFor(parent: GameState): Boolean {
+        return if (player == parent.player) outcome == Outcome.LOSE else outcome == Outcome.WIN
+    }
+
     //=================================================================================
     // Functions for constructing successor states
     //=================================================================================

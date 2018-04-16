@@ -6,11 +6,12 @@ import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.indexing.NDArrayIndex
 import java.lang.Math.pow
+import java.security.SecureRandom
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-val rand = Random(System.currentTimeMillis())
+val rand = Random(SecureRandom().nextLong())
 
 interface GameSearchAlgo {
     fun next(state: GameState): Pair<GameState, SlimState?>
@@ -102,14 +103,6 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
 
     fun sign(s1: GameState, s2: GameState): Int {
         return if (s1.player == s2.player) 1 else -1
-    }
-
-    fun GameState.winFor(parent: GameState): Boolean {
-        return if (player == parent.player) outcome == Outcome.WIN else outcome == Outcome.LOSE
-    }
-
-    fun GameState.lossFor(parent: GameState): Boolean {
-        return if (player == parent.player) outcome == Outcome.LOSE else outcome == Outcome.WIN
     }
 
     fun GameState.initialSelfValue(): Float {
