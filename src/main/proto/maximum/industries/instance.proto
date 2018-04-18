@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package max.dillon;
+package maximum.industries;
 
 enum Player {
     WHITE = 0;
