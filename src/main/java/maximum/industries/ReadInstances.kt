@@ -13,7 +13,7 @@ fun main(args: Array<String>) {
             states += 1
 
             val sz = gameSpec.boardSize
-            val player = if (inst.player == Instance.Player.WHITE) Player.WHITE else Player.BLACK
+            val player = if (inst.player.eq(Instance.Player.WHITE)) Player.WHITE else Player.BLACK
             val gameBoard = Array(sz) { IntArray(sz) { 0 } }
             for (i in 0 until inst.boardState.size()) {
                 val x = i / sz
@@ -24,6 +24,7 @@ fun main(args: Array<String>) {
             val state = GameState(gameSpec, gameBoard, player,
                                   0,0, 0, 0, 0, 0)
             state.printBoard()
+            println("Player: ${inst.player}")
             println("Outcome: ${inst.outcome}")
             println("Length: ${inst.gameLength}")
             for (tsr in inst.treeSearchResultList) {

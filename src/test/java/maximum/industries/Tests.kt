@@ -1,13 +1,13 @@
 package maximum.industries
 
 import org.amshove.kluent.shouldEqual
-import org.deeplearning4j.nn.graph.ComputationGraph
 import org.deeplearning4j.util.ModelSerializer
 import org.junit.Test
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.indexing.NDArrayIndex
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import kotlin.math.sqrt
 
 fun GameState.desc(): String {
     return toString().split(":").get(1).trim()
@@ -44,15 +44,15 @@ class TestChess() {
 
     @Test
     fun modelEval() {
-        val state = initBoard(white=Placement(k="a1",p="a7",r="g4",b="e4"),
-                              black=Placement(k="h8",q="c2", p="b4"),
-                              whiteMove = true)
+        val state = initBoard(white = Placement(k = "a1", p = "a6", q = "a8", b = "a4"),
+                              black = Placement(k = "e8", p = "e7,f7", b = "d7", n = "c8"),
+                              whiteMove = false)
 
-//        val model = ModelSerializer.restoreComputationGraph("model.chess.68000")
-//        val search = MonteCarloTreeSearch(
-//                AlphaZeroMctsStrategy(model, 1.0, 0.1), 5000)
+        val model = ModelSerializer.restoreComputationGraph("model.chess.58000")
         val search = MonteCarloTreeSearch(
-                VanillaMctsStrategy(1.0, 0.1), 5000)
+                AlphaZeroMctsStrategy(model, 1.0, 0.1), 100)
+//        val search = MonteCarloTreeSearch(
+//                DirichletMctsStrategy(1.0, 0.1, floatArrayOf(1f, 0f, 0.5f)), 5000)
 
         state.printBoard()
         val (next, slim) = search.next(state)
@@ -140,6 +140,38 @@ class TestChess() {
                                     "d4 -> e2", "d4 -> e6", "d4 -> f3", "d4 -> f5"))
     }
 
+    fun expectedValuePlusSdevs(wld: FloatArray, values: FloatArray, sdevs: Float): Float {
+        val n = wld.sum()
+        val e = values[0] * wld[0] / n +
+                values[1] * wld[1] / n +
+                values[2] * wld[2] / n
+        var varev = 0f  // accumulator for variance of expected value
+        val vdenom = n * n * (n + 1)  // dirichlet var/cov denominator
+        for (i in 0..2) for (j in 0..2) {
+            val cov_ij =
+                    if (i == j) wld[i] * (n - wld[i]) / vdenom
+                    else -wld[i] * wld[j] / vdenom
+            varev += cov_ij * values[i] * values[j]
+        }
+        return e + sqrt(varev) * sdevs
+    }
+
+    @Test
+    fun dirichlet() {
+        println(expectedValuePlusSdevs(floatArrayOf(0.1f, 0.1f, 0.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+        println(expectedValuePlusSdevs(floatArrayOf(1.1f, 0.1f, 0.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+        println(expectedValuePlusSdevs(floatArrayOf(2.1f, 0.1f, 0.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+        println(expectedValuePlusSdevs(floatArrayOf(3.1f, 0.1f, 0.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+        println(expectedValuePlusSdevs(floatArrayOf(0.1f, 1.1f, 0.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+        println(expectedValuePlusSdevs(floatArrayOf(0.1f, 2.1f, 0.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+        println(expectedValuePlusSdevs(floatArrayOf(0.1f, 3.1f, 0.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+        println(expectedValuePlusSdevs(floatArrayOf(0.1f, 0.1f, 1.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+        println(expectedValuePlusSdevs(floatArrayOf(0.1f, 0.1f, 2.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+        println(expectedValuePlusSdevs(floatArrayOf(0.1f, 0.1f, 3.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+        println(expectedValuePlusSdevs(floatArrayOf(1.1f, 1.1f, 1.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+        println(expectedValuePlusSdevs(floatArrayOf(2.1f, 2.1f, 2.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+    }
+
 //    @Test
 //    fun searchTest() {
 //        val state = initBoard(
@@ -173,8 +205,7 @@ class TestChess() {
 open class TwoColorSetup(name: String) {
     val gameSpec = loadSpec(name)
 
-    fun initBoard(white: String, black: String, whiteMove: Boolean = true,
-                  model: ComputationGraph? = null): GameState {
+    fun initBoard(white: String = "", black: String = "", whiteMove: Boolean = true): GameState {
         val gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
         fun place(placement: String, sign: Int) {
             for (j in placement.split(",")) {
@@ -253,83 +284,190 @@ class TestOthello() : TwoColorSetup("othello") {
     }
 }
 
-//
-//class TestTicTacToe() : TwoColorSetup("tictactoe") {
-//    @Test
-//    fun instanceSerialization() {
-//        val current = initBoard(white = "a1", black = "c1", whiteMove = true)
-//        val final = initBoard(white = "b2,b1,b3", black = "a1", whiteMove = true)
-//        treeSearch2Move(current, 1.0)
-//
-//        val bos = ByteArrayOutputStream()
-//        recordGame(final, arrayListOf(slim2(current)), bos)
-//
-//        val bis = ByteArrayInputStream(bos.toByteArray())
-//        val dataset = getBatch(gameSpec, StreamInstance2Reader(bis), 1)
-//
-//        println("toModelInput")
-//        println(current.toModelInput())
-//        println("serialized/deserialized")
-//        println(dataset.features[0])
-//        println("pHat")
-//        println(dataset.labels[0])
-//        println(dataset.labels[1])
-//        println(dataset.labels[2])
-//    }
-//
-//    @Test
-//    fun modelEval() {
-//        val m0 = initBoard(
-//                white = "a2", black = "", whiteMove = false,
-//                model = ModelSerializer.restoreComputationGraph("prod_model.tictactoe"))
-//
-//        val m1 = treeSearchMove(m0, 1.0)
-//        val m2 = treeSearchMove(m1, 1.0)
-//        val m3 = treeSearchMove(m2, 1.0)
-//
-//        println("WhiteMove: ${m0.whiteMove} Value: ${m0.value}")
-//        m0.printBoard()
-//        for (next in m0.nextMoves) println("${next.toString()} ${next.prior} ${next.pi}")
-//
-//        println("WhiteMove: ${m1.whiteMove} Value: ${m1.value}")
-//        m1.printBoard()
-//        for (next in m1.nextMoves) println("${next.toString()} ${next.prior} ${next.pi}")
-//
-//        println("WhiteMove: ${m2.whiteMove} Value: ${m2.value}")
-//        m2.printBoard()
-//        for (next in m2.nextMoves) println("${next.toString()} ${next.prior} ${next.pi}")
-//
-//        println("WhiteMove: ${m3.whiteMove} Value: ${m3.predict().first}")
-//        m3.printBoard()
-//    }
-//
-//}
-//
-//class TestConnect4() : TwoColorSetup("connect4") {
-//    @Test
-//    fun modelEval() {
-//        var state = initBoard(white = "c1,d1",
-//                              black = "c2",
-//                              whiteMove = false,
-//                              model = ModelSerializer.restoreComputationGraph("prod_model.connect4"))
-//
-//        state.printBoard()
-//        println(state.toModelInput())
-//        treeSearchMove(state, 0.5)
-//        println(state.value)
-//        for (next in state.nextMoves) {
-//            println("${next.toString()} ${next.prior} ${next.pi}")
-//        }
-//    }
-//}
+class TestTicTacToe() : TwoColorSetup("tictactoe") {
+    fun check(initial: GameState, slim: SlimState?, final: GameState) {
+        val bos = ByteArrayOutputStream()
+        recordGame(final, arrayListOf(slim!!), bos)
+        val bis = ByteArrayInputStream(bos.toByteArray())
+        val dataset = maximum.industries.bak.getBatch(gameSpec, StreamInstanceReader(bis), 1)
 
+        assert(initial.toProbModelInput().equals(dataset.features[0]))
+        assert(dataset.labels[0].getInt(0) == if (final.winFor(initial)) 1 else -1)
+        for (i in slim.treeSearchResults.indices) {
+            val tsr = slim.treeSearchResults[i]
+            assert(tsr.prob == dataset.labels[1].getFloat(0, tsr.index))
+        }
+    }
+
+    @Test
+    fun instanceSerialization() {
+        val search = MonteCarloTreeSearch(VanillaMctsStrategy(
+                1.0, 1.0), 100)
+
+        val whiteMove = initBoard(white = "a1",
+                                  black = "c1",
+                                  whiteMove = false)
+        val blackMove = initBoard(white = "a1,a2",
+                                  black = "c1",
+                                  whiteMove = false)
+        val winWhite = initBoard(white = "a1,a2,a3",
+                                 black = "c1,c2",
+                                 whiteMove = false)
+        val winBlack = initBoard(white = "a1,a2,a3",
+                                 black = "c1,c2",
+                                 whiteMove = false)
+
+        val (_, slimWhite) = search.next(whiteMove)
+        check(whiteMove, slimWhite, winWhite)
+        check(whiteMove, slimWhite, winBlack)
+
+        val (_, slimBlack) = search.next(blackMove)
+        check(blackMove, slimBlack, winWhite)
+        check(blackMove, slimBlack, winBlack)
+    }
+
+    @Test
+    fun modelEval() {
+        val m0 = initBoard(white = "a2", black = "", whiteMove = false)
+        val search = MonteCarloTreeSearch(AlphaZeroMctsStrategy(
+                ModelSerializer.restoreComputationGraph("model.tictactoe.10000"),
+                exploration = 1.0, temperature = 0.1), 300)
+
+        m0.printBoard()
+        val (m1, _) = search.next(m0)
+        m1.printBoard()
+        val (m2, _) = search.next(m1)
+        m2.printBoard()
+        val (m3, _) = search.next(m2)
+        m3.printBoard()
+        val (m4, _) = search.next(m3)
+        m4.printBoard()
+        val (m5, _) = search.next(m4)
+        m5.printBoard()
+        val (m6, _) = search.next(m5)
+        m6.printBoard()
+    }
+}
+
+fun main(args: Array<String>) {
+    val x = TestConnect4()
+    x.check()
+}
+
+class TestConnect4() : TwoColorSetup("connect4") {
+    @Test
+    fun modelEval() {
+        var state = initBoard(white = "c1,e1,d1",
+                              black = "d2,c2",
+                              whiteMove = false)
+        state.printBoard()
+        val model = ModelSerializer.restoreComputationGraph("model.reboot.38000")
+
+        val search = MonteCarloTreeSearch(
+                AlphaZeroMctsStrategy(model, 1.0, 0.1), 500)
+        val (next, slim) = search.next(state)
+        next.printBoard()
+    }
+
+    fun checkModelConsistency(path: String) {
+        val model = ModelSerializer.restoreComputationGraph(path)
+
+        var sump = 0f
+        var sumv = 0f
+        var sump2 = 0f
+        var sumv2 = 0f
+        var sumpv = 0f
+        var n = 0
+
+        for (i in 0 until 50) {
+            var state = initBoard()
+            while (state.outcome == Outcome.UNDETERMINED) {
+                state.printBoard()
+                println(state.toProbModelInput())
+                val outputs = model.output(state.toProbModelInput())
+                for (j in 0 until 49) {
+                    println("${j / 7} ${j % 7}: ${outputs[1].getFloat(intArrayOf(0, j)).f3()} ${outputs[2].getFloat(
+                            intArrayOf(0, j)).f3()}")
+                }
+                for (next in state.nextMoves) {
+                    val nextp = outputs[1].getFloat(intArrayOf(0, next.toPolicyIndex()))
+                    val nextv = model.output(next.toProbModelInput())[0].getFloat(0, 0)
+
+                    sump += nextp
+                    sumv += nextv
+                    sump2 += nextp * nextp
+                    sumv2 += nextv * nextv
+                    sumpv += nextp * nextv
+                    n += 1
+                }
+                state = state.nextMoves[rand.nextInt(state.nextMoves.size)]
+            }
+        }
+
+        val cov = sumpv / n - (sump / n) * (sumv / n)
+        val sdp = sqrt(sump2 / n - (sump / n) * (sump / n))
+        val sdv = sqrt(sumv2 / n - (sumv / n) * (sumv / n))
+        val correl = cov / sdp / sdv
+
+        println("${correl.f3()}\t $path")
+    }
+
+    @Test
+    fun check() {
+//        checkModelConsistency("model.4191452.2000")
+//        checkModelConsistency("model.4191452.4000")
+//        checkModelConsistency("model.4191452.6000")
+//        checkModelConsistency("model.4191452.8000")
+//        checkModelConsistency("model.4191452.10000")
+//        checkModelConsistency("model.4191452.12000")
+//        checkModelConsistency("model.4191452.14000")
+//        checkModelConsistency("model.4191452.16000")
+//        checkModelConsistency("model.4191452.18000")
+//        checkModelConsistency("model.4191452.20000")
+        checkModelConsistency("model.4191452.22000")
+        checkModelConsistency("model.4191452.24000")
+//        checkModelConsistency("model.4191200.1000")
+//        checkModelConsistency("model.4191200.2000")
+//        checkModelConsistency("model.4191200.3000")
+//        checkModelConsistency("model.4191200.4000")
+//        checkModelConsistency("model.4191200.6000")
+//        checkModelConsistency("model.4191200.8000")
+//        checkModelConsistency("model.4191200.10000")
+
+//        checkModelConsistency("model.4190851.2000")
+//        checkModelConsistency("model.4190851.4000")
+//        checkModelConsistency("model.4190851.6000")
+//        checkModelConsistency("model.4190851.8000")
+//        checkModelConsistency("model.4190851.10000")
+//        checkModelConsistency("model.4190851.12000")
+//        checkModelConsistency("model.4190851.14000")
+//        checkModelConsistency("model.4190851.16000")
+//        checkModelConsistency("prod_model.connect4")
+//        checkModelConsistency("model.c4_4181236.10000")
+//        checkModelConsistency("model.c4_4181236.20000")
+//        checkModelConsistency("model.c4_4181236.30000")
+//        checkModelConsistency("model.c4_4181236.40000")
+//        checkModelConsistency("model.c4_4181610.10000")
+//        checkModelConsistency("model.c4_4181610.20000")
+//        checkModelConsistency("model.c4_4181610.30000")
+//        checkModelConsistency("model.c4_4181610.40000")
+//        checkModelConsistency("model.c4_4181610.50000")
+//        checkModelConsistency("model.c4_4181610.80000")
+//        checkModelConsistency("model.connect4_new.10000")
+//        checkModelConsistency("model.connect4_new.20000")
+//        checkModelConsistency("model.connect4_new.30000")
+//        checkModelConsistency("model.connect4_new.50000")
+//        checkModelConsistency("model.connect4_new.70000")
+//        checkModelConsistency("model.reboot.10000")
+    }
+}
 
 class TestINDArray() {
     @Test
     fun testArray() {
-        val arr = Nd4j.zeros(2,2,3,3)
-        val ia = intArrayOf(0,0)
-        val onez = Nd4j.ones(3,3)
+        val arr = Nd4j.zeros(2, 2, 3, 3)
+        val ia = intArrayOf(0, 0)
+        val onez = Nd4j.ones(3, 3)
         arr.put(arrayOf(NDArrayIndex.point(0), NDArrayIndex.point(0)), onez)
         println(arr)
     }

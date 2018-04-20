@@ -9,14 +9,15 @@ import java.lang.Math.pow
 import java.security.SecureRandom
 import java.util.*
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.sqrt
 
 val rand = Random(SecureRandom().nextLong())
 
-interface GameSearchAlgo {
-    fun next(state: GameState): Pair<GameState, SlimState?>
-    fun gameOver()
-}
+// Extension methods for type-safe equality checking for similar enums, so compiler
+// will prevent mistakes like (inst.player == state.player)
+fun Player.eq(other: Player): Boolean = this == other
+fun Instance.Player.eq(other: Instance.Player): Boolean = this == other
 
 class MonteCarloTreeSearch(val strategy: MctsStrategy,
                            val iterations: Int) : GameSearchAlgo {
@@ -62,19 +63,18 @@ data class SlimState(val state: ByteArray,
 
 interface MctsStrategy {
     // An expanded node is one that has at least an initial value estimate (via a
-    // rollout or model eval) and whose children, if any, have priors and initialized
-    // counts for terminal nodes. The algorithm will expand one node per iteration.
+    // rollout or model eval) and whose children, if any, have priors (and initialized
+    // values for terminal nodes0. The algorithm will expand one node per iteration.
     fun expanded(state: GameState): Boolean
 
     // Returns a priority balancing three components:
-    // (1) the current estimated value of the node (+/-1 for terminal wins/losses)
+    // (1) the current estimated value of the node (incl. prior & model/mcts est.)
     // (2) the information value of exploring the node (zero for terminal nodes)
-    // (3) the bias value of an immediate terminal win
+    // (3) the bias value of an immediate terminal win or loss.
     fun searchPriority(s1: GameState, s2: GameState): Double
 
     // For a terminal node just increments visit count and sets fixed value. For a
-    // non-terminal node (1) initializes child priors, (2) sets child values and
-    // priming visit counts for any terminal child nodes, (3) sets initial node value
+    // non-terminal nodeinitializes child priors and sets initial node value either
     // via rollout or model. During rollout immediate winning moves must be taken.
     fun expand(state: GameState)
 
@@ -102,7 +102,7 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
     }
 
     fun sign(s1: GameState, s2: GameState): Int {
-        return if (s1.player == s2.player) 1 else -1
+        return if (s1.player.eq(s2.player)) 1 else -1
     }
 
     fun GameState.initialSelfValue(): Float {
@@ -119,13 +119,18 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
     override fun searchPriority(s1: GameState, s2: GameState): Double {
         val s1Info = info(s1)
         val s2Info = info(s2)
-        val priorValue = s2Info.P / sqrt(1.0 + s2Info.N) // TODO: tuning
+        // the prior is the model's estimate of the probability we'll make this move.
+        // we'll treat it here as a component of expected node value. TODO: tune
+        val priorValue = s2Info.P * 2.0 / sqrt(4.0 + s2Info.N)
+        // the estimated child node value, sign adjusted to be value for current player
         val nodeValue = sign(s1, s2) * s2Info.Q
-        val winValue = if (s2.winFor(s1)) 100.0 else 0.0 // always take immed. wins
+        val termValue =
+                if (s2.winFor(s1)) 100.0 // always take immediate wins
+                else if (s2.lossFor(s1)) -100.0 else 0.0 // and avoid immediate losses
         val infoValue =
-                if (s2.outcome != Outcome.UNDETERMINED) 0.0
+                if (s2.outcome != Outcome.UNDETERMINED) 0.0 // no info value for terminals
                 else exploration * sqrt(s1Info.N.toDouble()) / (1 + s2Info.N)
-        return priorValue + nodeValue + winValue + infoValue
+        return priorValue + nodeValue + termValue + infoValue
     }
 
     // picks a child node, first taking a win if one exists, then taking non-loss
@@ -194,7 +199,7 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
                 initTsr(it, this)
             }.build()
         }
-        val player = if (state.player == Player.WHITE) {
+        val player = if (state.player.eq(Player.WHITE)) {
             Instance.Player.WHITE
         } else {
             Instance.Player.BLACK
@@ -203,6 +208,7 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
     }
 
     override fun pickMove(state: GameState): Pair<GameState, SlimState> {
+        println("Value: ${info(state).Q}")
         for (next in state.nextMoves) {
             val nInfo = info(next)
             println("$next:\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
@@ -229,6 +235,25 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
 // might as well create this just once
 val turnIndices = arrayOf(NDArrayIndex.point(0), NDArrayIndex.point(0))
 
+fun GameState.toProbModelInput(): INDArray {
+    val sz = gameSpec.boardSize
+    val np = gameSpec.pieceCount - 1
+    val input = Nd4j.zeros(1, 2 * np + 1, sz, sz)
+    for (x in 0 until sz) {
+        for (y in 0 until sz) {
+            val p = at(x, y)
+            if (p != 0) {
+                val channel = if (p > 0) p else np - p
+                input.putScalar(intArrayOf(0, channel, x, y), 1)
+            }
+        }
+    }
+    val turn = Nd4j.ones(sz, sz)
+    if (player.eq(Player.BLACK)) turn.muli(-1)
+    input.put(turnIndices, turn)
+    return input
+}
+
 open class AlphaZeroMctsStrategy(val model: ComputationGraph,
                                  exploration: Double,
                                  temperature: Double) :
@@ -237,43 +262,27 @@ open class AlphaZeroMctsStrategy(val model: ComputationGraph,
     override fun expand(state: GameState) {
         val sInfo = info(state)
         if (state.outcome == Outcome.UNDETERMINED) {
-            val outputs = model.output(state.toModelInput())
+            val outputs = model.output(state.toProbModelInput())
             sInfo.Q = outputs[0].getFloat(0, 0)
             for (next in state.nextMoves) {
                 val nInfo = info(next)
                 nInfo.Q = next.initialSelfValue()
                 nInfo.P = outputs[1].getFloat(intArrayOf(0, next.toPolicyIndex()))
+
+                //val nv = model.output(next.toProbModelInput())[0].getFloat(0,0)
+                //println("  prior/value $next  ${nInfo.P.f3()}  ${nv.f3()}")
             }
+            //println()
         }
         sInfo.N += 1
         sInfo.expanded = true
     }
-
-    fun GameState.toModelInput(): INDArray {
-        val sz = gameSpec.boardSize
-        val np = gameSpec.pieceCount - 1
-        val input = Nd4j.zeros(1, 2 * np + 1, sz, sz)
-        for (x in 0 until sz) {
-            for (y in 0 until sz) {
-                val p = at(x, y)
-                if (p != 0) {
-                    val channel = if (p > 0) p else np - p
-                    input.putScalar(intArrayOf(0, channel, x, y), 1)
-                }
-            }
-        }
-        val turn = Nd4j.ones(sz, sz)
-        if (player == Player.BLACK) turn.muli(-1)
-        input.put(turnIndices, turn)
-        return input
-    }
 }
 
-class DirichletMctsStrategy(model: ComputationGraph,
-                            exploration: Double,
+class DirichletMctsStrategy(exploration: Double,
                             temperature: Double,
                             val values: FloatArray) :
-        AlphaZeroMctsStrategy(model, exploration, temperature) {
+        VanillaMctsStrategy(exploration, temperature) {
 
     open class DirichletInfo : Info() {
         var wld = FloatArray(3) { 0f }
@@ -282,6 +291,15 @@ class DirichletMctsStrategy(model: ComputationGraph,
     override fun info(state: GameState): DirichletInfo {
         val depthInfo = allInfo.getOrPut(state.moveDepth) { HashMap() }
         return depthInfo.getOrPut(state) { DirichletInfo() } as DirichletInfo
+    }
+
+    fun GameState.initialSelfDirichlet(): FloatArray {
+        return when (outcome) {
+            Outcome.WIN -> floatArrayOf(1f, 0f, 0f)
+            Outcome.LOSE -> floatArrayOf(0f, 1f, 0f)
+            Outcome.DRAW -> floatArrayOf(0f, 0f, 1f)
+            else -> floatArrayOf(0.1f, 0.1f, 0.1f)
+        }
     }
 
     fun expectedValuePlusSdevs(wld: FloatArray, sdevs: Float): Float {
@@ -301,50 +319,65 @@ class DirichletMctsStrategy(model: ComputationGraph,
     }
 
     override fun searchPriority(s1: GameState, s2: GameState): Double {
-        val s1Info = info(s1)
         val s2Info = info(s2)
-        val nodeValue = sign(s1, s2) * s2Info.Q
+        val nodeValue = sign(s1, s2) * expectedValuePlusSdevs(s2Info.wld, 4f)
         val winValue = if (s2.winFor(s1)) 100.0 else 0.0 // always take immed. wins
-        val infoValue =
-                if (s2.outcome != Outcome.UNDETERMINED) 0.0
-                else exploration * sqrt(s1Info.N.toDouble()) / (1 + s2Info.N)
-        return nodeValue + winValue + infoValue
+        return nodeValue + winValue
     }
 
     override fun expand(state: GameState) {
         val sInfo = info(state)
         if (state.outcome == Outcome.UNDETERMINED) {
-            val outputs = model.output(state.toModelInput())
-            sInfo.wld[0] = outputs[0].getFloat(0, 0)
-            sInfo.wld[1] = outputs[0].getFloat(0, 1)
-            sInfo.wld[2] = outputs[0].getFloat(0, 2)
             for (next in state.nextMoves) {
-                val nInfo = info(next)
-                nInfo.Q = next.initialSelfValue()
-                nInfo.wld[0] = outputs[1].getFloat(intArrayOf(0, 0, next.toPolicyIndex(), 0))
-                nInfo.wld[1] = outputs[1].getFloat(intArrayOf(0, 1, next.toPolicyIndex(), 0))
-                nInfo.wld[2] = outputs[1].getFloat(intArrayOf(0, 2, next.toPolicyIndex(), 0))
+                info(next).wld = next.initialSelfDirichlet()
             }
+            var rollout = state
+            while (rollout.outcome == Outcome.UNDETERMINED) {
+                // use uniform probability for non-loss moves
+                rollout = pickChildByProbs(rollout, DoubleArray(rollout.nextMoves.size) { 1.0 })
+            }
+            val result = rollout.initialSelfDirichlet()
+            for (i in 0 until 3) sInfo.wld[i] += sign(state, rollout) * result[i]
         }
         sInfo.N += 1
         sInfo.expanded = true
     }
 
+    override fun backprop(stack: List<GameState>, expanded: GameState) {
+        val eInfo = info(expanded)
+        for (ancestor in stack) {
+            val aInfo = info(ancestor)
+            if (sign(ancestor, expanded) > 0) {
+                aInfo.wld[0] += eInfo.wld[0]
+                aInfo.wld[1] += eInfo.wld[1]
+            } else {
+                aInfo.wld[0] += eInfo.wld[1]
+                aInfo.wld[1] += eInfo.wld[0]
+            }
+            aInfo.wld[2] += eInfo.wld[2]
+        }
+    }
+
     override fun pickMove(state: GameState): Pair<GameState, SlimState> {
         for (next in state.nextMoves) {
             val nInfo = info(next)
-            println("$next:\t${nInfo.N}\t${nInfo.wld[0].f3()}\t${nInfo.wld[1].f3()}\t${nInfo.wld[2].f3()}")
+            println("$next:\t${nInfo.N}\t${nInfo.wld[0].f1()}\t${nInfo.wld[1].f1()}\t${nInfo.wld[2].f1()}")
         }
         val sz = state.nextMoves.size
-        val probs = DoubleArray(sz) {
-            pow(info(state.nextMoves[it]).N.toDouble(), 1 / temperature)
+        val values = DoubleArray(sz) {
+            pow(expectedValuePlusSdevs(info(state.nextMoves[it]).wld, -1f).toDouble(),
+                    1 / temperature)
         }
-        val next = pickChildByProbs(state, probs)
-        val probsum = probs.sum()
-        for (i in 0 until sz) {
-            probs[i] /= probsum
+        val next = pickChildByProbs(state, values)
+        val slim = slimState(state) { i, tsr ->
+            val wld = info(state.nextMoves[i]).wld
+            val wldsum = max(wld.sum(), 0.001f)
+            tsr.wld = Instance.WinLoseDraw.newBuilder()
+                    .setWin(wld[0] / wldsum)
+                    .setLose(wld[1] / wldsum) // TODO: do we need to swap win/loss here?
+                    .setDraw(wld[2] / wldsum)
+                    .build()
         }
-        val slim = slimState(state) { i, tsr -> tsr.prob = probs[i].toFloat() }
         allInfo.remove(state.moveDepth) // won't be needing these anymore
         return Pair(next, slim)
     }

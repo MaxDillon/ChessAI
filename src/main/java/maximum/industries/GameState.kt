@@ -120,11 +120,11 @@ class GameState {
     }
 
     fun winFor(parent: GameState): Boolean {
-        return if (player == parent.player) outcome == Outcome.WIN else outcome == Outcome.LOSE
+        return if (player.eq(parent.player)) outcome == Outcome.WIN else outcome == Outcome.LOSE
     }
 
     fun lossFor(parent: GameState): Boolean {
-        return if (player == parent.player) outcome == Outcome.LOSE else outcome == Outcome.WIN
+        return if (player.eq(parent.player)) outcome == Outcome.LOSE else outcome == Outcome.WIN
     }
 
     //=================================================================================
@@ -247,7 +247,7 @@ class GameState {
         if (move.exchange.isNotEmpty()) {
             for (i in gameSpec.pieceList.indices) {
                 if (gameSpec.pieceList[i].name == move.exchange) {
-                    set(x2, y2, if (player == Player.WHITE) i else -i)
+                    set(x2, y2, if (player.eq(Player.WHITE)) i else -i)
                 }
             }
         }
@@ -255,7 +255,7 @@ class GameState {
         val nextPlayer = if (move.`continue`) {
             player
         } else {
-            if (player == Player.WHITE) Player.BLACK else Player.WHITE
+            if (player.eq(Player.WHITE)) Player.BLACK else Player.WHITE
         }
         val nextState = GameState(gameSpec, nextBoard, nextPlayer, srcPiece, x1, y1, x2, y2, moveDepth + 1)
         nextStates.getOrPut(move.priority) { ArrayList() }.add(nextState)
@@ -274,7 +274,7 @@ class GameState {
                                   x1: Int, y1: Int, srcPiece: Int = at(x1, y1)) {
         val piece = getPieceDefinition(srcPiece)
         val forwardSign: Int =
-                if (gameSpec.boardSymmetry == Symmetry.NONE || player == Player.WHITE) 1 else -1
+                if (gameSpec.boardSymmetry == Symmetry.NONE || player.eq(Player.WHITE)) 1 else -1
 
         for (move in piece.moveList) {
             val targetSquares = arrayListOf<Pair<Int, Int>>()
@@ -295,7 +295,7 @@ class GameState {
                     "forward" -> forward(Pair(size, forwardSign)).map(::toBoard)
                     "backward" -> forward(Pair(size, -forwardSign)).map(::toBoard)
                     "rank" -> {
-                        val row = if (player == Player.WHITE || gameSpec.boardSymmetry == Symmetry.NONE) {
+                        val row = if (player.eq(Player.WHITE) || gameSpec.boardSymmetry == Symmetry.NONE) {
                             size - 1
                         } else {
                             gameSpec.boardSize - size
@@ -330,7 +330,7 @@ class GameState {
     // Note: getNextStates() is for lazy init of nextMoves. should not be called directly
     private fun getNextStates(): ArrayList<GameState> {
         val states = TreeMap<Int, ArrayList<GameState>>() // map of priorities => lists of states
-        val playerSign = if (player == Player.WHITE) 1 else -1
+        val playerSign = if (player.eq(Player.WHITE)) 1 else -1
 
         when (gameSpec.moveSource) {
             MoveSource.PIECES_ON_BOARD -> {
@@ -412,9 +412,9 @@ class GameState {
                 if (whiteCount.sum() == blackCount.sum())
                     Outcome.DRAW
                 else if (whiteCount.sum() > blackCount.sum()) {
-                    if (player == Player.WHITE) Outcome.WIN else Outcome.LOSE
+                    if (player.eq(Player.WHITE)) Outcome.WIN else Outcome.LOSE
                 } else {
-                    if (player == Player.WHITE) Outcome.LOSE else Outcome.WIN
+                    if (player.eq(Player.WHITE)) Outcome.LOSE else Outcome.WIN
                 }
             }
             GameDecision.COUNT_CAPTURED_PIECES -> {
@@ -448,28 +448,28 @@ class GameState {
                 Condition.KEY_PIECES_CAPTURED -> {
                     for (i in gameSpec.pieceList.indices) {
                         if (whiteCounts[i] < gameSpec.pieceList[i].min) {
-                            return if (player == Player.WHITE) Outcome.LOSE else Outcome.WIN
+                            return if (player.eq(Player.WHITE)) Outcome.LOSE else Outcome.WIN
                         }
                         if (blackCounts[i] < gameSpec.pieceList[i].min) {
-                            return if (player == Player.WHITE) Outcome.WIN else Outcome.LOSE
+                            return if (player.eq(Player.WHITE)) Outcome.WIN else Outcome.LOSE
                         }
                     }
                 }
                 Condition.NO_PIECES_ON_BOARD -> {
                     if (whiteCounts.sum() == 0) {
-                        return if (player == Player.WHITE) Outcome.LOSE else Outcome.WIN
+                        return if (player.eq(Player.WHITE)) Outcome.LOSE else Outcome.WIN
                     }
                     if (blackCounts.sum() == 0) {
-                        return if (player == Player.WHITE) Outcome.WIN else Outcome.LOSE
+                        return if (player.eq(Player.WHITE)) Outcome.WIN else Outcome.LOSE
                     }
                 }
                 Condition.N_IN_A_ROW -> {
                     val (longestWhite, longestBlack) = maxSequenceLengths(game_over.param)
                     if (longestWhite >= game_over.param) {
-                        return if (player == Player.WHITE) Outcome.WIN else Outcome.LOSE
+                        return if (player.eq(Player.WHITE)) Outcome.WIN else Outcome.LOSE
                     }
                     if (longestBlack >= game_over.param) {
-                        return if (player == Player.WHITE) Outcome.LOSE else Outcome.WIN
+                        return if (player.eq(Player.WHITE)) Outcome.LOSE else Outcome.WIN
                     }
                 }
                 else -> {

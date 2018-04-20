@@ -1,11 +1,19 @@
 package maximum.industries
 
+
+import maximum.industries.*
+import maximum.industries.FileInstanceReader
 import maximum.industries.GameGrammar.*
+import maximum.industries.InstanceReader
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
+import org.deeplearning4j.nn.conf.ComputationGraphConfiguration
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.Updater
+import org.deeplearning4j.nn.conf.graph.ElementWiseVertex
+import org.deeplearning4j.nn.conf.graph.PreprocessorVertex
 import org.deeplearning4j.nn.conf.inputs.InputType
 import org.deeplearning4j.nn.conf.layers.*
+import org.deeplearning4j.nn.conf.preprocessor.CnnToFeedForwardPreProcessor
 import org.deeplearning4j.nn.graph.ComputationGraph
 import org.deeplearning4j.nn.weights.WeightInit
 import org.deeplearning4j.ui.api.UIServer
@@ -15,6 +23,7 @@ import org.deeplearning4j.util.ModelSerializer
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.dataset.MultiDataSet
 import org.nd4j.linalg.factory.Nd4j
+import org.nd4j.linalg.indexing.NDArrayIndex
 import org.nd4j.linalg.lossfunctions.LossFunctions
 import java.io.FileInputStream
 import java.io.InputStream
@@ -26,75 +35,118 @@ import java.util.*
 import java.util.function.BiPredicate
 import kotlin.math.min
 
-fun policySize(gameSpec: GameSpec): Int {
+fun policyChannels(gameSpec: GameSpec): Int {
     val N = gameSpec.boardSize
     val P = gameSpec.pieceCount - 1
-    val srcDim = (
-            if (gameSpec.moveSource == GameGrammar.MoveSource.ENDS) P
-            else N * N)
-    val dstDim = N * N
-    return srcDim * dstDim
+    return if (gameSpec.moveSource == GameGrammar.MoveSource.ENDS) P else N * N
+}
+
+fun policySize(gameSpec: GameSpec): Int {
+    val N = gameSpec.boardSize
+    return policyChannels(gameSpec) * N * N
+}
+
+fun ComputationGraphConfiguration.GraphBuilder.addResidual(input: String,
+                                                           output: String,
+                                                           convFilters: Int):
+        ComputationGraphConfiguration.GraphBuilder { this
+            .addLayer("${output}_conv1",
+            ConvolutionLayer.Builder(3, 3)
+                    .nOut(convFilters).stride(1, 1).padding(1, 1)
+                    .activation(Activation.RELU).weightInit(WeightInit.RELU)
+                    .build(), input)
+            .addLayer("${output}_conv2",
+                      ConvolutionLayer.Builder(3, 3)
+                              .nOut(convFilters)
+                              .stride(1, 1)
+                              .padding(1, 1)
+                              .activation(Activation.RELU)
+                              .weightInit(WeightInit.RELU)
+                              .build(), "${output}_conv1")
+            .addLayer("${output}_batch",
+                      BatchNormalization(), "${output}_conv2")
+            .addVertex("$output",
+                    ElementWiseVertex(ElementWiseVertex.Op.Add), input, "${output}_batch")
+    return this
 }
 
 fun newModel(gameSpec: GameSpec, N: Int, P: Int, rate: Double): ComputationGraph {
     val inChannels = 2 * P + 1
+    val convFilters = 48
     val mconfig = NeuralNetConfiguration.Builder()
             .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
             .learningRate(rate)
+            .regularization(true).l2(1e-6)
             .updater(Updater.NESTEROVS)
-            .weightInit(WeightInit.XAVIER)
+            .weightInit(WeightInit.RELU)
             .graphBuilder()
             .addInputs("input")
             .setInputTypes(InputType.convolutional(N, N, inChannels))
 
+            // =======================================================
+            // Convolutional Layers, Batch Normalization, Skips
+            // =======================================================
+
             .addLayer("conv1", ConvolutionLayer.Builder(3, 3)
-                    .nIn(inChannels).nOut(64)
+                    .nIn(inChannels).nOut(convFilters)
                     .stride(1, 1).padding(1, 1)
                     .activation(Activation.RELU)
                     .build(), "input")
             .addLayer("norm_conv1", BatchNormalization(), "conv1")
 
-            .addLayer("conv2", ConvolutionLayer.Builder(3, 3)
-                    .nOut(64)
+            .addResidual("norm_conv1", "residual1", convFilters)
+            .addResidual("residual1", "residual2", convFilters)
+
+            // =======================================================
+            // Convolutional Output Reshaping
+            // =======================================================
+
+            .addLayer("legal_conv", ConvolutionLayer.Builder(3, 3)
+                    .nOut(policyChannels(gameSpec))
                     .stride(1, 1).padding(1, 1)
-                    .activation(Activation.RELU)
-                    .build(), "norm_conv1", "input")
-            .addLayer("norm_conv2", BatchNormalization(), "conv2")
+                    .activation(Activation.LEAKYRELU)
+                    .build(), "residual2")
+            .addVertex("legal_reshape",
+                       PreprocessorVertex(
+                               CnnToFeedForwardPreProcessor(N, N, policyChannels(gameSpec))),
+                       "legal_conv")
+            .addLayer("legal_batch", BatchNormalization(), "legal_reshape")
+            .addLayer("legal",
+                      LossLayer.Builder(LossFunctions.LossFunction.L2)
+                              .activation(Activation.TANH)
+                              .build(),
+                      "legal_batch")
 
-            .addLayer("conv3", ConvolutionLayer.Builder(3, 3)
-                    .nOut(64)
+            .addLayer("policy_conv", ConvolutionLayer.Builder(3, 3)
+                    .nOut(policyChannels(gameSpec))
                     .stride(1, 1).padding(1, 1)
-                    .activation(Activation.RELU)
-                    .build(), "norm_conv2", "norm_conv1")
-            .addLayer("norm_conv3", BatchNormalization(), "conv3")
+                    .activation(Activation.LEAKYRELU)
+                    .build(), "residual2")
+            .addVertex("policy_reshape",
+                       PreprocessorVertex(
+                               CnnToFeedForwardPreProcessor(N, N, policyChannels(gameSpec))),
+                       "policy_conv")
+            .addLayer("policy_batch", BatchNormalization(), "policy_reshape")
+            .addLayer("policy",
+                      LossLayer.Builder(LossFunctions.LossFunction.KL_DIVERGENCE)
+                              .activation(Activation.SOFTMAX)
+                              .build(),
+                      "policy_batch")
 
-            .addLayer("dense1", DenseLayer.Builder()
-                    .nOut(50)
-                    .activation(Activation.RELU)
-                    .build(), "norm_conv3", "norm_conv2")
-            .addLayer("norm_dense1", BatchNormalization(), "dense1")
-            .addLayer("dense2", DenseLayer.Builder()
-                    .nOut(40)
-                    .activation(Activation.RELU)
-                    .build(), "norm_dense1")
-            .addLayer("norm_dense2", BatchNormalization(), "dense2")
-            .addLayer("dense3", DenseLayer.Builder()
-                    .nOut(30)
-                    .activation(Activation.RELU)
-                    .build(), "norm_dense2")
+            // =======================================================
+            // Value Output
+            // =======================================================
 
+            .addLayer("dense", DenseLayer.Builder()
+                    .nOut(32)
+                    .activation(Activation.LEAKYRELU)
+                    .build(), "residual2")
+            .addLayer("dense_batch", BatchNormalization(), "dense")
             .addLayer("value", OutputLayer.Builder(LossFunctions.LossFunction.L2)
                     .nOut(1)
-                    .activation(Activation.SOFTSIGN)
-                    .build(), "dense3")
-            .addLayer("policy", OutputLayer.Builder(LossFunctions.LossFunction.KL_DIVERGENCE)
-                    .nOut(policySize(gameSpec))
-                    .activation(Activation.SOFTMAX)
-                    .build(), "dense3")
-            .addLayer("legal", OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-                    .nOut(policySize(gameSpec))
-                    .activation(Activation.SOFTSIGN)
-                    .build(), "dense3")
+                    .activation(Activation.TANH)
+                    .build(), "dense_batch")
+
             .setOutputs( "value", "policy", "legal")
             .build()
     val model = ComputationGraph(mconfig)
@@ -121,15 +173,15 @@ fun main(args: Array<String>) {
     }
     val game = args[0]
     val filePattern = getArg(args, "data") ?: game
-    val lastN = getArg(args, "lastn")?.toInt() ?: 10
+    val lastN = getArg(args, "lastn")?.toInt() ?: 100
     val modelName = getArg(args, "model")
     val outName = getArg(args, "saveas") ?: game
-    val rate = getArg(args, "rate")?.toDouble() ?: 0.001
+    val rate = getArg(args, "rate")?.toDouble() ?: 0.0001
 
     val gameSpec = loadSpec(game)
     val N = gameSpec.boardSize
     val P = gameSpec.pieceCount - 1
-    val batchSize = 300
+    val batchSize = 1000
 
     val model = if (modelName == null) {
         newModel(gameSpec, N, P, rate)
@@ -174,7 +226,7 @@ class FileInstanceReader(val prob: Double, val lastN: Int, val filePattern: Stri
         val matcher = BiPredicate<Path, BasicFileAttributes> { file, _ ->
             val fileName = file.fileName.toString()
             fileName.matches(Regex(".*data.$filePattern.[0-9]+.done")) ||
-                    fileName == filePattern
+            fileName == filePattern
         }
         val paths = ArrayList<Path>()
         for (path in find(Paths.get("."), 1, matcher).iterator()) paths.add(path)
@@ -218,8 +270,9 @@ fun parseBatch(gameSpec: GameSpec, instances: Array<Instance.TrainingInstance>):
                 input.putScalar(intArrayOf(i, channel, x, y), 1)
             }
         }
-        val turn = if (instances[i].player == Instance.Player.WHITE) 1 else -1
-        for (x in 0 until sz) for (y in 0 until sz) input.putScalar(intArrayOf(i, 0, x, y), turn)
+        val turn = if (instances[i].player.eq(Instance.Player.WHITE)) 1 else -1
+        input.put(arrayOf(NDArrayIndex.point(i), NDArrayIndex.point(0),
+                          NDArrayIndex.all(), NDArrayIndex.all()), turn)
 
         for (j in 0 until instances[i].treeSearchResultCount) {
             val tsr = instances[i].treeSearchResultList[j]
