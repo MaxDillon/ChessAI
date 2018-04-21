@@ -369,7 +369,7 @@ class TestConnect4() : TwoColorSetup("connect4") {
         next.printBoard()
     }
 
-    fun checkModelConsistency(path: String) {
+    fun checkModelConsistency(path: String, player: Player, display: Boolean = false) {
         val model = ModelSerializer.restoreComputationGraph(path)
 
         var sump = 0f
@@ -378,27 +378,34 @@ class TestConnect4() : TwoColorSetup("connect4") {
         var sumv2 = 0f
         var sumpv = 0f
         var n = 0
+        var l = 0
 
         for (i in 0 until 50) {
             var state = initBoard()
             while (state.outcome == Outcome.UNDETERMINED) {
-                state.printBoard()
-                println(state.toProbModelInput())
                 val outputs = model.output(state.toProbModelInput())
-                for (j in 0 until 49) {
-                    println("${j / 7} ${j % 7}: ${outputs[1].getFloat(intArrayOf(0, j)).f3()} ${outputs[2].getFloat(
-                            intArrayOf(0, j)).f3()}")
+                if (display) {
+                    state.printBoard()
+                    println(state.toProbModelInput())
+                    for (j in 0 until 49) {
+                        println("${j / 7} ${j % 7}: ${outputs[1].getFloat(intArrayOf(0, j)).f3()} ${outputs[2].getFloat(
+                                intArrayOf(0, j)).f3()}")
+                    }
                 }
-                for (next in state.nextMoves) {
-                    val nextp = outputs[1].getFloat(intArrayOf(0, next.toPolicyIndex()))
-                    val nextv = model.output(next.toProbModelInput())[0].getFloat(0, 0)
+                if (player.eq(state.player)) {
+                    for (next in state.nextMoves) {
+                        val nextp = outputs[1].getFloat(intArrayOf(0, next.toPolicyIndex()))
+                        val nextl = outputs[2].getFloat(intArrayOf(0, next.toPolicyIndex()))
+                        val nextv = model.output(next.toProbModelInput())[0].getFloat(0, 0)
 
-                    sump += nextp
-                    sumv += nextv
-                    sump2 += nextp * nextp
-                    sumv2 += nextv * nextv
-                    sumpv += nextp * nextv
-                    n += 1
+                        sump += nextp
+                        sumv += nextv
+                        sump2 += nextp * nextp
+                        sumv2 += nextv * nextv
+                        sumpv += nextp * nextv
+                        n += 1
+                        l += if (nextl > 0) 1 else 0
+                    }
                 }
                 state = state.nextMoves[rand.nextInt(state.nextMoves.size)]
             }
@@ -408,57 +415,19 @@ class TestConnect4() : TwoColorSetup("connect4") {
         val sdp = sqrt(sump2 / n - (sump / n) * (sump / n))
         val sdv = sqrt(sumv2 / n - (sumv / n) * (sumv / n))
         val correl = cov / sdp / sdv
+        val legality = l.toFloat() / n
 
-        println("${correl.f3()}\t $path")
+        println("${correl.f3()}\t${legality.f3()}\t$path $player")
+    }
+
+    fun checkModelConsistency(path: String) {
+        checkModelConsistency(path, Player.WHITE)
+        checkModelConsistency(path, Player.BLACK)
     }
 
     @Test
     fun check() {
-//        checkModelConsistency("model.4191452.2000")
-//        checkModelConsistency("model.4191452.4000")
-//        checkModelConsistency("model.4191452.6000")
-//        checkModelConsistency("model.4191452.8000")
-//        checkModelConsistency("model.4191452.10000")
-//        checkModelConsistency("model.4191452.12000")
-//        checkModelConsistency("model.4191452.14000")
-//        checkModelConsistency("model.4191452.16000")
-//        checkModelConsistency("model.4191452.18000")
-//        checkModelConsistency("model.4191452.20000")
-        checkModelConsistency("model.4191452.22000")
-        checkModelConsistency("model.4191452.24000")
-//        checkModelConsistency("model.4191200.1000")
-//        checkModelConsistency("model.4191200.2000")
-//        checkModelConsistency("model.4191200.3000")
-//        checkModelConsistency("model.4191200.4000")
-//        checkModelConsistency("model.4191200.6000")
-//        checkModelConsistency("model.4191200.8000")
-//        checkModelConsistency("model.4191200.10000")
-
-//        checkModelConsistency("model.4190851.2000")
-//        checkModelConsistency("model.4190851.4000")
-//        checkModelConsistency("model.4190851.6000")
-//        checkModelConsistency("model.4190851.8000")
-//        checkModelConsistency("model.4190851.10000")
-//        checkModelConsistency("model.4190851.12000")
-//        checkModelConsistency("model.4190851.14000")
-//        checkModelConsistency("model.4190851.16000")
-//        checkModelConsistency("prod_model.connect4")
-//        checkModelConsistency("model.c4_4181236.10000")
-//        checkModelConsistency("model.c4_4181236.20000")
-//        checkModelConsistency("model.c4_4181236.30000")
-//        checkModelConsistency("model.c4_4181236.40000")
-//        checkModelConsistency("model.c4_4181610.10000")
-//        checkModelConsistency("model.c4_4181610.20000")
-//        checkModelConsistency("model.c4_4181610.30000")
-//        checkModelConsistency("model.c4_4181610.40000")
-//        checkModelConsistency("model.c4_4181610.50000")
-//        checkModelConsistency("model.c4_4181610.80000")
-//        checkModelConsistency("model.connect4_new.10000")
-//        checkModelConsistency("model.connect4_new.20000")
-//        checkModelConsistency("model.connect4_new.30000")
-//        checkModelConsistency("model.connect4_new.50000")
-//        checkModelConsistency("model.connect4_new.70000")
-//        checkModelConsistency("model.reboot.10000")
+        checkModelConsistency("model.connect4.5000")
     }
 }
 

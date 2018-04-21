@@ -1,10 +1,6 @@
 package maximum.industries
 
-
-import maximum.industries.*
-import maximum.industries.FileInstanceReader
-import maximum.industries.GameGrammar.*
-import maximum.industries.InstanceReader
+import maximum.industries.GameGrammar.GameSpec
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
@@ -24,7 +20,7 @@ import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.dataset.MultiDataSet
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.indexing.NDArrayIndex
-import org.nd4j.linalg.lossfunctions.LossFunctions
+import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 import java.io.FileInputStream
 import java.io.InputStream
 import java.nio.file.Files.find
@@ -33,6 +29,7 @@ import java.nio.file.Paths
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.*
 import java.util.function.BiPredicate
+import kotlin.collections.HashMap
 import kotlin.math.min
 
 fun policyChannels(gameSpec: GameSpec): Int {
@@ -46,28 +43,80 @@ fun policySize(gameSpec: GameSpec): Int {
     return policyChannels(gameSpec) * N * N
 }
 
-fun ComputationGraphConfiguration.GraphBuilder.addResidual(input: String,
-                                                           output: String,
-                                                           convFilters: Int):
-        ComputationGraphConfiguration.GraphBuilder { this
-            .addLayer("${output}_conv1",
-            ConvolutionLayer.Builder(3, 3)
-                    .nOut(convFilters).stride(1, 1).padding(1, 1)
-                    .activation(Activation.RELU).weightInit(WeightInit.RELU)
-                    .build(), input)
-            .addLayer("${output}_conv2",
-                      ConvolutionLayer.Builder(3, 3)
-                              .nOut(convFilters)
-                              .stride(1, 1)
-                              .padding(1, 1)
-                              .activation(Activation.RELU)
-                              .weightInit(WeightInit.RELU)
-                              .build(), "${output}_conv1")
-            .addLayer("${output}_batch",
-                      BatchNormalization(), "${output}_conv2")
-            .addVertex("$output",
-                    ElementWiseVertex(ElementWiseVertex.Op.Add), input, "${output}_batch")
+typealias GBuilder = ComputationGraphConfiguration.GraphBuilder
+
+fun GBuilder.F(fn: String, vararg of: String,
+               makeLayers: LayerQueue.() -> Unit): GBuilder {
+    val queue = LayerQueue()
+    queue.makeLayers()
+    var inputs = of.toList()
+    for (i in 0 until queue.layers.size) {
+        val name = if (i == queue.layers.size - 1) fn else "${fn}_${i}"
+        println("Adding $name = f(${inputs})")
+        addLayer(name, queue.layers[i], *inputs.toTypedArray())
+        inputs = listOf(name)
+    }
     return this
+}
+
+fun GBuilder.R(fn: String, vararg of: String,
+               makeLayers: LayerQueue.() -> Unit): GBuilder {
+    F("res_$fn", *of, makeLayers = makeLayers)
+    val mergeInputs = of.toMutableList()
+    mergeInputs.add("res_$fn")
+    println("Adding $fn = f(${mergeInputs})")
+    addVertex(fn, ElementWiseVertex(ElementWiseVertex.Op.Add), *mergeInputs.toTypedArray())
+    return this
+}
+
+fun GBuilder.CNN2FF(fn: String, of: String, sz: Int, channels: Int): GBuilder {
+    println("Adding $fn = f($of)")
+    addVertex(fn, PreprocessorVertex(CnnToFeedForwardPreProcessor(sz, sz, channels)), of)
+    return this
+}
+
+class LayerQueue {
+    val layers = ArrayList<Layer>()
+    fun queueLayer(layer: Layer) {
+        layers.add(layer)
+    }
+
+    fun convolution(inChannels: Int = 0, filters: Int,
+                    kernel: Int = 3, pad: Int = 1, stride: Int = 1,
+                    activation: Activation = Activation.RELU,
+                    init: WeightInit = WeightInit.RELU,
+                    norm: Boolean = true) {
+        if (norm) queueLayer(BatchNormalization())
+        queueLayer(ConvolutionLayer.Builder(kernel, kernel)
+                           .nIn(inChannels).nOut(filters)
+                           .padding(pad, pad).stride(stride, stride)
+                           .activation(activation).weightInit(init).build())
+    }
+
+    fun dense(units: Int,
+              activation: Activation = Activation.RELU,
+              init: WeightInit = WeightInit.RELU,
+              norm: Boolean = true) {
+        if (norm) queueLayer(BatchNormalization())
+        queueLayer(DenseLayer.Builder().nOut(units).activation(activation)
+                           .weightInit(init).build())
+    }
+
+    fun loss(activation: Activation = Activation.TANH,
+             loss: LossFunction = LossFunction.L2) {
+        queueLayer(LossLayer.Builder().activation(activation)
+                           .lossFunction(loss).build())
+    }
+
+    fun output(nOut: Int,
+               activation: Activation = Activation.TANH,
+               loss: LossFunction = LossFunction.L2,
+               init: WeightInit = WeightInit.RELU,
+               norm: Boolean = true) {
+        if (norm) queueLayer(BatchNormalization())
+        queueLayer(OutputLayer.Builder().nOut(nOut).activation(activation)
+                           .lossFunction(loss).weightInit(init).build())
+    }
 }
 
 fun newModel(gameSpec: GameSpec, N: Int, P: Int, rate: Double): ComputationGraph {
@@ -75,79 +124,50 @@ fun newModel(gameSpec: GameSpec, N: Int, P: Int, rate: Double): ComputationGraph
     val convFilters = 48
     val mconfig = NeuralNetConfiguration.Builder()
             .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-            .learningRate(rate)
-            .regularization(true).l2(1e-6)
+            .regularization(true).l2(1e-7)
             .updater(Updater.NESTEROVS)
-            .weightInit(WeightInit.RELU)
+            .learningRate(rate)
             .graphBuilder()
             .addInputs("input")
             .setInputTypes(InputType.convolutional(N, N, inChannels))
 
-            // =======================================================
-            // Convolutional Layers, Batch Normalization, Skips
-            // =======================================================
+            // ######## First convolution #############################
+            .F("conv1", "input") {
+                convolution(inChannels, convFilters)
+            }
 
-            .addLayer("conv1", ConvolutionLayer.Builder(3, 3)
-                    .nIn(inChannels).nOut(convFilters)
-                    .stride(1, 1).padding(1, 1)
-                    .activation(Activation.RELU)
-                    .build(), "input")
-            .addLayer("norm_conv1", BatchNormalization(), "conv1")
+            // ######## Residual block    #############################
+            .R("res1", "conv1") {
+                convolution(filters = convFilters)
+                convolution(filters = convFilters)
+            }
+            .R("res2", "res1") {
+                convolution(filters = convFilters)
+                convolution(filters = convFilters)
+            }
 
-            .addResidual("norm_conv1", "residual1", convFilters)
-            .addResidual("residual1", "residual2", convFilters)
+            // ######## Legal head       #############################
+            .F("legal1", "res2") {
+                convolution(filters = policyChannels(gameSpec))
+            }
+            .CNN2FF("legalff", "legal1", N, policyChannels(gameSpec))
+            .F("legal", "legalff") { loss(loss = LossFunction.MSE) }
 
-            // =======================================================
-            // Convolutional Output Reshaping
-            // =======================================================
+            // ######## Policy head      #############################
+            .F("policy1", "res2") {
+                convolution(filters = policyChannels(gameSpec))
+            }
+            .CNN2FF("policyff", "policy1", N, policyChannels(gameSpec))
+            .F("policy", "policyff") { loss(loss = LossFunction.L2) }
 
-            .addLayer("legal_conv", ConvolutionLayer.Builder(3, 3)
-                    .nOut(policyChannels(gameSpec))
-                    .stride(1, 1).padding(1, 1)
-                    .activation(Activation.LEAKYRELU)
-                    .build(), "residual2")
-            .addVertex("legal_reshape",
-                       PreprocessorVertex(
-                               CnnToFeedForwardPreProcessor(N, N, policyChannels(gameSpec))),
-                       "legal_conv")
-            .addLayer("legal_batch", BatchNormalization(), "legal_reshape")
-            .addLayer("legal",
-                      LossLayer.Builder(LossFunctions.LossFunction.L2)
-                              .activation(Activation.TANH)
-                              .build(),
-                      "legal_batch")
-
-            .addLayer("policy_conv", ConvolutionLayer.Builder(3, 3)
-                    .nOut(policyChannels(gameSpec))
-                    .stride(1, 1).padding(1, 1)
-                    .activation(Activation.LEAKYRELU)
-                    .build(), "residual2")
-            .addVertex("policy_reshape",
-                       PreprocessorVertex(
-                               CnnToFeedForwardPreProcessor(N, N, policyChannels(gameSpec))),
-                       "policy_conv")
-            .addLayer("policy_batch", BatchNormalization(), "policy_reshape")
-            .addLayer("policy",
-                      LossLayer.Builder(LossFunctions.LossFunction.KL_DIVERGENCE)
-                              .activation(Activation.SOFTMAX)
-                              .build(),
-                      "policy_batch")
-
-            // =======================================================
-            // Value Output
-            // =======================================================
-
-            .addLayer("dense", DenseLayer.Builder()
-                    .nOut(32)
-                    .activation(Activation.LEAKYRELU)
-                    .build(), "residual2")
-            .addLayer("dense_batch", BatchNormalization(), "dense")
-            .addLayer("value", OutputLayer.Builder(LossFunctions.LossFunction.L2)
-                    .nOut(1)
-                    .activation(Activation.TANH)
-                    .build(), "dense_batch")
-
-            .setOutputs( "value", "policy", "legal")
+            // ######## Value head        #############################
+            .F("valuetower", "res2") {
+                dense(30)
+                dense(10)
+            }
+            .F("value", "valuetower") { output(1,
+                                               loss = LossFunction.L2) }
+            .setOutputs("value", "policy", "legal")
             .build()
     val model = ComputationGraph(mconfig)
     model.init()
@@ -176,12 +196,12 @@ fun main(args: Array<String>) {
     val lastN = getArg(args, "lastn")?.toInt() ?: 100
     val modelName = getArg(args, "model")
     val outName = getArg(args, "saveas") ?: game
-    val rate = getArg(args, "rate")?.toDouble() ?: 0.0001
+    val rate = getArg(args, "rate")?.toDouble() ?: 0.01
 
     val gameSpec = loadSpec(game)
     val N = gameSpec.boardSize
     val P = gameSpec.pieceCount - 1
-    val batchSize = 1000
+    val batchSize = 500
 
     val model = if (modelName == null) {
         newModel(gameSpec, N, P, rate)
@@ -236,6 +256,8 @@ class FileInstanceReader(val prob: Double, val lastN: Int, val filePattern: Stri
     }
 
     var instream = nextStream()
+    val counts = HashMap<Pair<Instance.Player, Int>, Int>()
+    var total = 0
 
     override fun next(): Instance.TrainingInstance {
         while (true) {
@@ -244,8 +266,23 @@ class FileInstanceReader(val prob: Double, val lastN: Int, val filePattern: Stri
                 instream.close()
                 instream = nextStream()
                 continue
-            } else if (rand.nextDouble() < prob) {
-                return instance
+            } else {
+                // adjust probability of selecting an instance so we come out approximately
+                // balanced between wins and losses for white and black
+                val key = Pair(instance.player, instance.outcome)
+                val count = counts.getOrPut(key, { 0 })
+                val threshold = prob *
+                                if (instance.outcome == 0) 1.0
+                                else if ((count + 1.0) / (total + 1.0) > 0.25) 0.1 else 1.0
+                if (rand.nextDouble() < threshold) {
+                    counts.put(key, count + 1)
+                    if (instance.outcome != 0) total += 1
+                    if (total % 5000 == 0) {
+                        for (k in counts.keys) print("$k: ${counts[k]}   ")
+                        println()
+                    }
+                    return instance
+                }
             }
         }
     }
