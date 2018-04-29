@@ -44,14 +44,14 @@ class TestChess() {
 
     @Test
     fun modelEval() {
-        val state = initBoard(white = Placement(k = "a1", p = "a6", q = "a8", b = "a4"),
-                              black = Placement(k = "e8", p = "e7,f7", b = "d7", n = "c8"),
-                              whiteMove = false)
+        val state = initBoard(white = Placement(k = "e3", q = "f4", r = "e1,g7", p = "a2"),
+                              black = Placement(k = "a8", r="h1", n="g5", p="b5,c4"),
+                              whiteMove = true)
 
-        val model = ModelSerializer.restoreComputationGraph("model.chess.58000")
+        val model = ModelSerializer.restoreComputationGraph("model.chess.Model008.15000")
         val search = MonteCarloTreeSearch(
-                AlphaZeroMctsStrategy(model, 1.0, 0.1), 100)
-//        val search = MonteCarloTreeSearch(
+//                VanillaMctsStrategy(0.3, 0.1), 1500)
+                AlphaZeroMctsStrategy(model, 0.3, 0.1), 1500)
 //                DirichletMctsStrategy(1.0, 0.1, floatArrayOf(1f, 0f, 0.5f)), 5000)
 
         state.printBoard()

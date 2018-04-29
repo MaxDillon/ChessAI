@@ -1,7 +1,9 @@
 package maximum.industries
 
 import maximum.industries.GameGrammar.GameSpec
+import org.deeplearning4j.eval.Evaluation
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration
+import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.graph.ElementWiseVertex
 import org.deeplearning4j.nn.conf.graph.PreprocessorVertex
 import org.deeplearning4j.nn.conf.layers.*
@@ -13,10 +15,14 @@ import org.deeplearning4j.ui.stats.StatsListener
 import org.deeplearning4j.ui.storage.InMemoryStatsStorage
 import org.deeplearning4j.util.ModelSerializer
 import org.nd4j.linalg.activations.Activation
+import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.dataset.MultiDataSet
+import org.nd4j.linalg.dataset.api.iterator.MultiDataSetIterator
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.indexing.NDArrayIndex
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
+import org.nd4j.linalg.lossfunctions.impl.PseudoSpherical
+import org.nd4j.shade.jackson.databind.jsontype.NamedType
 import java.io.*
 import java.nio.file.Files.find
 import java.nio.file.Path
@@ -123,9 +129,9 @@ interface IModel {
     fun newModel(gameSpec: GameGrammar.GameSpec): ComputationGraph
 }
 
-fun hasLegal(model: ComputationGraph): Boolean {
+fun modelHas(model: ComputationGraph, layerName: String): Boolean {
     for (layer in model.layers) {
-        if (layer.conf().layer.layerName == "legal") return true
+        if (layer.conf().layer.layerName == layerName) return true
     }
     return false
 }
@@ -169,10 +175,15 @@ fun trainUsage() {
         |                              or on recent files matching data.<datafile>.nnnnn.done
         |                              Default is <game>
         |        [-lastn <n>]          The number of recent files to train on. Default is 200.
+        |        [-drawweight <w>]     The weight to use for sampling of draws.
+        |        [-batch <n>]          The batch size.
         """.trimMargin())
 }
 
 fun main(args: Array<String>) {
+    NeuralNetConfiguration.reinitMapperWithSubtypes(
+            Collections.singletonList(NamedType(PseudoSpherical::class.java)))
+
     if (args.contains("-h")) {
         return trainUsage()
     }
@@ -206,14 +217,16 @@ fun main(args: Array<String>) {
                 newModel
             }
 
-    val useLegal = hasLegal(model)
+    val useValue = modelHas(model, "value")
+    val usePolicy = modelHas(model, "policy")
+    val useLegal = modelHas(model, "legal")
 
     val dataPattern = getArg(args, "data") ?: gameName
     val lastN = getArg(args, "lastn")?.toInt() ?: 200
     val saveAs = getArg(args, "saveas") ?: defaultSaveAs
     val drawWeight = getArg(args, "drawweight")?.toDouble() ?: 1.0
-
-    val batchSize = 200
+    val batchSize = getArg(args, "batch")?.toInt() ?: 200
+    val logFile = getArg(args, "logfile")?: "log.$saveAs"
     var batchCount = startingBatch
 
     val uiServer = UIServer.getInstance()
@@ -224,9 +237,29 @@ fun main(args: Array<String>) {
     model.params()
     model.init(model.params(), true)
 
-    val reader = FileInstanceReader(0.2, drawWeight, lastN, dataPattern)
+    val trainReader = FileInstanceReader(0.2, drawWeight, lastN, dataPattern, "done")
+    val testReader = FileInstanceReader(0.2, drawWeight, lastN, dataPattern, "test")
+
+    var ema_train = 0.0
+    var ema_test = 0.0
+    fun ema(ema: Double, next: Double, w: Double) =
+            if (ema == 0.0) next else w * ema + (1 - w) * next
     while (true) {
-        model.fit(getBatch(gameSpec, reader, batchSize, useLegal))
+
+        val train_batch = getBatch(gameSpec, trainReader, batchSize, useValue, usePolicy, useLegal)
+        val test_batch = getBatch(gameSpec, testReader, batchSize, useValue, usePolicy, useLegal)
+
+        val train_score = model.score(train_batch)
+        val test_score = model.score(test_batch)
+
+        ema_train = ema(ema_train, train_score, 0.9)
+        ema_test = ema(ema_test, test_score, 0.9)
+
+        File(logFile).appendText(
+                "${batchCount},${ema_train.toFloat().f3()},${ema_test.toFloat().f3()}\n")
+
+        model.fit(train_batch)
+
         batchCount++
         if (batchCount % 1000 == 0) {
             ModelSerializer.writeModel(model, "model.$saveAs.$batchCount", true)
@@ -245,8 +278,12 @@ class StreamInstanceReader(val stream: InputStream) : InstanceReader {
 }
 
 class FileInstanceReader(val prob: Double, val drawWeight: Double,
-                         val lastN: Int, val filePattern: String) : InstanceReader {
+                         val lastN: Int, val filePattern: String,
+                         val extension: String) : InstanceReader {
     private val rand = Random()
+    var currentStream = nextStream()
+    val counts = HashMap<Pair<Instance.Player, Int>, Int>()
+    var total = 0
 
     // return a recent file of training data matching 'data.{filepattern}.nnnnnnn.done'
     // or else return just the one file if a full name was given instead of a pattern.
@@ -254,7 +291,7 @@ class FileInstanceReader(val prob: Double, val drawWeight: Double,
     fun nextStream(): FileInputStream {
         val matcher = BiPredicate<Path, BasicFileAttributes> { file, _ ->
             val fileName = file.fileName.toString()
-            fileName.matches(Regex(".*data.$filePattern.[0-9]+.done")) ||
+            fileName.matches(Regex(".*data.$filePattern.[0-9]+.$extension")) ||
             fileName == filePattern
         }
         val paths = ArrayList<Path>()
@@ -264,16 +301,19 @@ class FileInstanceReader(val prob: Double, val drawWeight: Double,
         return FileInputStream(recent[rand.nextInt(recent.size)].toString())
     }
 
-    var instream = nextStream()
-    val counts = HashMap<Pair<Instance.Player, Int>, Int>()
-    var total = 0
-
     override fun next(): Instance.TrainingInstance {
         while (true) {
-            val instance = Instance.TrainingInstance.parseDelimitedFrom(instream)
+            val instance = try {
+                Instance.TrainingInstance.parseDelimitedFrom(currentStream)
+            } catch (_: Exception) {
+                null
+            }
             if (instance == null) {
-                instream.close()
-                instream = nextStream()
+                try {
+                    currentStream.close()
+                    currentStream = nextStream()
+                } catch (_: Exception) {
+                }
                 continue
             } else {
                 // adjust probability of selecting an instance so we come out approximately
@@ -297,9 +337,8 @@ class FileInstanceReader(val prob: Double, val drawWeight: Double,
     }
 }
 
-fun parseBatch(gameSpec: GameSpec,
-               instances: Array<Instance.TrainingInstance>,
-               useLegal: Boolean): MultiDataSet {
+fun parseBatch(gameSpec: GameSpec, instances: Array<Instance.TrainingInstance>,
+               useValue: Boolean, usePolicy: Boolean, useLegal: Boolean): MultiDataSet {
     val sz = gameSpec.boardSize
     val np = gameSpec.pieceCount - 1
     val batchSize = instances.size
@@ -329,16 +368,16 @@ fun parseBatch(gameSpec: GameSpec,
         }
         value.putScalar(i, instances[i].outcome)
     }
-    if (useLegal) {
-        return MultiDataSet(arrayOf(input), arrayOf(value, policy, legal))
-    } else {
-        return MultiDataSet(arrayOf(input), arrayOf(value, policy))
-    }
+    val outputs = ArrayList<INDArray>()
+    if (useValue) outputs.add(value)
+    if (usePolicy) outputs.add(policy)
+    if (useLegal) outputs.add(legal)
+    return MultiDataSet(arrayOf(input), outputs.toTypedArray())
 }
 
-fun getBatch(gameSpec: GameSpec, reader: InstanceReader,
-             batchSize: Int, useLegal: Boolean): MultiDataSet {
+fun getBatch(gameSpec: GameSpec, reader: InstanceReader, batchSize: Int,
+             useValue: Boolean, usePolicy: Boolean, useLegal: Boolean): MultiDataSet {
     val instances = Array(batchSize) { reader.next() }
-    return parseBatch(gameSpec, instances, useLegal)
+    return parseBatch(gameSpec, instances, useValue, usePolicy, useLegal)
 }
 
