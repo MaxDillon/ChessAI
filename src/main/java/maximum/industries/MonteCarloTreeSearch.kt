@@ -185,6 +185,15 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
         }
     }
 
+    fun report(state: GameState) {
+        val info = info(state)
+        if (info.expanded) {
+            for (i in 0 until state.moveDepth) print("  ")
+            println("${state}: ${info.N} ${info.Q.f3()}")
+            for (next in state.nextMoves) report(next)
+        }
+    }
+
     fun slimState(state: GameState,
                   initTsr: (i: Int, builder: Instance.TreeSearchResult.Builder) -> Unit): SlimState {
         val sz = state.gameSpec.boardSize
@@ -208,10 +217,8 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
     }
 
     override fun pickMove(state: GameState): Pair<GameState, SlimState> {
-        println("Value: ${info(state).Q}")
         for (next in state.nextMoves) {
             val nInfo = info(next)
-            println("$next:\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
         }
         val sz = state.nextMoves.size
         val policy = DoubleArray(sz) { info(state.nextMoves[it]).N.toDouble() }
@@ -268,11 +275,7 @@ open class AlphaZeroMctsStrategy(val model: ComputationGraph,
                 val nInfo = info(next)
                 nInfo.Q = next.initialSelfValue()
                 nInfo.P = outputs[1].getFloat(intArrayOf(0, next.toPolicyIndex()))
-
-                //val nv = model.output(next.toProbModelInput())[0].getFloat(0,0)
-                //println("  prior/value $next  ${nInfo.P.f3()}  ${nv.f3()}")
             }
-            //println()
         }
         sInfo.N += 1
         sInfo.expanded = true
@@ -361,7 +364,6 @@ class DirichletMctsStrategy(exploration: Double,
     override fun pickMove(state: GameState): Pair<GameState, SlimState> {
         for (next in state.nextMoves) {
             val nInfo = info(next)
-            println("$next:\t${nInfo.N}\t${nInfo.wld[0].f1()}\t${nInfo.wld[1].f1()}\t${nInfo.wld[2].f1()}")
         }
         val sz = state.nextMoves.size
         val values = DoubleArray(sz) {

@@ -1,7 +1,6 @@
 package maximum.industries
 
 import maximum.industries.GameGrammar.GameSpec
-import org.deeplearning4j.eval.Evaluation
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.graph.ElementWiseVertex
@@ -17,13 +16,14 @@ import org.deeplearning4j.util.ModelSerializer
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.dataset.MultiDataSet
-import org.nd4j.linalg.dataset.api.iterator.MultiDataSetIterator
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.indexing.NDArrayIndex
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 import org.nd4j.linalg.lossfunctions.impl.PseudoSpherical
 import org.nd4j.shade.jackson.databind.jsontype.NamedType
-import java.io.*
+import java.io.File
+import java.io.FileInputStream
+import java.io.InputStream
 import java.nio.file.Files.find
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -226,16 +226,14 @@ fun main(args: Array<String>) {
     val saveAs = getArg(args, "saveas") ?: defaultSaveAs
     val drawWeight = getArg(args, "drawweight")?.toDouble() ?: 1.0
     val batchSize = getArg(args, "batch")?.toInt() ?: 200
-    val logFile = getArg(args, "logfile")?: "log.$saveAs"
+    val logFile = getArg(args, "logfile") ?: "log.$saveAs"
     var batchCount = startingBatch
 
     val uiServer = UIServer.getInstance()
     val statsStorage = InMemoryStatsStorage()
     uiServer.attach(statsStorage)
     model.setListeners(StatsListener(statsStorage))
-
-    model.params()
-    model.init(model.params(), true)
+    model.init()
 
     val trainReader = FileInstanceReader(0.2, drawWeight, lastN, dataPattern, "done")
     val testReader = FileInstanceReader(0.2, drawWeight, lastN, dataPattern, "test")
@@ -244,20 +242,21 @@ fun main(args: Array<String>) {
     var ema_test = 0.0
     fun ema(ema: Double, next: Double, w: Double) =
             if (ema == 0.0) next else w * ema + (1 - w) * next
+
     while (true) {
-
         val train_batch = getBatch(gameSpec, trainReader, batchSize, useValue, usePolicy, useLegal)
-        val test_batch = getBatch(gameSpec, testReader, batchSize, useValue, usePolicy, useLegal)
+        if (batchCount % 5 == 1) {
+            val test_batch = getBatch(gameSpec, testReader, batchSize, useValue, usePolicy, useLegal)
 
-        val train_score = model.score(train_batch)
-        val test_score = model.score(test_batch)
+            val train_score = model.score(train_batch)
+            val test_score = model.score(test_batch)
 
-        ema_train = ema(ema_train, train_score, 0.9)
-        ema_test = ema(ema_test, test_score, 0.9)
+            ema_train = ema(ema_train, train_score, 0.9)
+            ema_test = ema(ema_test, test_score, 0.9)
 
-        File(logFile).appendText(
-                "${batchCount},${ema_train.toFloat().f3()},${ema_test.toFloat().f3()}\n")
-
+            File(logFile).appendText(
+                    "${batchCount},${ema_train.toFloat().f3()},${ema_test.toFloat().f3()}\n")
+        }
         model.fit(train_batch)
 
         batchCount++

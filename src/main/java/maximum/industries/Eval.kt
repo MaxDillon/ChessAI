@@ -41,6 +41,7 @@ fun emBatchen(inputs: Array<INDArray>, batchSize: Int): INDArray {
 fun checkModelConsistency(gameSpec: GameSpec, model: ComputationGraph,
                           maxStates: Int, maxBatch: Int, minDepth: Int, maxDepth: Int,
                           player: Player) {
+    val doValue = modelHas(model, "value")
     val doLegal = modelHas(model, "legal")
 
     var numStates = 0
@@ -66,7 +67,7 @@ fun checkModelConsistency(gameSpec: GameSpec, model: ComputationGraph,
                 }
                 val outputs = model.output(emBatchen(inputs, maxBatch))
 
-                val policy = outputs[1].getRow(0)
+                val policy = outputs[if (doValue) 1 else 0].getRow(0)
                 val isLegal = Nd4j.zeros(policySize(gameSpec))
                 for (next in state.nextMoves) isLegal.putScalar(next.toPolicyIndex(), 1f)
                 val notLegal = isLegal.sub(1f).muli(-1)
@@ -76,8 +77,10 @@ fun checkModelConsistency(gameSpec: GameSpec, model: ComputationGraph,
                 sumNextIllegalMass += policy.mul(notLegal).sumNumber().toFloat()
                 val legalPolicy = policy.mul(isLegal)
                 val nextVal = Nd4j.zeros(policySize(gameSpec))
-                for (i in state.nextMoves.indices) {
-                    nextVal.putScalar(state.nextMoves[i].toPolicyIndex(), outputs[0].getFloat(i + 1, 0))
+                if (doValue) {
+                    for (i in state.nextMoves.indices) {
+                        nextVal.putScalar(state.nextMoves[i].toPolicyIndex(), outputs[0].getFloat(i + 1, 0))
+                    }
                 }
                 val legalNextVal = nextVal.mul(isLegal)
 

@@ -3,8 +3,11 @@ package maximum.industries
 import com.google.protobuf.ByteString
 import com.google.protobuf.TextFormat
 import max.dillon.treeSearchMove
+import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.graph.ComputationGraph
 import org.deeplearning4j.util.ModelSerializer
+import org.nd4j.linalg.lossfunctions.impl.PseudoSpherical
+import org.nd4j.shade.jackson.databind.jsontype.NamedType
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.nio.file.Files
@@ -135,6 +138,8 @@ fun getAlgo(game: String, algo: String,
                 exploration, temperature, floatArrayOf(1.0f, 0.0f, 0.5f)), iter)
         "model" -> {
             val modelName = if (toks[1].endsWith(".*")) getLatest(toks[1]) else toks[1]
+            NeuralNetConfiguration.reinitMapperWithSubtypes(
+                    Collections.singletonList(NamedType(PseudoSpherical::class.java)))
             val model = ModelSerializer.restoreComputationGraph(modelName)
             MonteCarloTreeSearch(AlphaZeroMctsStrategy(model, exploration, temperature), iter)
         }
