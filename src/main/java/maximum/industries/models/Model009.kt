@@ -8,7 +8,6 @@ import org.deeplearning4j.nn.conf.inputs.InputType
 import org.deeplearning4j.nn.graph.ComputationGraph
 import org.deeplearning4j.nn.weights.WeightInit
 import org.nd4j.linalg.activations.Activation
-import org.nd4j.linalg.learning.config.Adam
 import org.nd4j.linalg.lossfunctions.LossFunctions
 
 /**
@@ -26,9 +25,9 @@ class Model009 : IModel {
 
         val config = NeuralNetConfiguration.Builder()
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .regularization(true).l2(0.1)
+                .regularization(true).l2(0.001)
                 .updater(Updater.NESTEROVS)
-                .learningRate(1e-7)
+                .learningRate(1e-6)
                 .graphBuilder()
                 .addInputs("input")
                 .setInputTypes(InputType.convolutional(sz, sz, inChannels))
@@ -58,14 +57,14 @@ class Model009 : IModel {
                 }
 
                 // ######## Value head        #############################
-//                .F("valuetower", "res4") {
-//                    dense(20, init = weightInit, activation = activation)
-//                }
-//                .F("value", "valuetower") {
-//                    output(nOut = 1,
-//                           activation = Activation.TANH,
-//                           loss = LossFunctions.LossFunction.L2)
-//                }
+                .F("valuetower", "res4") {
+                    dense(20, init = weightInit, activation = activation)
+                }
+                .F("value", "valuetower") {
+                    output(nOut = 1,
+                           activation = Activation.TANH,
+                           loss = LossFunctions.LossFunction.L2)
+                }
                 // ######## Policy head      #############################
                 .F("policy1", "res4") {
                     convolution(filters = policyChannels(gameSpec), init = weightInit, activation = activation)
@@ -76,7 +75,7 @@ class Model009 : IModel {
                          loss = LossFunctions.LossFunction.PSEUDO_SPHERICAL)
                 }
 
-                .setOutputs("policy")
+                .setOutputs("value", "policy")
                 .build()
 
         return ComputationGraph(config).apply { init() }

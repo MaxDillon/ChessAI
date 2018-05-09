@@ -17,7 +17,6 @@ import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.dataset.MultiDataSet
 import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.indexing.NDArrayIndex
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 import org.nd4j.linalg.lossfunctions.impl.PseudoSpherical
 import org.nd4j.shade.jackson.databind.jsontype.NamedType
@@ -336,36 +335,25 @@ class FileInstanceReader(val prob: Double, val drawWeight: Double,
     }
 }
 
-fun parseBatch(gameSpec: GameSpec, instances: Array<Instance.TrainingInstance>,
-               useValue: Boolean, usePolicy: Boolean, useLegal: Boolean): MultiDataSet {
+data class TrainingData(val input: INDArray, val value: INDArray, val policy: INDArray, val legal: INDArray)
+
+fun initTrainingData(gameSpec: GameSpec, batchSize: Int): TrainingData {
     val sz = gameSpec.boardSize
     val np = gameSpec.pieceCount - 1
-    val batchSize = instances.size
     val input = Nd4j.zeros(batchSize, 2 * np + 1, sz, sz)
     val value = Nd4j.zeros(batchSize, 1)
     val policy = Nd4j.zeros(batchSize, policySize(gameSpec))
     val legal = Nd4j.ones(batchSize, policySize(gameSpec)).mul(-1)
+    return TrainingData(input, value, policy, legal)
+}
 
+fun parseBatch(gameSpec: GameSpec, instances: Array<Instance.TrainingInstance>,
+               useValue: Boolean, usePolicy: Boolean, useLegal: Boolean): MultiDataSet {
+    val batchSize = instances.size
+    val (input, value, policy, legal) = initTrainingData(gameSpec, batchSize)
     for (i in 0 until batchSize) {
-        for (j in 0 until instances[i].boardState.size()) {
-            val x = j / sz
-            val y = j % sz
-            val p = instances[i].boardState.byteAt(j).toInt()
-            if (p != 0) {
-                val channel = if (p > 0) p else np - p
-                input.putScalar(intArrayOf(i, channel, x, y), 1)
-            }
-        }
-        val turn = if (instances[i].player.eq(Instance.Player.WHITE)) 1 else -1
-        input.put(arrayOf(NDArrayIndex.point(i), NDArrayIndex.point(0),
-                          NDArrayIndex.all(), NDArrayIndex.all()), turn)
-
-        for (j in 0 until instances[i].treeSearchResultCount) {
-            val tsr = instances[i].treeSearchResultList[j]
-            policy.putScalar(intArrayOf(i, tsr.index), tsr.prob)
-            legal.putScalar(intArrayOf(i, tsr.index), 1f)
-        }
-        value.putScalar(i, instances[i].outcome)
+        val reflection = rand.nextInt(4)
+        instances[i].toBatchTrainingInput(gameSpec, i, reflection, input, value, policy, legal)
     }
     val outputs = ArrayList<INDArray>()
     if (useValue) outputs.add(value)

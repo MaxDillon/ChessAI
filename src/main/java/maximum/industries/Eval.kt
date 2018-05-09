@@ -62,8 +62,8 @@ fun checkModelConsistency(gameSpec: GameSpec, model: ComputationGraph,
                 val numNext = state.nextMoves.size
                 // get prediction for target player's current move
                 val inputs = Array(numNext + 1) {
-                    if (it == 0) state.toProbModelInput()
-                    else state.nextMoves[it - 1].toProbModelInput()
+                    if (it == 0) state.toModelInput()
+                    else state.nextMoves[it - 1].toModelInput()
                 }
                 val outputs = model.output(emBatchen(inputs, maxBatch))
 

@@ -25,7 +25,7 @@ class MonteCarloTreeSearch(val strategy: MctsStrategy,
         assert(state.outcome == Outcome.UNDETERMINED)
         val stack = ArrayList<GameState>()
 
-        for (i in 1..iterations) {
+        for (i in 0..iterations) {
             var node = state
             while (strategy.expanded(node) &&
                    node.outcome == Outcome.UNDETERMINED) {
@@ -44,17 +44,6 @@ class MonteCarloTreeSearch(val strategy: MctsStrategy,
     override fun gameOver() {
         strategy.gameOver()
     }
-}
-
-fun GameState.toPolicyIndex(): Int {
-    val dim = gameSpec.boardSize
-    val dst = y2 + dim * x2
-    val src = if (gameSpec.moveSource == MoveSource.ENDS) {
-        abs(p1) - 1 // subtract out the virtual piece added to all gamespecs
-    } else {
-        y1 + x1 * dim
-    }
-    return src * dim * dim + dst
 }
 
 data class SlimState(val state: ByteArray,
@@ -194,31 +183,33 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
         }
     }
 
-    fun slimState(state: GameState,
-                  initTsr: (i: Int, builder: Instance.TreeSearchResult.Builder) -> Unit): SlimState {
-        val sz = state.gameSpec.boardSize
-        val arr = ByteArray(sz * sz) {
-            val x = it / sz
-            val y = it % sz
-            (state.at(x, y)).toByte()
-        }
-        val tsrs = Array(state.nextMoves.size) {
-            Instance.TreeSearchResult.newBuilder().apply {
-                index = state.nextMoves[it].toPolicyIndex()
-                initTsr(it, this)
-            }.build()
-        }
-        val player = if (state.player.eq(Player.WHITE)) {
-            Instance.Player.WHITE
-        } else {
-            Instance.Player.BLACK
-        }
-        return SlimState(arr, player, tsrs)
-    }
+//    fun slimState(state: GameState,
+//                  initTsr: (i: Int, builder: Instance.TreeSearchResult.Builder) -> Unit): SlimState {
+//        val sz = state.gameSpec.boardSize
+//        val arr = ByteArray(sz * sz) {
+//            val x = it / sz
+//            val y = it % sz
+//            (state.at(x, y)).toByte()
+//        }
+//        val tsrs = Array(state.nextMoves.size) {
+//            Instance.TreeSearchResult.newBuilder().apply {
+//                index = state.nextMoves[it].toPolicyIndex()
+//                initTsr(it, this)
+//            }.build()
+//        }
+//        val player = if (state.player.eq(Player.WHITE)) {
+//            Instance.Player.WHITE
+//        } else {
+//            Instance.Player.BLACK
+//        }
+//        return SlimState(arr, player, tsrs)
+//    }
 
     override fun pickMove(state: GameState): Pair<GameState, SlimState> {
+        println("Value: ${info(state).Q}")
         for (next in state.nextMoves) {
             val nInfo = info(next)
+            println("$next:\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
         }
         val sz = state.nextMoves.size
         val policy = DoubleArray(sz) { info(state.nextMoves[it]).N.toDouble() }
@@ -226,7 +217,7 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
         for (i in 0 until sz) policy[i] /= policySum
         // record non-exponentiated normalized policy in slim state. we don't want
         // model inputs to depend on temperature, or have most values driven to zero.
-        val slim = slimState(state) { i, tsr -> tsr.prob = policy[i].toFloat() }
+        val slim = state.toSlimState { i, tsr -> tsr.prob = policy[i].toFloat() }
         // now exponentiate to get weights for picking actual move
         for (i in 0 until sz) policy[i] = pow(policy[i], 1 / temperature)
         val next = pickChildByProbs(state, policy)
@@ -239,27 +230,27 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
     }
 }
 
-// might as well create this just once
-val turnIndices = arrayOf(NDArrayIndex.point(0), NDArrayIndex.point(0))
-
-fun GameState.toProbModelInput(): INDArray {
-    val sz = gameSpec.boardSize
-    val np = gameSpec.pieceCount - 1
-    val input = Nd4j.zeros(1, 2 * np + 1, sz, sz)
-    for (x in 0 until sz) {
-        for (y in 0 until sz) {
-            val p = at(x, y)
-            if (p != 0) {
-                val channel = if (p > 0) p else np - p
-                input.putScalar(intArrayOf(0, channel, x, y), 1)
-            }
-        }
-    }
-    val turn = Nd4j.ones(sz, sz)
-    if (player.eq(Player.BLACK)) turn.muli(-1)
-    input.put(turnIndices, turn)
-    return input
-}
+//// might as well create this just once
+//val turnIndices = arrayOf(NDArrayIndex.point(0), NDArrayIndex.point(0))
+//
+//fun GameState.toProbModelInput(): INDArray {
+//    val sz = gameSpec.boardSize
+//    val np = gameSpec.pieceCount - 1
+//    val input = Nd4j.zeros(1, 2 * np + 1, sz, sz)
+//    for (x in 0 until sz) {
+//        for (y in 0 until sz) {
+//            val p = at(x, y)
+//            if (p != 0) {
+//                val channel = if (p > 0) p else np - p
+//                input.putScalar(intArrayOf(0, channel, x, y), 1)
+//            }
+//        }
+//    }
+//    val turn = Nd4j.ones(sz, sz)
+//    if (player.eq(Player.BLACK)) turn.muli(-1)
+//    input.put(turnIndices, turn)
+//    return input
+//}
 
 open class AlphaZeroMctsStrategy(val model: ComputationGraph,
                                  exploration: Double,
@@ -269,7 +260,7 @@ open class AlphaZeroMctsStrategy(val model: ComputationGraph,
     override fun expand(state: GameState) {
         val sInfo = info(state)
         if (state.outcome == Outcome.UNDETERMINED) {
-            val outputs = model.output(state.toProbModelInput())
+            val outputs = model.output(state.toModelInput())
             sInfo.Q = outputs[0].getFloat(0, 0)
             for (next in state.nextMoves) {
                 val nInfo = info(next)
@@ -371,7 +362,7 @@ class DirichletMctsStrategy(exploration: Double,
                     1 / temperature)
         }
         val next = pickChildByProbs(state, values)
-        val slim = slimState(state) { i, tsr ->
+        val slim = state.toSlimState { i, tsr ->
             val wld = info(state.nextMoves[i]).wld
             val wldsum = max(wld.sum(), 0.001f)
             tsr.wld = Instance.WinLoseDraw.newBuilder()

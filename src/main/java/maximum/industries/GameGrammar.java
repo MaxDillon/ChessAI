@@ -498,6 +498,10 @@ public final class GameGrammar {
      * <code>MOVE_LIMIT = 5;</code>
      */
     MOVE_LIMIT(5),
+    /**
+     * <code>REPEATED_POSITION = 6;</code>
+     */
+    REPEATED_POSITION(6),
     UNRECOGNIZED(-1),
     ;
 
@@ -525,6 +529,10 @@ public final class GameGrammar {
      * <code>MOVE_LIMIT = 5;</code>
      */
     public static final int MOVE_LIMIT_VALUE = 5;
+    /**
+     * <code>REPEATED_POSITION = 6;</code>
+     */
+    public static final int REPEATED_POSITION_VALUE = 6;
 
 
     public final int getNumber() {
@@ -551,6 +559,7 @@ public final class GameGrammar {
         case 3: return BOARD_FULL;
         case 4: return N_IN_A_ROW;
         case 5: return MOVE_LIMIT;
+        case 6: return REPEATED_POSITION;
         default: return null;
       }
     }
@@ -6084,13 +6093,13 @@ public final class GameGrammar {
       "ource\022\023\n\017PIECES_ON_BOARD\020\000\022\010\n\004ENDS\020\001*`\n\007" +
       "Outcome\022\016\n\nDISALLOWED\020\000\022\013\n\007ALLOWED\020\001\022\013\n\007" +
       "CAPTURE\020\002\022\010\n\004SWAP\020\003\022\010\n\004STAY\020\004\022\n\n\006DEPLOY\020" +
-      "\005\022\013\n\007IMPRESS\020\006*\177\n\tCondition\022\021\n\rNO_LEGAL_",
-      "MOVE\020\000\022\026\n\022NO_PIECES_ON_BOARD\020\001\022\027\n\023KEY_PI" +
-      "ECES_CAPTURED\020\002\022\016\n\nBOARD_FULL\020\003\022\016\n\nN_IN_" +
-      "A_ROW\020\004\022\016\n\nMOVE_LIMIT\020\005*]\n\014GameDecision\022" +
-      "\007\n\003WIN\020\000\022\010\n\004LOSS\020\001\022\010\n\004DRAW\020\003\022\025\n\021COUNT_LI" +
-      "VE_PIECES\020\004\022\031\n\025COUNT_CAPTURED_PIECES\020\005b\006" +
-      "proto3"
+      "\005\022\013\n\007IMPRESS\020\006*\226\001\n\tCondition\022\021\n\rNO_LEGAL",
+      "_MOVE\020\000\022\026\n\022NO_PIECES_ON_BOARD\020\001\022\027\n\023KEY_P" +
+      "IECES_CAPTURED\020\002\022\016\n\nBOARD_FULL\020\003\022\016\n\nN_IN" +
+      "_A_ROW\020\004\022\016\n\nMOVE_LIMIT\020\005\022\025\n\021REPEATED_POS" +
+      "ITION\020\006*]\n\014GameDecision\022\007\n\003WIN\020\000\022\010\n\004LOSS" +
+      "\020\001\022\010\n\004DRAW\020\003\022\025\n\021COUNT_LIVE_PIECES\020\004\022\031\n\025C" +
+      "OUNT_CAPTURED_PIECES\020\005b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

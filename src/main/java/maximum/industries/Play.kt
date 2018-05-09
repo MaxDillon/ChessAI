@@ -2,9 +2,7 @@ package maximum.industries
 
 import com.google.protobuf.ByteString
 import com.google.protobuf.TextFormat
-import max.dillon.treeSearchMove
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
-import org.deeplearning4j.nn.graph.ComputationGraph
 import org.deeplearning4j.util.ModelSerializer
 import org.nd4j.linalg.lossfunctions.impl.PseudoSpherical
 import org.nd4j.shade.jackson.databind.jsontype.NamedType
@@ -104,36 +102,12 @@ class HumanInput : GameSearchAlgo {
     override fun gameOver() {}
 }
 
-// A strategy that allows play against the old versions of things.
-class OldMcts(val gameSpec: max.dillon.GameGrammar.GameSpec,
-              val model: ComputationGraph?) : GameSearchAlgo {
-    override fun next(state: GameState): Pair<GameState, SlimState?> {
-        val mstate = max.dillon.GameState(gameSpec, model)
-        mstate.gameBoard = Array(gameSpec.boardSize) { row ->
-            IntArray(gameSpec.boardSize) { col ->
-                state.at(col, row)
-            }
-        }
-        mstate.whiteMove = state.player == Player.WHITE
-        val next_old = treeSearchMove(mstate, 0.1, 3000)
-        val nplayer = if (next_old.whiteMove) Player.WHITE else Player.BLACK
-        val next_new = GameState(state.gameSpec, next_old.gameBoard, nplayer,
-                                 0, 0, 0, 0, 0, next_old.moveDepth)
-        return Pair(next_new, SlimState(ByteArray(0), Instance.Player.WHITE,
-                                        emptyArray()))
-    }
-
-    override fun gameOver() {
-    }
-}
-
 fun getAlgo(game: String, algo: String,
             iter: Int, exploration: Double, temperature: Double): GameSearchAlgo {
     val toks = algo.split(":")
     return when (toks[0]) {
         "mcts" -> MonteCarloTreeSearch(VanillaMctsStrategy(
                 exploration, temperature), iter)
-        "omcts" -> OldMcts(max.dillon.loadSpec(game), null)
         "dmcts" -> MonteCarloTreeSearch(DirichletMctsStrategy(
                 exploration, temperature, floatArrayOf(1.0f, 0.0f, 0.5f)), iter)
         "model" -> {
@@ -142,11 +116,6 @@ fun getAlgo(game: String, algo: String,
                     Collections.singletonList(NamedType(PseudoSpherical::class.java)))
             val model = ModelSerializer.restoreComputationGraph(modelName)
             MonteCarloTreeSearch(AlphaZeroMctsStrategy(model, exploration, temperature), iter)
-        }
-        "omodel" -> {
-            val modelName = if (toks[1].endsWith(".*")) getLatest(toks[1]) else toks[1]
-            val model = ModelSerializer.restoreComputationGraph(modelName)
-            OldMcts(max.dillon.loadSpec(game), model)
         }
         "human" -> HumanInput()
         else -> throw RuntimeException("no algo specified")
@@ -174,13 +143,16 @@ fun getLatest(modelFile: String): String {
 fun appUsage() {
     println("""
         |java PlayKt <game>
-        |        [-white <model>]      Model for the white player. Default is mcts.
-        |        [-black <model>]      Model for the black player. Default is mcts.
-        |        [-n <n>]              The number of games to play. Default=100.
-        |        [-iter <iter>]        The number of mcts rollouts to perform.
-        |        [-exploration <e>     Governs exploration in tree search. Default=1
-        |        [-temperature <t>     Governs move selection exponent. Default=0.2
-        |        [-saveas <name>]      A name pattern for saved games. Default is <game>
+        |        [-white <model>]    Model for the white player. Default is mcts.
+        |        [-black <model>]    Model for the black player. Default is mcts.
+        |        [-n <n>]            The number of games to play. Default=100.
+        |        [-witer <iter>]     The number of rollouts/evals to perform for white.
+        |        [-biter <iter>]     The number of rollouts/evals to perform for black.
+        |        [-wexpl <e>         Governs exploration in tree search for white. Default=0.5
+        |        [-bexpl <e>         Governs exploration in tree search for black. Default=0.5
+        |        [-wtemp <t>         Governs move selection exponent for white. Default=0.1
+        |        [-btemp <t>         Governs move selection exponent for black. Default=0.1
+        |        [-saveas <name>]    A name pattern for saved games. Default is <game>
         |<model> may be 'mcts' to run with Monte Carlo tree search only,
         |            or 'dmcts' to run with Dirichlet Monte Carlo tree search,
         |            or 'human' to enter moves manually
@@ -204,12 +176,15 @@ fun main(args: Array<String>) {
         return appUsage()
     }
     val game = args[0]
+    val n = getArg(args, "n")?.toInt() ?: 100
     val white = getArg(args, "white") ?: "mcts"
     val black = getArg(args, "black") ?: "mcts"
-    val n = getArg(args, "n")?.toInt() ?: 100
-    val iter = getArg(args, "iter")?.toInt() ?: 1600
-    val temperature = getArg(args, "temperature")?.toDouble() ?: 0.2
-    val exploration = getArg(args, "exploration")?.toDouble() ?: 1.0
+    val witer = getArg(args, "witer")?.toInt() ?: 100
+    val biter = getArg(args, "biter")?.toInt() ?: 100
+    val wtemp = getArg(args, "wtemp")?.toDouble() ?: 0.1
+    val btemp = getArg(args, "btemp")?.toDouble() ?: 0.1
+    val wexpl = getArg(args, "wexpl")?.toDouble() ?: 0.5
+    val bexpl = getArg(args, "bexpl")?.toDouble() ?: 0.5
     val saveas = getArg(args, "saveas") ?: game
     val baseName = "data.$saveas.${System.currentTimeMillis()}"
     val workFile = "$baseName.work"
@@ -220,10 +195,10 @@ fun main(args: Array<String>) {
 
     val gameSpec = loadSpec(game)
 
-    val whiteAlgo = getAlgo(game, white, iter, exploration, temperature)
+    val whiteAlgo = getAlgo(game, white, witer, wexpl, wtemp)
     val blackAlgo =
             if (white == black) whiteAlgo
-            else getAlgo(game, black, iter, exploration, temperature)
+            else getAlgo(game, black, biter, bexpl, btemp)
 
     for (i in 1..n) play(gameSpec, whiteAlgo, blackAlgo, outputStream)
     Files.move(Paths.get(workFile), Paths.get(doneFile))

@@ -1,3 +1,3 @@
 #!/bin/bash
 
-java -cp target/quest-1.0-SNAPSHOT.jar:$(mvn dependency:build-classpath | grep -v INFO) max.dillon.TrainingKt $*
+java -cp target/classes:$(mvn dependency:build-classpath | grep -v INFO) maximum.industries.TrainKt $*

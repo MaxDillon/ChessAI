@@ -63,6 +63,7 @@ class GameState {
     val x2: Int // p1's dst x
     val y2: Int // p1's dst y
     val moveDepth: Int
+    val history: ArrayList<Int>
     val nextMoves: ArrayList<GameState> by lazy {
         getNextStates()
     }
@@ -92,10 +93,12 @@ class GameState {
         this.x2 = -1
         this.y2 = -1
         this.moveDepth = 0
+        this.history = arrayListOf(gameBoard.contentDeepHashCode())
     }
 
     constructor(gameSpec: GameSpec, gameBoard: Array<IntArray>, player: Player,
-                p1: Int, x1: Int, y1: Int, x2: Int, y2: Int, moveDepth: Int) {
+                p1: Int, x1: Int, y1: Int, x2: Int, y2: Int, moveDepth: Int,
+                history: ArrayList<Int> = ArrayList()) {
         this.gameSpec = gameSpec
         this.gameBoard = gameBoard
         this.player = player
@@ -105,6 +108,8 @@ class GameState {
         this.x2 = x2
         this.y2 = y2
         this.moveDepth = moveDepth
+        this.history = history
+        this.history.add(gameBoard.contentDeepHashCode())
     }
 
     override fun toString() =
@@ -115,6 +120,7 @@ class GameState {
                 "$moveDepth: ${'a' + x1}${y1 + 1} -> ${'a' + x2}${y2 + 1}$status"
             }
 
+    // TODO: consider changing everything to atRowCol instead of X,Y, which are consistently confusing
     fun at(x: Int, y: Int): Int {
         return gameBoard[y][x]
     }
@@ -139,7 +145,7 @@ class GameState {
         return x < 0 || y < 0 || x >= gameSpec.boardSize || y >= gameSpec.boardSize
     }
 
-    private fun checkLandingConstraints(x1: Int, y1: Int, x2: Int, y2: Int,
+    private fun checkLandingConstraints(x2: Int, y2: Int,
                                         srcPiece: Int, move: Move): Boolean {
         val dstPiece = at(x2, y2)
         if (dstPiece == 0 && move.land.none == GameGrammar.Outcome.DISALLOWED) {
@@ -257,7 +263,8 @@ class GameState {
         } else {
             if (player.eq(Player.WHITE)) Player.BLACK else Player.WHITE
         }
-        val nextState = GameState(gameSpec, nextBoard, nextPlayer, srcPiece, x1, y1, x2, y2, moveDepth + 1)
+        val nextState = GameState(gameSpec, nextBoard, nextPlayer, srcPiece, x1, y1, x2, y2,
+                                  moveDepth + 1, ArrayList(history))
         nextStates.getOrPut(move.priority) { ArrayList() }.add(nextState)
     }
 
@@ -320,7 +327,7 @@ class GameState {
                 val (x2, y2) = square
                 if (x2 < 0 || x2 >= gameSpec.boardSize) continue
                 if (y2 < 0 || y2 >= gameSpec.boardSize) continue
-                if (!checkLandingConstraints(x1, y1, x2, y2, srcPiece, move)) continue
+                if (!checkLandingConstraints(x2, y2, srcPiece, move)) continue
                 if (!checkJumpingConstraints(x1, y1, x2, y2, srcPiece, move)) continue
                 createAndAddState(nextStates, x1, y1, x2, y2, srcPiece, move)
             }
@@ -472,6 +479,13 @@ class GameState {
                         return if (player.eq(Player.WHITE)) Outcome.LOSE else Outcome.WIN
                     }
                 }
+                Condition.REPEATED_POSITION -> {
+                    var count = 0
+                    for (position in history) {
+                        if (position == history.last()) count++
+                    }
+                    if (count == game_over.param) return Outcome.DRAW
+                }
                 else -> {
                 }
             }
@@ -524,7 +538,7 @@ class GameState {
         for (index in 0 until gameSpec.boardSize) print("       ")
         print("    \u001B[0m\n\u001B[37m\u001B[40m    ")
         for (index in 0 until gameSpec.boardSize) print("   " + ('a' + index) + "   ")
-        print("    \u001B[0m")
+        print("  ${if (player == Player.WHITE) "W" else "B"} \u001B[0m")
         println("\n")
     }
 }
