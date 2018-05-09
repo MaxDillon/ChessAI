@@ -55,7 +55,7 @@ private fun pass(): List<Pair<Int, Int>> {
 
 class GameState {
     val gameSpec: GameSpec
-    private val gameBoard: Array<IntArray>
+    val gameBoard: Array<IntArray>
     val player: Player
     val p1: Int // the piece that was moved (needed to construct input channels)
     val x1: Int // p1's src x
@@ -93,7 +93,8 @@ class GameState {
         this.x2 = -1
         this.y2 = -1
         this.moveDepth = 0
-        this.history = arrayListOf(gameBoard.contentDeepHashCode())
+        // you'd think contentDeepHashCode would work here, but no.
+        this.history = arrayListOf(gameBoard.contentDeepToString().hashCode())
     }
 
     constructor(gameSpec: GameSpec, gameBoard: Array<IntArray>, player: Player,
@@ -109,7 +110,8 @@ class GameState {
         this.y2 = y2
         this.moveDepth = moveDepth
         this.history = history
-        this.history.add(gameBoard.contentDeepHashCode())
+        // you'd think contentDeepHashCode would work here, but no.
+        this.history.add(gameBoard.contentDeepToString().hashCode())
     }
 
     override fun toString() =

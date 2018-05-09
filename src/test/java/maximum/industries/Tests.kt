@@ -15,6 +15,7 @@ fun GameState.desc(): String {
     return toString().split(":").get(1).trim()
             .replace(" WIN", "")
             .replace(" LOSE", "")
+            .replace(" DRAW", "")
 }
 
 fun checkStatesEqual(state1: GameState, state2: GameState) {
@@ -285,6 +286,20 @@ class TestChess() {
         val b2b3 = gameSpec.toPolicyIndex(MoveInfo(1, 1, 1, 2, 0))
         val b4b5 = gameSpec.toPolicyIndex(MoveInfo(1, 3, 1, 4, 0))
         checkLegalAndPolicy(3, intArrayOf(a1b1, b2b3, b4b5))
+    }
+
+    @Test
+    fun testThreefoldRepetition() {
+        var state = GameState(gameSpec)
+        state = state.nextMoves.filter { it.desc() == "b1 -> a3" }.first()
+        state = state.nextMoves.filter { it.desc() == "b8 -> a6" }.first()
+        state = state.nextMoves.filter { it.desc() == "a3 -> b1" }.first()
+        state = state.nextMoves.filter { it.desc() == "a6 -> b8" }.first()
+        state = state.nextMoves.filter { it.desc() == "b1 -> a3" }.first()
+        state = state.nextMoves.filter { it.desc() == "b8 -> a6" }.first()
+        state = state.nextMoves.filter { it.desc() == "a3 -> b1" }.first()
+        state = state.nextMoves.filter { it.desc() == "a6 -> b8" }.first()
+        state.outcome.shouldEqual(Outcome.DRAW)
     }
 
     fun expectedValuePlusSdevs(wld: FloatArray, values: FloatArray, sdevs: Float): Float {
