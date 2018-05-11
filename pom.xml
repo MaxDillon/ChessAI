@@ -67,12 +67,10 @@
 
         <!-- Change the nd4j.backend property to nd4j-cuda-7.5-platform or nd4j-cuda-8.0-platform to use CUDA GPUs -->
         <!--<nd4j.backend>nd4j-native-platform</nd4j.backend>-->
-        <nd4j.backend>nd4j-native-platform</nd4j.backend>
+        <nd4j.backend>nd4j-cuda-8.0-platform</nd4j.backend>
         <java.version>1.8</java.version>
         <nd4j.version>0.9.1</nd4j.version>
         <dl4j.version>0.9.1</dl4j.version>
-        <javafx.version>2.2.3</javafx.version>
-        <javafx.runtime.lib.jar>/Library//Java/JavaVirtualMachines/jdk1.8.0_131.jdk//Contents/Home/jre/lib/ext/jfxrt.jar</javafx.runtime.lib.jar>
     </properties>
 
     <repositories>
@@ -130,14 +128,6 @@
             <groupId>org.deeplearning4j</groupId>
             <artifactId>deeplearning4j-ui_2.10</artifactId>
             <version>${dl4j.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>javafx</groupId>
-            <artifactId>jfxrt</artifactId>
-            <version>2.0</version>
-            <scope>system</scope>
-            <systemPath>${javafx.runtime.lib.jar}</systemPath>
         </dependency>
 
         <dependency>
