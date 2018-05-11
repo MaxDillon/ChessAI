@@ -27,8 +27,7 @@ class MonteCarloTreeSearch(val strategy: MctsStrategy,
 
         for (i in 0..iterations) {
             var node = state
-            while (strategy.expanded(node) &&
-                   node.outcome == Outcome.UNDETERMINED) {
+            while (strategy.expanded(node) && node.outcome == Outcome.UNDETERMINED) {
                 stack.add(node)
                 node = node.nextMoves.maxBy { next ->
                     strategy.searchPriority(node, next)
@@ -38,6 +37,7 @@ class MonteCarloTreeSearch(val strategy: MctsStrategy,
             strategy.backprop(stack, node)
             stack.clear()
         }
+        println("Cache size: ${strategy.cacheSize()}")
         return strategy.pickMove(state)
     }
 
@@ -53,7 +53,7 @@ data class SlimState(val state: ByteArray,
 interface MctsStrategy {
     // An expanded node is one that has at least an initial value estimate (via a
     // rollout or model eval) and whose children, if any, have priors (and initialized
-    // values for terminal nodes0. The algorithm will expand one node per iteration.
+    // values for terminal nodes. The algorithm will expand one node per iteration.
     fun expanded(state: GameState): Boolean
 
     // Returns a priority balancing three components:
@@ -63,8 +63,9 @@ interface MctsStrategy {
     fun searchPriority(s1: GameState, s2: GameState): Double
 
     // For a terminal node just increments visit count and sets fixed value. For a
-    // non-terminal nodeinitializes child priors and sets initial node value either
-    // via rollout or model. During rollout immediate winning moves must be taken.
+    // non-terminal node initializes child priors and sets initial node value either
+    // via rollout or model. During rollout immediate winning moves must be taken
+    // and immediate losing moves avoided if possible.
     fun expand(state: GameState)
 
     // Backprop estimated values of just-expanded nodes to the root of the search.
@@ -75,6 +76,9 @@ interface MctsStrategy {
 
     // Clear any caches
     fun gameOver()
+
+    // Report on size of caches
+    fun cacheSize(): Int
 }
 
 open class VanillaMctsStrategy(val exploration: Double, val temperature: Double) : MctsStrategy {
@@ -83,11 +87,19 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
                     var Q: Float = 0f,
                     var P: Float = 0f)
 
-    val allInfo = HashMap<Int, HashMap<GameState, Info>>()
+    val allInfo = HashMap<Short, HashMap<GameState, Info>>()
 
     open fun info(state: GameState): Info {
         val depthInfo = allInfo.getOrPut(state.moveDepth) { HashMap() }
         return depthInfo.getOrPut(state) { Info() }
+    }
+
+    override fun cacheSize(): Int {
+        var size = 0
+        for ((_, map) in allInfo) {
+            size += map.size
+        }
+        return size
     }
 
     fun sign(s1: GameState, s2: GameState): Int {
@@ -110,11 +122,12 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
         val s2Info = info(s2)
         // the prior is the model's estimate of the probability we'll make this move.
         // we'll treat it here as a component of expected node value. TODO: tune
+        // note: this is not currently normalized. may have sum>1 or sum<1.
         val priorValue = s2Info.P * 2.0 / sqrt(4.0 + s2Info.N)
         // the estimated child node value, sign adjusted to be value for current player
         val nodeValue = sign(s1, s2) * s2Info.Q
         val termValue =
-                if (s2.winFor(s1)) 100.0 // always take immediate wins
+                if (s2.winFor(s1)) 100.0 // during search always take immediate wins
                 else if (s2.lossFor(s1)) -100.0 else 0.0 // and avoid immediate losses
         val infoValue =
                 if (s2.outcome != Outcome.UNDETERMINED) 0.0 // no info value for terminals
@@ -135,11 +148,11 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
                 if (state.nextMoves[it].lossFor(state)) 0.0 else weights[it]
             }
             for (i in 1 until sz) nonLossCumls[i] += nonLossCumls[i - 1]
-            if (nonLossCumls[sz - 1] == 0.0) {
+            if (nonLossCumls.last() == 0.0) {
                 // there are no non-loss moves. return a random loss.
                 return state.nextMoves[rand.nextInt(sz)]
             }
-            val point = rand.nextFloat() * nonLossCumls[sz - 1]
+            val point = rand.nextFloat() * nonLossCumls.last()
             var count = 0;
             for (i in 0 until sz) if (nonLossCumls[i] < point) count++
             return state.nextMoves[count]
@@ -174,37 +187,15 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
         }
     }
 
-    fun report(state: GameState) {
-        val info = info(state)
-        if (info.expanded) {
-            for (i in 0 until state.moveDepth) print("  ")
-            println("${state}: ${info.N} ${info.Q.f3()}")
-            for (next in state.nextMoves) report(next)
-        }
-    }
+    // maybe some auto-pruning of caches at level N+4 or so?
 
-//    fun slimState(state: GameState,
-//                  initTsr: (i: Int, builder: Instance.TreeSearchResult.Builder) -> Unit): SlimState {
-//        val sz = state.gameSpec.boardSize
-//        val arr = ByteArray(sz * sz) {
-//            val x = it / sz
-//            val y = it % sz
-//            (state.at(x, y)).toByte()
-//        }
-//        val tsrs = Array(state.nextMoves.size) {
-//            Instance.TreeSearchResult.newBuilder().apply {
-//                index = state.nextMoves[it].toPolicyIndex()
-//                initTsr(it, this)
-//            }.build()
-//        }
-//        val player = if (state.player.eq(Player.WHITE)) {
-//            Instance.Player.WHITE
-//        } else {
-//            Instance.Player.BLACK
-//        }
-//        return SlimState(arr, player, tsrs)
-//    }
+    // problem with P * exploration is we'll never explore things with low prior.
 
+    // Q: should the move picking use Q and/or P in addition to N? lots of times we have ties
+    // for N because the branching factor is high and exploration is sufficiently high to
+    // make us spread across everything. maybe the fix we need is rather in the priority.
+    // Q: should we have a more auto-tuned concept of temperature where we enforce a maximum
+    // entropy?
     override fun pickMove(state: GameState): Pair<GameState, SlimState> {
         println("Value: ${info(state).Q}")
         for (next in state.nextMoves) {
@@ -222,6 +213,7 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
         for (i in 0 until sz) policy[i] = pow(policy[i], 1 / temperature)
         val next = pickChildByProbs(state, policy)
         allInfo.remove(state.moveDepth) // won't be needing these anymore
+        allInfo.remove((state.moveDepth - 1).toShort()) // or these, which might exist if there are two algos
         return Pair(next, slim)
     }
 
@@ -230,42 +222,39 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
     }
 }
 
-//// might as well create this just once
-//val turnIndices = arrayOf(NDArrayIndex.point(0), NDArrayIndex.point(0))
-//
-//fun GameState.toProbModelInput(): INDArray {
-//    val sz = gameSpec.boardSize
-//    val np = gameSpec.pieceCount - 1
-//    val input = Nd4j.zeros(1, 2 * np + 1, sz, sz)
-//    for (x in 0 until sz) {
-//        for (y in 0 until sz) {
-//            val p = at(x, y)
-//            if (p != 0) {
-//                val channel = if (p > 0) p else np - p
-//                input.putScalar(intArrayOf(0, channel, x, y), 1)
-//            }
-//        }
-//    }
-//    val turn = Nd4j.ones(sz, sz)
-//    if (player.eq(Player.BLACK)) turn.muli(-1)
-//    input.put(turnIndices, turn)
-//    return input
-//}
+open class AlphaZeroMctsNoModelStrategy(exploration: Double, temperature: Double) :
+        VanillaMctsStrategy(exploration, temperature) {
+    override fun searchPriority(s1: GameState, s2: GameState): Double {
+        val s1Info = info(s1)
+        val s2Info = info(s2)
+        // the estimated child node value, sign adjusted to be value for current player
+        val nodeValue = sign(s1, s2) * s2Info.Q
+        val termValue =
+                if (s2.winFor(s1)) 100.0 // during search always take immediate wins
+                else if (s2.lossFor(s1)) -100.0 else 0.0 // and avoid immediate losses
+        val infoValue =
+                if (s2.outcome != Outcome.UNDETERMINED) 0.0 // no info value for terminals
+                else exploration * s2Info.P * sqrt(s1Info.N.toDouble()) / (1 + s2Info.N)
+        return nodeValue + termValue + infoValue
+    }
+}
 
 open class AlphaZeroMctsStrategy(val model: ComputationGraph,
                                  exploration: Double,
                                  temperature: Double) :
-        VanillaMctsStrategy(exploration, temperature) {
-
+        AlphaZeroMctsNoModelStrategy(exploration, temperature) {
     override fun expand(state: GameState) {
         val sInfo = info(state)
         if (state.outcome == Outcome.UNDETERMINED) {
             val outputs = model.output(state.toModelInput())
-            sInfo.Q = outputs[0].getFloat(0, 0)
+            val output_value = outputs[0]
+            val output_policy = outputs[1]
+            sInfo.Q = output_value.getFloat(0 /* batch index */)
             for (next in state.nextMoves) {
                 val nInfo = info(next)
                 nInfo.Q = next.initialSelfValue()
-                nInfo.P = outputs[1].getFloat(intArrayOf(0, next.toPolicyIndex()))
+                nInfo.P = output_policy.getFloat(intArrayOf(0 /* batch index */,
+                                                            next.toPolicyIndex()))
             }
         }
         sInfo.N += 1

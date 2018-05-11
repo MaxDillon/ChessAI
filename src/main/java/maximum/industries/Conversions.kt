@@ -90,12 +90,12 @@ fun GameState.toModelInput(): INDArray {
 
 fun GameSpec.fromModelInput(input: INDArray, batchIndex: Int): GameState {
     val size = boardSize
-    val newBoard = Array(size) { IntArray(size) { 0 } }
+    val newBoard = ByteArray(size * size) { 0 }
     for (channel in 1..(2 * numRealPieces())) {
         for (x in 0 until size) {
             for (y in 0 until size) {
                 if (input.getFloat(intArrayOf(batchIndex, channel, y, x)) > 0) {
-                    newBoard[y][x] = channelToPiece(channel)
+                    newBoard[y * size + x] = channelToPiece(channel).toByte()
                 }
             }
         }
@@ -124,12 +124,12 @@ fun GameState.toSlimState(initTsr: (i: Int, builder: Instance.TreeSearchResult.B
     return SlimState(array, player, tsrs)
 }
 
-fun SlimState.toTrainingInstance(finalOutcome: Int, finalDepth: Int): Instance.TrainingInstance {
+fun SlimState.toTrainingInstance(finalOutcome: Int, finalDepth: Short): Instance.TrainingInstance {
     val slimPlayer = player // to disambiguate below
     return Instance.TrainingInstance.newBuilder().apply {
         boardState = ByteString.copyFrom(state)
         player = slimPlayer
-        gameLength = finalDepth
+        gameLength = finalDepth.toInt()
         outcome = finalOutcome
         treeSearchResults.forEach { addTreeSearchResult(it) }
     }.build()

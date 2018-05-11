@@ -28,11 +28,11 @@ fun main(args: Array<String>) {
             val inst = Instance.TrainingInstance.parseDelimitedFrom(instream) ?: break
 
             val sz = gameSpec.boardSize
-            val gameBoard = Array(sz) { IntArray(sz) { 0 } }
+            val gameBoard = ByteArray(sz * sz) { 0 }
             for (i in 0 until inst.boardState.size()) {
                 val x = i / sz
                 val y = i % sz
-                gameBoard[y][x] = inst.boardState.byteAt(i).toInt()
+                gameBoard[y * sz + x] = inst.boardState.byteAt(i)
             }
             val player = if (inst.player.eq(Instance.Player.WHITE)) Player.WHITE else Player.BLACK
             val state = GameState(gameSpec, gameBoard, player, 0, 0, 0, 0, 0, 0)
@@ -42,7 +42,7 @@ fun main(args: Array<String>) {
                     oldTsrIndex(gameSpec, info) == it.index
                 }.first()!!.prob
             }
-            var fixed = slim.toTrainingInstance(inst.outcome, inst.gameLength)
+            var fixed = slim.toTrainingInstance(inst.outcome, inst.gameLength.toShort())
             fixed.writeDelimitedTo(outstream)
 
             states += 1

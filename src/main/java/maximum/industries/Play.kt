@@ -24,7 +24,8 @@ interface GameSearchAlgo {
 }
 
 fun play(gameSpec: GameGrammar.GameSpec,
-         white: GameSearchAlgo, black: GameSearchAlgo,
+         white: GameSearchAlgo,
+         black: GameSearchAlgo,
          stream: OutputStream) {
     var state = GameState(gameSpec)
     val history = ArrayList<SlimState>()
@@ -63,7 +64,7 @@ fun recordGame(finalState: GameState, slimStates: ArrayList<SlimState>, outputSt
         Instance.TrainingInstance.newBuilder().apply {
             boardState = ByteString.copyFrom(slim.state)
             player = slim.player
-            gameLength = finalState.moveDepth
+            gameLength = finalState.moveDepth.toInt()
             outcome = when (finalState.outcome) {
                 Outcome.WIN -> if (slimWhite == finalWhite) 1 else -1
                 Outcome.LOSE -> if (slimWhite == finalWhite) -1 else 1
@@ -107,6 +108,8 @@ fun getAlgo(game: String, algo: String,
     val toks = algo.split(":")
     return when (toks[0]) {
         "mcts" -> MonteCarloTreeSearch(VanillaMctsStrategy(
+                exploration, temperature), iter)
+        "amcts" -> MonteCarloTreeSearch(AlphaZeroMctsNoModelStrategy(
                 exploration, temperature), iter)
         "dmcts" -> MonteCarloTreeSearch(DirichletMctsStrategy(
                 exploration, temperature, floatArrayOf(1.0f, 0.0f, 0.5f)), iter)

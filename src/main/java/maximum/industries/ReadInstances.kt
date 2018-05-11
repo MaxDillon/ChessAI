@@ -14,11 +14,11 @@ fun main(args: Array<String>) {
 
             val sz = gameSpec.boardSize
             val player = if (inst.player.eq(Instance.Player.WHITE)) Player.WHITE else Player.BLACK
-            val gameBoard = Array(sz) { IntArray(sz) { 0 } }
+            val gameBoard = ByteArray(sz * sz) { 0 }
             for (i in 0 until inst.boardState.size()) {
                 val y = i / sz
                 val x = i % sz
-                gameBoard[y][x] = inst.boardState.byteAt(i).toInt()
+                gameBoard[y * sz + x] = inst.boardState.byteAt(i)
             }
 
             val state = GameState(gameSpec, gameBoard, player,
