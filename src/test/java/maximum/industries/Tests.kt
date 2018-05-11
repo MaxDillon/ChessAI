@@ -244,8 +244,9 @@ class TestChess() {
                                black = Placement(k = "h8", p = "g7,h7,g5", b = "h6"), whiteMove = false)
         val final = initBoard(white = Placement(k = "d1", b = "a2,h8", r = "b8"),
                               black = Placement(p = "g6,h6,g5", b = "f8"), whiteMove = false)
-        val search = MonteCarloTreeSearch(VanillaMctsStrategy(0.2, 0.01), 15000)
-        val (state2, slim) = search.next(state1)
+        val params = SearchParameters(exploration = 0.2, temperature = 0.01, iterations = 5000)
+        val search = MonteCarloTreeSearch(VanillaMctsStrategy(params), params)
+        val (_, slim) = search.next(state1)
         val instance = slim!!.toTrainingInstance(final)
 
         val (input, value, policy, legal) = initTrainingData(gameSpec, 4)

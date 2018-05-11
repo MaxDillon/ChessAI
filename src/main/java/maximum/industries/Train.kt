@@ -8,6 +8,8 @@ import org.deeplearning4j.nn.conf.graph.PreprocessorVertex
 import org.deeplearning4j.nn.conf.layers.*
 import org.deeplearning4j.nn.conf.preprocessor.CnnToFeedForwardPreProcessor
 import org.deeplearning4j.nn.graph.ComputationGraph
+import org.deeplearning4j.nn.transferlearning.FineTuneConfiguration
+import org.deeplearning4j.nn.transferlearning.TransferLearning
 import org.deeplearning4j.nn.weights.WeightInit
 import org.deeplearning4j.ui.api.UIServer
 import org.deeplearning4j.ui.stats.StatsListener
@@ -197,7 +199,7 @@ fun main(args: Array<String>) {
 
     var defaultSaveAs = gameName
     var startingBatch = 0
-    val model =
+    val model_ =
             if (newModel == null) {
                 if (priorModelInfo == null) {
                     println("Error: no model specified or could not load model")
@@ -215,6 +217,14 @@ fun main(args: Array<String>) {
                 defaultSaveAs = "$gameName.${new!!}"
                 newModel
             }
+
+    val rate = getArg(args, "rate")?.toDouble() ?: -1.0
+    val model = if (rate < 0) {
+        model_
+    } else {
+        val fineTune = FineTuneConfiguration.Builder().learningRate(rate).build()
+        TransferLearning.GraphBuilder(model_).fineTuneConfiguration(fineTune).build()
+    }
 
     val useValue = modelHas(model, "value")
     val usePolicy = modelHas(model, "policy")

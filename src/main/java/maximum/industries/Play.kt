@@ -103,22 +103,18 @@ class HumanInput : GameSearchAlgo {
     override fun gameOver() {}
 }
 
-fun getAlgo(game: String, algo: String,
-            iter: Int, exploration: Double, temperature: Double): GameSearchAlgo {
+fun getAlgo(algo: String, params: SearchParameters): GameSearchAlgo {
     val toks = algo.split(":")
     return when (toks[0]) {
-        "mcts" -> MonteCarloTreeSearch(VanillaMctsStrategy(
-                exploration, temperature), iter)
-        "amcts" -> MonteCarloTreeSearch(AlphaZeroMctsNoModelStrategy(
-                exploration, temperature), iter)
-        "dmcts" -> MonteCarloTreeSearch(DirichletMctsStrategy(
-                exploration, temperature, floatArrayOf(1.0f, 0.0f, 0.5f)), iter)
+        "mcts" -> MonteCarloTreeSearch(VanillaMctsStrategy(params), params)
+        "amcts" -> MonteCarloTreeSearch(AlphaZeroMctsNoModelStrategy(params), params)
+        "dmcts" -> MonteCarloTreeSearch(DirichletMctsStrategy(params, floatArrayOf(1.0f, 0.0f, 0.5f)), params)
         "model" -> {
             val modelName = if (toks[1].endsWith(".*")) getLatest(toks[1]) else toks[1]
             NeuralNetConfiguration.reinitMapperWithSubtypes(
                     Collections.singletonList(NamedType(PseudoSpherical::class.java)))
             val model = ModelSerializer.restoreComputationGraph(modelName)
-            MonteCarloTreeSearch(AlphaZeroMctsStrategy(model, exploration, temperature), iter)
+            MonteCarloTreeSearch(AlphaZeroMctsStrategy(model, params), params)
         }
         "human" -> HumanInput()
         else -> throw RuntimeException("no algo specified")
@@ -174,6 +170,11 @@ fun getArg(args: Array<String>, arg: String): String? {
     return null
 }
 
+data class SearchParameters(val iterations: Int = 100,
+                            val exploration: Double = 1.0,
+                            val temperature: Double = 0.3,
+                            val rampBy: Int = 10)
+
 fun main(args: Array<String>) {
     if (args.contains("-h")) {
         return appUsage()
@@ -188,6 +189,7 @@ fun main(args: Array<String>) {
     val btemp = getArg(args, "btemp")?.toDouble() ?: 0.1
     val wexpl = getArg(args, "wexpl")?.toDouble() ?: 0.5
     val bexpl = getArg(args, "bexpl")?.toDouble() ?: 0.5
+    val ramp = getArg(args, "ramp")?.toInt() ?: 10
     val saveas = getArg(args, "saveas") ?: game
     val baseName = "data.$saveas.${System.currentTimeMillis()}"
     val workFile = "$baseName.work"
@@ -197,11 +199,11 @@ fun main(args: Array<String>) {
     val outputStream = FileOutputStream(workFile)
 
     val gameSpec = loadSpec(game)
+    val wParams = SearchParameters(witer, wexpl, wtemp, ramp)
+    val bParams = SearchParameters(biter, bexpl, btemp, ramp)
 
-    val whiteAlgo = getAlgo(game, white, witer, wexpl, wtemp)
-    val blackAlgo =
-            if (white == black) whiteAlgo
-            else getAlgo(game, black, biter, bexpl, btemp)
+    val whiteAlgo = getAlgo(white, wParams)
+    val blackAlgo = if (white == black) whiteAlgo else getAlgo(black, bParams)
 
     for (i in 1..n) play(gameSpec, whiteAlgo, blackAlgo, outputStream)
     Files.move(Paths.get(workFile), Paths.get(doneFile))

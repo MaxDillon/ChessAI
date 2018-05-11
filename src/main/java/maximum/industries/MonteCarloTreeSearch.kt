@@ -10,6 +10,7 @@ import java.security.SecureRandom
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sqrt
 
 val rand = Random(SecureRandom().nextLong())
@@ -20,12 +21,12 @@ fun Player.eq(other: Player): Boolean = this == other
 fun Instance.Player.eq(other: Instance.Player): Boolean = this == other
 
 class MonteCarloTreeSearch(val strategy: MctsStrategy,
-                           val iterations: Int) : GameSearchAlgo {
+                           val params: SearchParameters) : GameSearchAlgo {
     override fun next(state: GameState): Pair<GameState, SlimState?> {
         assert(state.outcome == Outcome.UNDETERMINED)
         val stack = ArrayList<GameState>()
 
-        for (i in 0..iterations) {
+        for (i in 0..params.iterations) {
             var node = state
             while (strategy.expanded(node) && node.outcome == Outcome.UNDETERMINED) {
                 stack.add(node)
@@ -81,7 +82,7 @@ interface MctsStrategy {
     fun cacheSize(): Int
 }
 
-open class VanillaMctsStrategy(val exploration: Double, val temperature: Double) : MctsStrategy {
+open class VanillaMctsStrategy(val params: SearchParameters) : MctsStrategy {
     open class Info(var expanded: Boolean = false,
                     var N: Int = 0,
                     var Q: Float = 0f,
@@ -131,7 +132,7 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
                 else if (s2.lossFor(s1)) -100.0 else 0.0 // and avoid immediate losses
         val infoValue =
                 if (s2.outcome != Outcome.UNDETERMINED) 0.0 // no info value for terminals
-                else exploration * sqrt(s1Info.N.toDouble()) / (1 + s2Info.N)
+                else params.exploration * sqrt(s1Info.N.toDouble()) / (1 + s2Info.N)
         return priorValue + nodeValue + termValue + infoValue
     }
 
@@ -187,10 +188,13 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
         }
     }
 
+    fun temperature(moveDepth: Short): Double {
+        val rampMix = min(1.0, (moveDepth / 2.0) / (params.rampBy + 1))
+        return rampMix * params.temperature + (1.0 - rampMix) * 1.0
+    }
+
     // maybe some auto-pruning of caches at level N+4 or so?
-
     // problem with P * exploration is we'll never explore things with low prior.
-
     // Q: should the move picking use Q and/or P in addition to N? lots of times we have ties
     // for N because the branching factor is high and exploration is sufficiently high to
     // make us spread across everything. maybe the fix we need is rather in the priority.
@@ -210,7 +214,7 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
         // model inputs to depend on temperature, or have most values driven to zero.
         val slim = state.toSlimState { i, tsr -> tsr.prob = policy[i].toFloat() }
         // now exponentiate to get weights for picking actual move
-        for (i in 0 until sz) policy[i] = pow(policy[i], 1 / temperature)
+        for (i in 0 until sz) policy[i] = pow(policy[i], 1 / temperature(state.moveDepth))
         val next = pickChildByProbs(state, policy)
         allInfo.remove(state.moveDepth) // won't be needing these anymore
         allInfo.remove((state.moveDepth - 1).toShort()) // or these, which might exist if there are two algos
@@ -222,8 +226,7 @@ open class VanillaMctsStrategy(val exploration: Double, val temperature: Double)
     }
 }
 
-open class AlphaZeroMctsNoModelStrategy(exploration: Double, temperature: Double) :
-        VanillaMctsStrategy(exploration, temperature) {
+open class AlphaZeroMctsNoModelStrategy(params: SearchParameters) : VanillaMctsStrategy(params) {
     override fun searchPriority(s1: GameState, s2: GameState): Double {
         val s1Info = info(s1)
         val s2Info = info(s2)
@@ -234,15 +237,13 @@ open class AlphaZeroMctsNoModelStrategy(exploration: Double, temperature: Double
                 else if (s2.lossFor(s1)) -100.0 else 0.0 // and avoid immediate losses
         val infoValue =
                 if (s2.outcome != Outcome.UNDETERMINED) 0.0 // no info value for terminals
-                else exploration * s2Info.P * sqrt(s1Info.N.toDouble()) / (1 + s2Info.N)
+                else params.exploration * s2Info.P * sqrt(s1Info.N.toDouble()) / (1 + s2Info.N)
         return nodeValue + termValue + infoValue
     }
 }
 
-open class AlphaZeroMctsStrategy(val model: ComputationGraph,
-                                 exploration: Double,
-                                 temperature: Double) :
-        AlphaZeroMctsNoModelStrategy(exploration, temperature) {
+open class AlphaZeroMctsStrategy(val model: ComputationGraph, params: SearchParameters) :
+        AlphaZeroMctsNoModelStrategy(params) {
     override fun expand(state: GameState) {
         val sInfo = info(state)
         if (state.outcome == Outcome.UNDETERMINED) {
@@ -262,11 +263,8 @@ open class AlphaZeroMctsStrategy(val model: ComputationGraph,
     }
 }
 
-class DirichletMctsStrategy(exploration: Double,
-                            temperature: Double,
-                            val values: FloatArray) :
-        VanillaMctsStrategy(exploration, temperature) {
-
+class DirichletMctsStrategy(params: SearchParameters, val values: FloatArray) :
+        VanillaMctsStrategy(params) {
     open class DirichletInfo : Info() {
         var wld = FloatArray(3) { 0f }
     }
@@ -348,7 +346,7 @@ class DirichletMctsStrategy(exploration: Double,
         val sz = state.nextMoves.size
         val values = DoubleArray(sz) {
             pow(expectedValuePlusSdevs(info(state.nextMoves[it]).wld, -1f).toDouble(),
-                    1 / temperature)
+                    1 / temperature(state.moveDepth))
         }
         val next = pickChildByProbs(state, values)
         val slim = state.toSlimState { i, tsr ->
