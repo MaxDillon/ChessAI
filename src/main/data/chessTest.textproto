@@ -130,6 +130,8 @@ piece {
         }
     }
 }
+
+
 piece {
     name: "Q"
     count: 1
@@ -150,6 +152,8 @@ piece {
         }
     }
 }
+
+
 piece {
     name: "K"
     count: 1
