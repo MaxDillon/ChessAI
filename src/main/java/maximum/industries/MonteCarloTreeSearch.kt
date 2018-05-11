@@ -237,7 +237,9 @@ open class AlphaZeroMctsNoModelStrategy(params: SearchParameters) : VanillaMctsS
                 else if (s2.lossFor(s1)) -100.0 else 0.0 // and avoid immediate losses
         val infoValue =
                 if (s2.outcome != Outcome.UNDETERMINED) 0.0 // no info value for terminals
-                else params.exploration * s2Info.P * sqrt(s1Info.N.toDouble()) / (1 + s2Info.N)
+//                else params.exploration * s2Info.P * sqrt(s1Info.N.toDouble()) / (1 + s2Info.N)
+                else params.exploration * s1Info.N *   (1.0 + s2Info.P * s1.nextMoves.size) / 2.0 /
+                     s1.nextMoves.size / (1 + s2Info.N) / (1 + s2Info.N)
         return nodeValue + termValue + infoValue
     }
 }
