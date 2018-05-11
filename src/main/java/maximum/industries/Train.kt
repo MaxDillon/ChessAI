@@ -1,21 +1,28 @@
 package maximum.industries
 
-import maximum.industries.GameGrammar.*
-import org.deeplearning4j.nn.api.OptimizationAlgorithm
+import maximum.industries.GameGrammar.GameSpec
+import org.deeplearning4j.nn.conf.ComputationGraphConfiguration
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
-import org.deeplearning4j.nn.conf.Updater
-import org.deeplearning4j.nn.conf.inputs.InputType
+import org.deeplearning4j.nn.conf.graph.ElementWiseVertex
+import org.deeplearning4j.nn.conf.graph.PreprocessorVertex
 import org.deeplearning4j.nn.conf.layers.*
+import org.deeplearning4j.nn.conf.preprocessor.CnnToFeedForwardPreProcessor
 import org.deeplearning4j.nn.graph.ComputationGraph
+import org.deeplearning4j.nn.transferlearning.FineTuneConfiguration
+import org.deeplearning4j.nn.transferlearning.TransferLearning
 import org.deeplearning4j.nn.weights.WeightInit
 import org.deeplearning4j.ui.api.UIServer
 import org.deeplearning4j.ui.stats.StatsListener
 import org.deeplearning4j.ui.storage.InMemoryStatsStorage
 import org.deeplearning4j.util.ModelSerializer
 import org.nd4j.linalg.activations.Activation
+import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.dataset.MultiDataSet
 import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.lossfunctions.LossFunctions
+import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
+import org.nd4j.linalg.lossfunctions.impl.PseudoSpherical
+import org.nd4j.shade.jackson.databind.jsontype.NamedType
+import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
 import java.nio.file.Files.find
@@ -24,132 +31,246 @@ import java.nio.file.Paths
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.*
 import java.util.function.BiPredicate
+import kotlin.collections.HashMap
 import kotlin.math.min
+
+fun inputChannels(gameSpec: GameSpec): Int {
+    val P = gameSpec.pieceCount - 1
+    return 2 * P + 1
+}
+
+fun policyChannels(gameSpec: GameSpec): Int {
+    val N = gameSpec.boardSize
+    val P = gameSpec.pieceCount - 1
+    return if (gameSpec.moveSource == GameGrammar.MoveSource.ENDS) P else N * N
+}
 
 fun policySize(gameSpec: GameSpec): Int {
     val N = gameSpec.boardSize
-    val P = gameSpec.pieceCount - 1
-    val srcDim = (
-            if (gameSpec.moveSource == GameGrammar.MoveSource.ENDS) P
-            else N * N)
-    val dstDim = N * N
-    return srcDim * dstDim
+    return policyChannels(gameSpec) * N * N
 }
 
-fun newModel(gameSpec: GameSpec, N: Int, P: Int, rate: Double): ComputationGraph {
-    val inChannels = 2 * P + 1
-    val mconfig = NeuralNetConfiguration.Builder()
-            .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-            .learningRate(rate)
-            .updater(Updater.NESTEROVS)
-            .weightInit(WeightInit.XAVIER)
-            .graphBuilder()
-            .addInputs("input")
-            .setInputTypes(InputType.convolutional(N, N, inChannels))
+typealias GBuilder = ComputationGraphConfiguration.GraphBuilder
 
-            .addLayer("conv1", ConvolutionLayer.Builder(3, 3)
-                    .nIn(inChannels).nOut(64)
-                    .stride(1, 1).padding(1, 1)
-                    .activation(Activation.RELU)
-                    .build(), "input")
-            .addLayer("norm_conv1", BatchNormalization(), "conv1")
+fun GBuilder.F(fn: String, vararg of: String,
+               makeLayers: LayerQueue.() -> Unit): GBuilder {
+    val queue = LayerQueue()
+    queue.makeLayers()
+    var inputs = of.toList()
+    for (i in 0 until queue.layers.size) {
+        val name = if (i == queue.layers.size - 1) fn else "${fn}_${i}"
+        println("Adding $name = f(${inputs})")
+        addLayer(name, queue.layers[i], *inputs.toTypedArray())
+        inputs = listOf(name)
+    }
+    return this
+}
 
-            .addLayer("conv2", ConvolutionLayer.Builder(3, 3)
-                    .nOut(64)
-                    .stride(1, 1).padding(1, 1)
-                    .activation(Activation.RELU)
-                    .build(), "norm_conv1", "input")
-            .addLayer("norm_conv2", BatchNormalization(), "conv2")
+fun GBuilder.R(fn: String, vararg of: String,
+               makeLayers: LayerQueue.() -> Unit): GBuilder {
+    F("res_$fn", *of, makeLayers = makeLayers)
+    val mergeInputs = of.toMutableList()
+    mergeInputs.add("res_$fn")
+    println("Adding $fn = f(${mergeInputs})")
+    addVertex(fn, ElementWiseVertex(ElementWiseVertex.Op.Add), *mergeInputs.toTypedArray())
+    return this
+}
 
-            .addLayer("conv3", ConvolutionLayer.Builder(3, 3)
-                    .nOut(64)
-                    .stride(1, 1).padding(1, 1)
-                    .activation(Activation.RELU)
-                    .build(), "norm_conv2", "norm_conv1")
-            .addLayer("norm_conv3", BatchNormalization(), "conv3")
+fun GBuilder.CNN2FF(fn: String, of: String, sz: Int, channels: Int): GBuilder {
+    println("Adding $fn = f($of)")
+    addVertex(fn, PreprocessorVertex(CnnToFeedForwardPreProcessor(sz, sz, channels)), of)
+    return this
+}
 
-            .addLayer("dense1", DenseLayer.Builder()
-                    .nOut(50)
-                    .activation(Activation.RELU)
-                    .build(), "norm_conv3", "norm_conv2")
-            .addLayer("norm_dense1", BatchNormalization(), "dense1")
-            .addLayer("dense2", DenseLayer.Builder()
-                    .nOut(40)
-                    .activation(Activation.RELU)
-                    .build(), "norm_dense1")
-            .addLayer("norm_dense2", BatchNormalization(), "dense2")
-            .addLayer("dense3", DenseLayer.Builder()
-                    .nOut(30)
-                    .activation(Activation.RELU)
-                    .build(), "norm_dense2")
+class LayerQueue {
+    val layers = ArrayList<Layer>()
+    fun queueLayer(layer: Layer) {
+        layers.add(layer)
+    }
 
-            .addLayer("value", OutputLayer.Builder(LossFunctions.LossFunction.L2)
-                    .nOut(1)
-                    .activation(Activation.SOFTSIGN)
-                    .build(), "dense3")
-            .addLayer("policy", OutputLayer.Builder(LossFunctions.LossFunction.KL_DIVERGENCE)
-                    .nOut(policySize(gameSpec))
-                    .activation(Activation.SOFTMAX)
-                    .build(), "dense3")
-            .addLayer("legal", OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-                    .nOut(policySize(gameSpec))
-                    .activation(Activation.SOFTSIGN)
-                    .build(), "dense3")
-            .setOutputs( "value", "policy", "legal")
-            .build()
-    val model = ComputationGraph(mconfig)
-    model.init()
-    return model
+    fun convolution(inChannels: Int = 0, filters: Int,
+                    kernel: Int = 3, pad: Int = 1, stride: Int = 1,
+                    activation: Activation = Activation.RELU,
+                    init: WeightInit = WeightInit.RELU,
+                    norm: Boolean = true) {
+        if (norm) queueLayer(BatchNormalization())
+        queueLayer(ConvolutionLayer.Builder(kernel, kernel)
+                           .nIn(inChannels).nOut(filters)
+                           .padding(pad, pad).stride(stride, stride)
+                           .activation(activation).weightInit(init).build())
+    }
+
+    fun dense(units: Int,
+              activation: Activation = Activation.RELU,
+              init: WeightInit = WeightInit.RELU,
+              norm: Boolean = true) {
+        if (norm) queueLayer(BatchNormalization())
+        queueLayer(DenseLayer.Builder().nOut(units).activation(activation)
+                           .weightInit(init).build())
+    }
+
+    fun loss(activation: Activation = Activation.TANH,
+             loss: LossFunction = LossFunction.L2) {
+        queueLayer(LossLayer.Builder().activation(activation)
+                           .lossFunction(loss).build())
+    }
+
+    fun output(nOut: Int,
+               activation: Activation = Activation.TANH,
+               loss: LossFunction = LossFunction.L2,
+               init: WeightInit = WeightInit.RELU,
+               norm: Boolean = true) {
+        if (norm) queueLayer(BatchNormalization())
+        queueLayer(OutputLayer.Builder().nOut(nOut).activation(activation)
+                           .lossFunction(loss).weightInit(init).build())
+    }
+}
+
+interface IModel {
+    fun newModel(gameSpec: GameGrammar.GameSpec): ComputationGraph
+}
+
+fun modelHas(model: ComputationGraph, layerName: String): Boolean {
+    for (layer in model.layers) {
+        if (layer.conf().layer.layerName == layerName) return true
+    }
+    return false
+}
+
+fun loadModel(modelName: String): Triple<ComputationGraph, String, Int>? {
+    try {
+        val model = ModelSerializer.restoreComputationGraph(modelName)
+        val tokens = modelName.split(".").toMutableList()
+        if (tokens.first() == "model") tokens.removeAt(0)
+        val batch = tokens.last().toIntOrNull() ?: 0
+        if (batch > 0) tokens.removeAt(tokens.lastIndex)
+        return Triple(model, tokens.joinToString("."), batch)
+    } catch (e: Exception) {
+        return null
+    }
+}
+
+fun newModel(modelName: String, gameSpec: GameSpec): ComputationGraph? {
+    try {
+        val factory: IModel =
+                Class.forName("maximum.industries.models.$modelName")
+                        .newInstance() as IModel
+        return factory.newModel(gameSpec)
+    } catch (e: Exception) {
+        return null
+    }
 }
 
 fun trainUsage() {
     println("""
         |java TrainingKt <game>
+        |        [-new <class>]        An unqualified class name in the maximum.industries.models
+        |                              package identifying a factory to construct a new model.
+        |        [-from <model>]       An existing model to continue training. If a -new argument
+        |                              is also provided, then the weights from the existing model
+        |                              wil be used to initalize the new one (which will only work
+        |                              if the architectures are the same).
+        |        [-saveas <name>]      A name pattern for saved models. Default is <game>.<model>
+        |                              or a continuation of the pattern from a loaded model.
         |        [-data <datafile>]    Will train on a file matching 'data.<datafile>.done'
         |                              or on recent files matching data.<datafile>.nnnnn.done
         |                              Default is <game>
-        |        [-lastn <n>]          The number of recent files to train on. Default is 10.
-        |        [-model <model>]      An optional saved model to continue training.
-        |        [-saveas <name>]      A name pattern for saved models. Default is <game>
-        |        [-rate <rate>]        Learning rate (for new models)
+        |        [-lastn <n>]          The number of recent files to train on. Default is 200.
+        |        [-drawweight <w>]     The weight to use for sampling of draws.
+        |        [-batch <n>]          The batch size.
         """.trimMargin())
 }
 
 fun main(args: Array<String>) {
+    NeuralNetConfiguration.reinitMapperWithSubtypes(
+            Collections.singletonList(NamedType(PseudoSpherical::class.java)))
+
     if (args.contains("-h")) {
         return trainUsage()
     }
-    val game = args[0]
-    val filePattern = getArg(args, "data") ?: game
-    val lastN = getArg(args, "lastn")?.toInt() ?: 10
-    val modelName = getArg(args, "model")
-    val outName = getArg(args, "saveas") ?: game
-    val rate = getArg(args, "rate")?.toDouble() ?: 0.001
+    val gameName = args[0]
+    val gameSpec = loadSpec(gameName)
 
-    val gameSpec = loadSpec(game)
-    val N = gameSpec.boardSize
-    val P = gameSpec.pieceCount - 1
-    val batchSize = 300
+    val from = getArg(args, "from")
+    val priorModelInfo = if (from != null) loadModel(from) else null
 
-    val model = if (modelName == null) {
-        newModel(gameSpec, N, P, rate)
+    val new = getArg(args, "new")
+    val newModel = if (new != null) newModel(new, gameSpec) else null
+
+    var defaultSaveAs = gameName
+    var startingBatch = 0
+    val model_ =
+            if (newModel == null) {
+                if (priorModelInfo == null) {
+                    println("Error: no model specified or could not load model")
+                    return
+                } else {
+                    defaultSaveAs = priorModelInfo.second
+                    startingBatch = priorModelInfo.third
+                    priorModelInfo.first
+                }
+            } else {
+                if (priorModelInfo != null) {
+                    newModel.init(priorModelInfo.first.params(), true)
+                    startingBatch = priorModelInfo.third
+                }
+                defaultSaveAs = "$gameName.${new!!}"
+                newModel
+            }
+
+    val rate = getArg(args, "rate")?.toDouble() ?: -1.0
+    val model = if (rate < 0) {
+        model_
     } else {
-        ModelSerializer.restoreComputationGraph(modelName)
+        val fineTune = FineTuneConfiguration.Builder().learningRate(rate).build()
+        TransferLearning.GraphBuilder(model_).fineTuneConfiguration(fineTune).build()
     }
 
-    //model.setListeners(ScoreIterationListener())
+    val useValue = modelHas(model, "value")
+    val usePolicy = modelHas(model, "policy")
+    val useLegal = modelHas(model, "legal")
+
+    val dataPattern = getArg(args, "data") ?: gameName
+    val lastN = getArg(args, "lastn")?.toInt() ?: 200
+    val saveAs = getArg(args, "saveas") ?: defaultSaveAs
+    val drawWeight = getArg(args, "drawweight")?.toDouble() ?: 1.0
+    val batchSize = getArg(args, "batch")?.toInt() ?: 200
+    val logFile = getArg(args, "logfile") ?: "log.$saveAs"
+    var batchCount = startingBatch
+
     val uiServer = UIServer.getInstance()
     val statsStorage = InMemoryStatsStorage()
     uiServer.attach(statsStorage)
     model.setListeners(StatsListener(statsStorage))
+    model.init()
 
-    var batchCount = 0
-    val reader = FileInstanceReader(0.2, lastN, filePattern)
+    val trainReader = FileInstanceReader(0.2, drawWeight, lastN, dataPattern, "done")
+    val testReader = FileInstanceReader(0.2, drawWeight, lastN, dataPattern, "test")
+
+    var ema_train = 0.0
+    var ema_test = 0.0
+    fun ema(ema: Double, next: Double, w: Double) =
+            if (ema == 0.0) next else w * ema + (1 - w) * next
+
     while (true) {
-        model.fit(getBatch(gameSpec, reader, batchSize))
+        val train_batch = getBatch(gameSpec, trainReader, batchSize, useValue, usePolicy, useLegal)
+        if (batchCount % 5 == 1) {
+            val test_batch = getBatch(gameSpec, testReader, batchSize, useValue, usePolicy, useLegal)
+
+            val train_score = model.score(train_batch)
+            val test_score = model.score(test_batch)
+
+            ema_train = ema(ema_train, train_score, 0.9)
+            ema_test = ema(ema_test, test_score, 0.9)
+
+            File(logFile).appendText(
+                    "${batchCount},${ema_train.toFloat().f3()},${ema_test.toFloat().f3()}\n")
+        }
+        model.fit(train_batch)
+
         batchCount++
         if (batchCount % 1000 == 0) {
-            ModelSerializer.writeModel(model, "model.$outName.$batchCount", true)
+            ModelSerializer.writeModel(model, "model.$saveAs.$batchCount", true)
         }
     }
 }
@@ -164,8 +285,13 @@ class StreamInstanceReader(val stream: InputStream) : InstanceReader {
     }
 }
 
-class FileInstanceReader(val prob: Double, val lastN: Int, val filePattern: String) : InstanceReader {
+class FileInstanceReader(val prob: Double, val drawWeight: Double,
+                         val lastN: Int, val filePattern: String,
+                         val extension: String) : InstanceReader {
     private val rand = Random()
+    var currentStream = nextStream()
+    val counts = HashMap<Pair<Instance.Player, Int>, Int>()
+    var total = 0
 
     // return a recent file of training data matching 'data.{filepattern}.nnnnnnn.done'
     // or else return just the one file if a full name was given instead of a pattern.
@@ -173,8 +299,8 @@ class FileInstanceReader(val prob: Double, val lastN: Int, val filePattern: Stri
     fun nextStream(): FileInputStream {
         val matcher = BiPredicate<Path, BasicFileAttributes> { file, _ ->
             val fileName = file.fileName.toString()
-            fileName.matches(Regex(".*data.$filePattern.[0-9]+.done")) ||
-                    fileName == filePattern
+            fileName.matches(Regex(".*data.$filePattern.[0-9]+.$extension")) ||
+            fileName == filePattern
         }
         val paths = ArrayList<Path>()
         for (path in find(Paths.get("."), 1, matcher).iterator()) paths.add(path)
@@ -183,56 +309,72 @@ class FileInstanceReader(val prob: Double, val lastN: Int, val filePattern: Stri
         return FileInputStream(recent[rand.nextInt(recent.size)].toString())
     }
 
-    var instream = nextStream()
-
     override fun next(): Instance.TrainingInstance {
         while (true) {
-            val instance = Instance.TrainingInstance.parseDelimitedFrom(instream)
+            val instance = try {
+                Instance.TrainingInstance.parseDelimitedFrom(currentStream)
+            } catch (_: Exception) {
+                null
+            }
             if (instance == null) {
-                instream.close()
-                instream = nextStream()
+                try {
+                    currentStream.close()
+                    currentStream = nextStream()
+                } catch (_: Exception) {
+                }
                 continue
-            } else if (rand.nextDouble() < prob) {
-                return instance
+            } else {
+                // adjust probability of selecting an instance so we come out approximately
+                // balanced between wins and losses for white and black
+                val key = Pair(instance.player, instance.outcome)
+                val count = counts.getOrPut(key, { 0 })
+                val threshold = prob *
+                                if (instance.outcome == 0) drawWeight
+                                else if ((count + 1.0) / (total + 1.0) > 0.25) 0.1 else 1.0
+                if (rand.nextDouble() < threshold) {
+                    counts.put(key, count + 1)
+                    if (instance.outcome != 0) total += 1
+                    if (total % 5000 == 0) {
+                        for (k in counts.keys) print("$k: ${counts[k]}   ")
+                        println()
+                    }
+                    return instance
+                }
             }
         }
     }
 }
 
-fun parseBatch(gameSpec: GameSpec, instances: Array<Instance.TrainingInstance>): MultiDataSet {
+data class TrainingData(val input: INDArray, val value: INDArray, val policy: INDArray, val legal: INDArray)
+
+fun initTrainingData(gameSpec: GameSpec, batchSize: Int): TrainingData {
     val sz = gameSpec.boardSize
     val np = gameSpec.pieceCount - 1
-    val batchSize = instances.size
     val input = Nd4j.zeros(batchSize, 2 * np + 1, sz, sz)
     val value = Nd4j.zeros(batchSize, 1)
     val policy = Nd4j.zeros(batchSize, policySize(gameSpec))
     val legal = Nd4j.ones(batchSize, policySize(gameSpec)).mul(-1)
-
-    for (i in 0 until batchSize) {
-        for (j in 0 until instances[i].boardState.size()) {
-            val x = j / sz
-            val y = j % sz
-            val p = instances[i].boardState.byteAt(j).toInt()
-            if (p != 0) {
-                val channel = if (p > 0) p else np - p
-                input.putScalar(intArrayOf(i, channel, x, y), 1)
-            }
-        }
-        val turn = if (instances[i].player == Instance.Player.WHITE) 1 else -1
-        for (x in 0 until sz) for (y in 0 until sz) input.putScalar(intArrayOf(i, 0, x, y), turn)
-
-        for (j in 0 until instances[i].treeSearchResultCount) {
-            val tsr = instances[i].treeSearchResultList[j]
-            policy.putScalar(intArrayOf(i, tsr.index), tsr.prob)
-            legal.putScalar(intArrayOf(i, tsr.index), 1f)
-        }
-        value.putScalar(i, instances[i].outcome)
-    }
-    return MultiDataSet(arrayOf(input), arrayOf(value, policy, legal))
+    return TrainingData(input, value, policy, legal)
 }
 
-fun getBatch(gameSpec: GameSpec, reader: InstanceReader, batchSize: Int): MultiDataSet {
+fun parseBatch(gameSpec: GameSpec, instances: Array<Instance.TrainingInstance>,
+               useValue: Boolean, usePolicy: Boolean, useLegal: Boolean): MultiDataSet {
+    val batchSize = instances.size
+    val (input, value, policy, legal) = initTrainingData(gameSpec, batchSize)
+    for (i in 0 until batchSize) {
+        val reflection = rand.nextInt(4)
+        instances[i].toBatchTrainingInput(gameSpec, i, reflection, input, value, policy, legal)
+    }
+    val outputs = ArrayList<INDArray>()
+    if (useValue) outputs.add(value)
+    if (usePolicy) outputs.add(policy)
+    if (useLegal) outputs.add(legal)
+    return MultiDataSet(arrayOf(input), outputs.toTypedArray())
+}
+
+fun getBatch(gameSpec: GameSpec, reader: InstanceReader, batchSize: Int,
+             useValue: Boolean, usePolicy: Boolean, useLegal: Boolean): MultiDataSet {
     val instances = Array(batchSize) { reader.next() }
-    return parseBatch(gameSpec, instances)
+    return parseBatch(gameSpec, instances, useValue, usePolicy, useLegal)
 }
 

@@ -183,3 +183,8 @@ game_over {
     param: 200
     decision: DRAW
 }
+game_over {
+    condition: REPEATED_POSITION
+    param: 3
+    decision: DRAW
+}

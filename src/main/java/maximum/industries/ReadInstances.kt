@@ -13,27 +13,30 @@ fun main(args: Array<String>) {
             states += 1
 
             val sz = gameSpec.boardSize
-            val player = if (inst.player == Instance.Player.WHITE) Player.WHITE else Player.BLACK
-            val gameBoard = Array(sz) { IntArray(sz) { 0 } }
+            val player = if (inst.player.eq(Instance.Player.WHITE)) Player.WHITE else Player.BLACK
+            val gameBoard = ByteArray(sz * sz) { 0 }
             for (i in 0 until inst.boardState.size()) {
-                val x = i / sz
-                val y = i % sz
-                gameBoard[y][x] = inst.boardState.byteAt(i).toInt()
+                val y = i / sz
+                val x = i % sz
+                gameBoard[y * sz + x] = inst.boardState.byteAt(i)
             }
 
             val state = GameState(gameSpec, gameBoard, player,
                                   0,0, 0, 0, 0, 0)
             state.printBoard()
+            println("Player: ${inst.player}")
             println("Outcome: ${inst.outcome}")
             println("Length: ${inst.gameLength}")
             for (tsr in inst.treeSearchResultList) {
+                val info = gameSpec.expandPolicyIndex(tsr.index)
                 if (tsr.type == Instance.TsrType.MOVE_PROB) {
-                    println("${tsr.index}:\t${tsr.prob.f3()} ")
+                    println("${info}:\t${tsr.prob.f3()} ")
                 } else {
-                    println("${tsr.index}:\t${tsr.wld.win.f3()} ${tsr.wld.lose.f3()} ${tsr.wld.draw.f3()} ")
+                    println("${info}:\t${tsr.wld.win.f3()} ${tsr.wld.lose.f3()} ${tsr.wld.draw.f3()} ")
                 }
             }
         } catch (e: Exception) {
+            e.printStackTrace()
             error += 1
         }
     }

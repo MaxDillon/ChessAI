@@ -7,7 +7,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sign
 
-enum class Outcome { UNDETERMINED, WIN, LOSE, DRAW }
+enum class Outcome { UNINITIALIZED, UNDETERMINED, WIN, LOSE, DRAW }
 enum class Player { WHITE, BLACK }
 
 //=================================================================================
@@ -51,60 +51,93 @@ val rank = Memoize { sizeAndRow: Pair<Int, Int> ->
 private fun pass(): List<Pair<Int, Int>> {
     return arrayListOf(Pair(0, 0))
 }
+
+val parseTemplate = Memoize { template: String ->
+    val action = template.substring(0, 1)
+    val (pattern, size_str) = template.substring(1).split("_")
+    var size = size_str.toInt()
+    Triple(action, pattern, size)
+}
+
 //=================================================================================
 
 class GameState {
     val gameSpec: GameSpec
-    private val gameBoard: Array<IntArray>
+    val gameBoard: ByteArray
     val player: Player
-    val p1: Int // the piece that was moved (needed to construct input channels)
-    val x1: Int // p1's src x
-    val y1: Int // p1's src y
-    val x2: Int // p1's dst x
-    val y2: Int // p1's dst y
-    val moveDepth: Int
-    val nextMoves: ArrayList<GameState> by lazy {
-        getNextStates()
-    }
-    val outcome: Outcome by lazy {
-        gameOutcome()
-    }
+    val _p1: Byte // the piece that was moved (needed to construct input channels)
+    val p1: Int get() { return _p1.toInt() }
+    val _x1: Byte
+    val x1: Int get() { return _x1.toInt() }
+    val _y1: Byte
+    val y1: Int get() { return _y1.toInt() }
+    val _x2: Byte
+    val x2: Int get() { return _x2.toInt() }
+    val _y2: Byte
+    val y2: Int get() { return _y2.toInt() }
+    val moveDepth: Short
+    val history: IntArray
+    private var _nextMoves: ArrayList<GameState>? = null
+    val nextMoves: ArrayList<GameState>
+        get() {
+            if (_nextMoves == null) _nextMoves = initNextMoves()
+            return _nextMoves!!
+        }
+    private var _outcome: Outcome = Outcome.UNINITIALIZED
+    val outcome: Outcome
+        get() {
+            if (_outcome == Outcome.UNINITIALIZED) _outcome = gameOutcome()
+            return _outcome
+        }
 
     constructor(gameSpec: GameSpec) {
         this.gameSpec = gameSpec
-        gameBoard = Array(gameSpec.boardSize) { IntArray(gameSpec.boardSize) { 0 } }
+        gameBoard = ByteArray(gameSpec.boardSize * gameSpec.boardSize) { 0 }
         gameSpec.pieceList.forEachIndexed { pieceType, piece ->
             piece.placementList.forEach { placement ->
                 val (x, y) = placement.substring(1).split("y").map { it.toInt() - 1 }
-                if (gameBoard[y][x] == 0) {
-                    gameBoard[y][x] = pieceType
+                if (get(x, y) == 0) {
+                    set(x, y, pieceType)
                     val oppositeX = if (gameSpec.boardSymmetry == Symmetry.ROTATE)
                         gameSpec.boardSize - 1 - x else x
                     val oppositeY = gameSpec.boardSize - 1 - y
-                    gameBoard[oppositeY][oppositeX] = -pieceType
+                    set(oppositeX, oppositeY, -pieceType)
                 } else throw RuntimeException("you can't place a piece at $x,$y")
             }
         }
         this.player = Player.WHITE
-        this.p1 = 0
-        this.x1 = -1
-        this.y1 = -1
-        this.x2 = -1
-        this.y2 = -1
+        this._p1 = 0.toByte()
+        this._x1 = (-1).toByte()
+        this._y1 = (-1).toByte()
+        this._x2 = (-1).toByte()
+        this._y2 = (-1).toByte()
         this.moveDepth = 0
+        this.history = IntArray(16) { 0 }
+        history[moveDepth % 16] = boardHash()
     }
 
-    constructor(gameSpec: GameSpec, gameBoard: Array<IntArray>, player: Player,
-                p1: Int, x1: Int, y1: Int, x2: Int, y2: Int, moveDepth: Int) {
+    constructor(gameSpec: GameSpec, gameBoard: ByteArray, player: Player,
+                p1: Int, x1: Int, y1: Int, x2: Int, y2: Int, moveDepth: Short,
+                history: IntArray = IntArray(16) { 0 }) {
         this.gameSpec = gameSpec
         this.gameBoard = gameBoard
         this.player = player
-        this.p1 = p1
-        this.x1 = x1
-        this.y1 = y1
-        this.x2 = x2
-        this.y2 = y2
+        this._p1 = p1.toByte()
+        this._x1 = x1.toByte()
+        this._y1 = y1.toByte()
+        this._x2 = x2.toByte()
+        this._y2 = y2.toByte()
         this.moveDepth = moveDepth
+        this.history = history
+        this.history[moveDepth % 16] = boardHash()
+    }
+
+    fun boardHash(): Int {
+        var hash = 0
+        for (piece in gameBoard) {
+            hash = hash * 31 + piece.toInt()
+        }
+        return hash
     }
 
     override fun toString() =
@@ -115,16 +148,25 @@ class GameState {
                 "$moveDepth: ${'a' + x1}${y1 + 1} -> ${'a' + x2}${y2 + 1}$status"
             }
 
+    // TODO: consider changing everything to atRowCol instead of X,Y, which are consistently confusing
     fun at(x: Int, y: Int): Int {
-        return gameBoard[y][x]
+        return gameBoard[y * gameSpec.boardSize + x].toInt()
+    }
+
+    fun get(x: Int, y: Int): Int {
+        return at(x, y)
+    }
+
+    fun set(x: Int, y: Int, value: Int) {
+        gameBoard[y * gameSpec.boardSize + x] = value.toByte()
     }
 
     fun winFor(parent: GameState): Boolean {
-        return if (player == parent.player) outcome == Outcome.WIN else outcome == Outcome.LOSE
+        return if (player.eq(parent.player)) outcome == Outcome.WIN else outcome == Outcome.LOSE
     }
 
     fun lossFor(parent: GameState): Boolean {
-        return if (player == parent.player) outcome == Outcome.LOSE else outcome == Outcome.WIN
+        return if (player.eq(parent.player)) outcome == Outcome.LOSE else outcome == Outcome.WIN
     }
 
     //=================================================================================
@@ -139,7 +181,7 @@ class GameState {
         return x < 0 || y < 0 || x >= gameSpec.boardSize || y >= gameSpec.boardSize
     }
 
-    private fun checkLandingConstraints(x1: Int, y1: Int, x2: Int, y2: Int,
+    private fun checkLandingConstraints(x2: Int, y2: Int,
                                         srcPiece: Int, move: Move): Boolean {
         val dstPiece = at(x2, y2)
         if (dstPiece == 0 && move.land.none == GameGrammar.Outcome.DISALLOWED) {
@@ -189,11 +231,9 @@ class GameState {
                                   x2: Int, y2: Int,
                                   srcPiece: Int,
                                   move: Move) {
-        val nextBoard = Array(gameBoard.size) { gameBoard[it] }
+        val nextBoard = gameBoard.clone()
         fun set(x: Int, y: Int, p: Int) {
-            // note: the == array comparison is intended here to support copy-on-write
-            if (gameBoard[y] == nextBoard[y]) nextBoard[y] = gameBoard[y].clone()
-            nextBoard[y][x] = p
+            nextBoard[y * gameSpec.boardSize + x] = p.toByte()
         }
 
         val dstPiece = at(x2, y2)
@@ -247,7 +287,7 @@ class GameState {
         if (move.exchange.isNotEmpty()) {
             for (i in gameSpec.pieceList.indices) {
                 if (gameSpec.pieceList[i].name == move.exchange) {
-                    set(x2, y2, if (player == Player.WHITE) i else -i)
+                    set(x2, y2, if (player.eq(Player.WHITE)) i else -i)
                 }
             }
         }
@@ -255,9 +295,10 @@ class GameState {
         val nextPlayer = if (move.`continue`) {
             player
         } else {
-            if (player == Player.WHITE) Player.BLACK else Player.WHITE
+            if (player.eq(Player.WHITE)) Player.BLACK else Player.WHITE
         }
-        val nextState = GameState(gameSpec, nextBoard, nextPlayer, srcPiece, x1, y1, x2, y2, moveDepth + 1)
+        val nextState = GameState(gameSpec, nextBoard, nextPlayer, srcPiece, x1, y1, x2, y2,
+                                  (moveDepth + 1).toShort(), history.clone())
         nextStates.getOrPut(move.priority) { ArrayList() }.add(nextState)
     }
 
@@ -274,16 +315,14 @@ class GameState {
                                   x1: Int, y1: Int, srcPiece: Int = at(x1, y1)) {
         val piece = getPieceDefinition(srcPiece)
         val forwardSign: Int =
-                if (gameSpec.boardSymmetry == Symmetry.NONE || player == Player.WHITE) 1 else -1
+                if (gameSpec.boardSymmetry == Symmetry.NONE || player.eq(Player.WHITE)) 1 else -1
 
         for (move in piece.moveList) {
             val targetSquares = arrayListOf<Pair<Int, Int>>()
 
             for (template in move.templateList) {
-                val action = template.substring(0, 1)
-                val (pattern, size_str) = template.substring(1).split("_")
-                var size = size_str.toInt()
-                if (size == 0) size = gameSpec.boardSize
+                val (action, pattern, size_tmp) = parseTemplate(template)
+                val size = if (size_tmp > 0) size_tmp else gameSpec.boardSize
 
                 // convert offset to board position (result may be out of bounds)
                 fun toBoard(offset: Pair<Int, Int>) = Pair(x1 + offset.first, y1 + offset.second)
@@ -295,7 +334,7 @@ class GameState {
                     "forward" -> forward(Pair(size, forwardSign)).map(::toBoard)
                     "backward" -> forward(Pair(size, -forwardSign)).map(::toBoard)
                     "rank" -> {
-                        val row = if (player == Player.WHITE || gameSpec.boardSymmetry == Symmetry.NONE) {
+                        val row = if (player.eq(Player.WHITE) || gameSpec.boardSymmetry == Symmetry.NONE) {
                             size - 1
                         } else {
                             gameSpec.boardSize - size
@@ -320,25 +359,26 @@ class GameState {
                 val (x2, y2) = square
                 if (x2 < 0 || x2 >= gameSpec.boardSize) continue
                 if (y2 < 0 || y2 >= gameSpec.boardSize) continue
-                if (!checkLandingConstraints(x1, y1, x2, y2, srcPiece, move)) continue
+                if (!checkLandingConstraints(x2, y2, srcPiece, move)) continue
                 if (!checkJumpingConstraints(x1, y1, x2, y2, srcPiece, move)) continue
                 createAndAddState(nextStates, x1, y1, x2, y2, srcPiece, move)
             }
         }
     }
 
-    // Note: getNextStates() is for lazy init of nextMoves. should not be called directly
-    private fun getNextStates(): ArrayList<GameState> {
+    // Note: initNextMoves() is for lazy init of nextMoves. should not be called directly
+    private fun initNextMoves(): ArrayList<GameState> {
         val states = TreeMap<Int, ArrayList<GameState>>() // map of priorities => lists of states
-        val playerSign = if (player == Player.WHITE) 1 else -1
+        val playerSign = if (player.eq(Player.WHITE)) 1 else -1
 
         when (gameSpec.moveSource) {
             MoveSource.PIECES_ON_BOARD -> {
-                gameBoard.forEachIndexed { y, row ->
-                    row.forEachIndexed { x, pieceId ->
-                        if (pieceId.sign == playerSign) {
-                            collectNextStates(states, x, y)
-                        }
+                for (i in 0 until gameBoard.size) {
+                    val x = i % gameSpec.boardSize
+                    val y = i / gameSpec.boardSize
+                    val p = gameBoard[i]
+                    if ((p.toInt()).sign == playerSign) {
+                        collectNextStates(states, x, y)
                     }
                 }
             }
@@ -363,17 +403,20 @@ class GameState {
     //=================================================================================
 
     private fun numEmptyCells(): Int {
-        return gameBoard.map { it.filter { it == 0 }.count() }.sum()
+        var empty = 0
+        for (i in 0 until gameBoard.size) {
+            if (gameBoard[i] == 0.toByte()) empty++
+        }
+        return empty
     }
 
     private fun pieceCounts(): Pair<IntArray, IntArray> {
         val whiteCounts = IntArray(gameSpec.pieceList.size) { 0 }
         val blackCounts = IntArray(gameSpec.pieceList.size) { 0 }
-        for (row in gameBoard) {
-            for (piece in row) {
-                if (piece > 0) whiteCounts[piece] += 1
-                if (piece < 0) blackCounts[-piece] += 1
-            }
+        for (b in gameBoard) {
+            val piece = b.toInt()
+            if (piece > 0) whiteCounts[piece] += 1
+            if (piece < 0) blackCounts[-piece] += 1
         }
         return Pair(whiteCounts, blackCounts)
     }
@@ -412,9 +455,9 @@ class GameState {
                 if (whiteCount.sum() == blackCount.sum())
                     Outcome.DRAW
                 else if (whiteCount.sum() > blackCount.sum()) {
-                    if (player == Player.WHITE) Outcome.WIN else Outcome.LOSE
+                    if (player.eq(Player.WHITE)) Outcome.WIN else Outcome.LOSE
                 } else {
-                    if (player == Player.WHITE) Outcome.LOSE else Outcome.WIN
+                    if (player.eq(Player.WHITE)) Outcome.LOSE else Outcome.WIN
                 }
             }
             GameDecision.COUNT_CAPTURED_PIECES -> {
@@ -448,29 +491,37 @@ class GameState {
                 Condition.KEY_PIECES_CAPTURED -> {
                     for (i in gameSpec.pieceList.indices) {
                         if (whiteCounts[i] < gameSpec.pieceList[i].min) {
-                            return if (player == Player.WHITE) Outcome.LOSE else Outcome.WIN
+                            return if (player.eq(Player.WHITE)) Outcome.LOSE else Outcome.WIN
                         }
                         if (blackCounts[i] < gameSpec.pieceList[i].min) {
-                            return if (player == Player.WHITE) Outcome.WIN else Outcome.LOSE
+                            return if (player.eq(Player.WHITE)) Outcome.WIN else Outcome.LOSE
                         }
                     }
                 }
                 Condition.NO_PIECES_ON_BOARD -> {
                     if (whiteCounts.sum() == 0) {
-                        return if (player == Player.WHITE) Outcome.LOSE else Outcome.WIN
+                        return if (player.eq(Player.WHITE)) Outcome.LOSE else Outcome.WIN
                     }
                     if (blackCounts.sum() == 0) {
-                        return if (player == Player.WHITE) Outcome.WIN else Outcome.LOSE
+                        return if (player.eq(Player.WHITE)) Outcome.WIN else Outcome.LOSE
                     }
                 }
                 Condition.N_IN_A_ROW -> {
                     val (longestWhite, longestBlack) = maxSequenceLengths(game_over.param)
                     if (longestWhite >= game_over.param) {
-                        return if (player == Player.WHITE) Outcome.WIN else Outcome.LOSE
+                        return if (player.eq(Player.WHITE)) Outcome.WIN else Outcome.LOSE
                     }
                     if (longestBlack >= game_over.param) {
-                        return if (player == Player.WHITE) Outcome.LOSE else Outcome.WIN
+                        return if (player.eq(Player.WHITE)) Outcome.LOSE else Outcome.WIN
                     }
+                }
+                Condition.REPEATED_POSITION -> {
+                    var count = 0
+                    var lastHash = history[moveDepth % 16]
+                    for (hash in history) {
+                        if (hash == lastHash) count++
+                    }
+                    if (count == game_over.param) return Outcome.DRAW
                 }
                 else -> {
                 }
@@ -483,48 +534,52 @@ class GameState {
     // Functions for pretty printing board states
     //=================================================================================
 
-    private fun getRow(row: IntArray, i: Int) {
+    private fun printRowTopOrBottom(row: Int) {
         val h_ = "\u001B[47m"
         val _h = "\u001B[0m"
         print("\u001B[40m    \u001B[0m")
-        row.forEachIndexed { j, _ ->
-            if ((i + j) % 2 == 0) print(h_)
+        for (col in 0 until gameSpec.boardSize) {
+            if ((row + col) % 2 == 0) print(h_)
             print("       $_h")
-        }.also { println("\u001B[37m\u001B[40m    \u001B[0m") }
+        }
+        println("\u001B[37m\u001B[40m    \u001B[0m")
     }
 
     fun printBoard() {
-        print("\u001B[40m        ")
-        for (index in 0 until gameSpec.boardSize) print("       ")
-        println("\u001B[0m")
-        print("\u001B[40m        ")
-        for (index in 0 until gameSpec.boardSize) print("       ")
-        println("\u001B[0m")
-
         val h_ = "\u001B[47m"
         val _h = "\u001B[0m"
         val b_ = "\u001B[1m"
 
-        gameBoard.reversed().forEachIndexed { i, row ->
+        // top border
+        print("\u001B[40m        ")
+        for (index in 0 until gameSpec.boardSize) print("       ")
+        println("\u001B[0m")
+        print("\u001B[40m        ")
+        for (index in 0 until gameSpec.boardSize) print("       ")
+        println("\u001B[0m")
 
-            getRow(row, i)
+        for (row in gameSpec.boardSize - 1 downTo 0) {
+            printRowTopOrBottom(row)
+
             print("\u001B[40m    \u001B[0m")
-            row.forEachIndexed { j, piece ->
-                if ((i + j) % 2 == 0) print(h_)
+            for (col in 0 until gameSpec.boardSize) {
+                if ((row + col) % 2 == 0) print(h_)
+                val piece = get(col, row)
                 var pieceStr = gameSpec.pieceList[abs(piece)].name
                 val symbol = if (piece < 0) "-" else if (piece > 0) " " else " ".also { pieceStr = " " }
                 print("$b_  $symbol$pieceStr$symbol  $_h")
+            }
+            println("\u001B[37m\u001B[40m  ${gameSpec.boardSize - row} \u001B[0m")
 
-            }.also { println("\u001B[37m\u001B[40m  ${gameSpec.boardSize - i} \u001B[0m") }
-
-            getRow(row, i)
-
+            printRowTopOrBottom(row)
         }
+
+        // bottom border
         print("\u001B[37m\u001B[40m    ")
         for (index in 0 until gameSpec.boardSize) print("       ")
         print("    \u001B[0m\n\u001B[37m\u001B[40m    ")
         for (index in 0 until gameSpec.boardSize) print("   " + ('a' + index) + "   ")
-        print("    \u001B[0m")
+        print("  ${if (player == Player.WHITE) "W" else "B"} \u001B[0m")
         println("\n")
     }
 }

@@ -1,18 +1,30 @@
 package maximum.industries
 
+import org.amshove.kluent.shouldBeGreaterThan
 import org.amshove.kluent.shouldEqual
-import org.deeplearning4j.nn.graph.ComputationGraph
-import org.deeplearning4j.util.ModelSerializer
+import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.junit.Test
-import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.indexing.NDArrayIndex
+import org.nd4j.linalg.lossfunctions.impl.PseudoSpherical
+import org.nd4j.shade.jackson.databind.jsontype.NamedType
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.util.*
+import kotlin.math.sqrt
 
 fun GameState.desc(): String {
     return toString().split(":").get(1).trim()
             .replace(" WIN", "")
             .replace(" LOSE", "")
+            .replace(" DRAW", "")
+}
+
+fun checkStatesEqual(state1: GameState, state2: GameState) {
+    state1.player.shouldEqual(state2.player)
+    for (x in 0 until state1.gameSpec.boardSize) {
+        for (y in 0 until state1.gameSpec.boardSize) {
+            state1.at(x, y).shouldEqual(state2.at(x, y))
+        }
+    }
 }
 
 class TestChess() {
@@ -22,16 +34,17 @@ class TestChess() {
             val p: String = "", val n: String = "", val b: String = "",
             val r: String = "", val q: String = "", val k: String = "")
 
-    fun initBoard(white: Placement, black: Placement, whiteMove: Boolean = true): GameState {
-        val gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
+    fun initBoard(white: Placement, black: Placement,
+                  whiteMove: Boolean = true, depth: Short = 0): GameState {
+        val gameBoard = ByteArray(gameSpec.boardSize * gameSpec.boardSize) { 0 }
         fun place(placement: Placement, sign: Int) {
             val (p, n, b, r, q, k) = placement
-            arrayListOf<String>(p, n, b, r, q, k).forEachIndexed { i, pstr ->
+            arrayListOf(p, n, b, r, q, k).forEachIndexed { i, pstr ->
                 if (pstr.length > 0) {
                     for (j in pstr.split(",")) {
                         val x = j.first() - 'a'
                         val y = j.substring(1).toInt() - 1
-                        gameBoard[y][x] = sign * (i + 1)
+                        gameBoard[y * gameSpec.boardSize + x] = (sign * (i + 1)).toByte()
                     }
                 }
             }
@@ -39,29 +52,28 @@ class TestChess() {
         place(white, 1)
         place(black, -1)
         val player = if (whiteMove) Player.WHITE else Player.BLACK
-        return GameState(gameSpec, gameBoard, player, 0, 0, 0, 0, 0, 0)
+        return GameState(gameSpec, gameBoard, player,
+                         0, 0, 0, 0, 0, depth)
     }
 
-    @Test
-    fun modelEval() {
-        val state = initBoard(white=Placement(k="a1",p="a7",r="g4",b="e4"),
-                              black=Placement(k="h8",q="c2", p="b4"),
-                              whiteMove = true)
-
-//        val model = ModelSerializer.restoreComputationGraph("model.chess.68000")
+//    @Test
+//    fun modelEval() {
+//        val state = initBoard(white = Placement(k = "e2", n = "c6", b = "c8", p = "h3,g4"),
+//                              black = Placement(k = "b6", n = "f6", b = "f8", r = "h8", p = "b5,b5,d5"),
+//                              whiteMove = false)
+//
+//        val model = ModelSerializer.restoreComputationGraph("model.Model008i.7000")
 //        val search = MonteCarloTreeSearch(
-//                AlphaZeroMctsStrategy(model, 1.0, 0.1), 5000)
-        val search = MonteCarloTreeSearch(
-                VanillaMctsStrategy(1.0, 0.1), 5000)
-
-        state.printBoard()
-        val (next, slim) = search.next(state)
-        next.printBoard()
-        println(slim!!.player)
-        for (tsr in slim!!.treeSearchResults) {
-            println("${tsr.index} ${tsr.prob}")
-        }
-    }
+//                AlphaZeroMctsStrategy(model, 0.3, 0.1), 500)
+//
+//        state.printBoard()
+//        val (next, slim) = search.next(state)
+//        next.printBoard()
+//        println(slim!!.player)
+//        for (tsr in slim!!.treeSearchResults) {
+//            println("${tsr.index} ${tsr.prob}")
+//        }
+//    }
 
     @Test
     fun pawnMoves() {
@@ -140,6 +152,189 @@ class TestChess() {
                                     "d4 -> e2", "d4 -> e6", "d4 -> f3", "d4 -> f5"))
     }
 
+    @Test
+    fun testConversions() {
+        // GameState => ModelInput => GameState (white move)
+        val state1a = initBoard(white = Placement(k = "d1", n = "c5", r = "h7", p = "b2,c3,d2"),
+                                black = Placement(k = "f7", p = "f6"),
+                                whiteMove = true)
+        val state1b = gameSpec.fromModelInput(state1a.toModelInput(), 0)
+        checkStatesEqual(state1a, state1b)
+
+        // GameState => ModelInput => GameState (black move)
+        val state2a = state1a.nextMoves[0]
+        val state2b = gameSpec.fromModelInput(state2a.toModelInput(), 0)
+        checkStatesEqual(state2a, state2b)
+
+        // GameState => Slim => Instance => BatchInput => GameState
+        val slim = state1a.toSlimState { _, tsr -> tsr.prob = 0.5f }
+        val white_win = initBoard(white = Placement(k = "a1"), black = Placement(),
+                                  whiteMove = false, depth = 10)
+        val white_loss = initBoard(black = Placement(k = "a1"), white = Placement(),
+                                   whiteMove = true, depth = 20)
+        val instance_win = slim.toTrainingInstance(white_win)
+        val instance_loss = slim.toTrainingInstance(white_loss)
+        val (input, value, policy, legal) = initTrainingData(gameSpec, 2)
+        instance_win.toBatchTrainingInput(gameSpec, 0, 0, input, value, policy, legal)
+        instance_loss.toBatchTrainingInput(gameSpec, 1, 0, input, value, policy, legal)
+        val state1c = gameSpec.fromModelInput(input, 0)
+        val state1d = gameSpec.fromModelInput(input, 1)
+
+        // check transported states are equal
+        checkStatesEqual(state1a, state1c)
+        checkStatesEqual(state1a, state1d)
+
+        // check transport of win/loss info
+        state1a.player.shouldEqual(Player.WHITE)
+        slim.player.shouldEqual(Instance.Player.WHITE)
+        white_win.player.shouldEqual(Player.BLACK)
+        white_loss.player.shouldEqual(Player.WHITE)
+        white_win.outcome.shouldEqual(Outcome.LOSE)
+        white_loss.outcome.shouldEqual(Outcome.LOSE)
+        state1c.player.shouldEqual(Player.WHITE)
+        state1d.player.shouldEqual(Player.WHITE)
+        instance_win.player.shouldEqual(Instance.Player.WHITE)
+        instance_loss.player.shouldEqual(Instance.Player.WHITE)
+        value.getFloat(0).shouldEqual(1f)
+        value.getFloat(1).shouldEqual(-1f)
+
+        // check transport of game length
+        instance_win.gameLength.shouldEqual(white_win.moveDepth.toInt())
+        instance_loss.gameLength.shouldEqual(white_loss.moveDepth.toInt())
+    }
+
+    @Test
+    fun testReflections() {
+        // white move to/from model input
+        val state1 = initBoard(white = Placement(k = "d1", n = "b3"),
+                               black = Placement(k = "g7"), whiteMove = true)
+        val refl_1 = initBoard(white = Placement(k = "e1", n = "g3"),
+                               black = Placement(k = "b7"), whiteMove = true)
+        val refl_2 = initBoard(black = Placement(k = "d8", n = "b6"),
+                               white = Placement(k = "g2"), whiteMove = false)
+        val refl_3 = initBoard(black = Placement(k = "e8", n = "g6"),
+                               white = Placement(k = "b2"), whiteMove = false)
+
+        // set up slim / instance / batch test
+        val (input, value, policy, legal) = initTrainingData(gameSpec, 4)
+
+        val white_win = initBoard(white = Placement(k = "a1"), black = Placement(), whiteMove = false)
+        val slim = state1.toSlimState { _, tsr -> tsr.prob = 0.5f }
+        val instance_win = slim.toTrainingInstance(white_win)
+
+        instance_win.toBatchTrainingInput(gameSpec, 0, 0, input, value, policy, legal)
+        instance_win.toBatchTrainingInput(gameSpec, 1, 1, input, value, policy, legal)
+        instance_win.toBatchTrainingInput(gameSpec, 2, 2, input, value, policy, legal)
+        instance_win.toBatchTrainingInput(gameSpec, 3, 3, input, value, policy, legal)
+
+        val state2 = gameSpec.fromModelInput(input, 0)
+        val state3 = gameSpec.fromModelInput(input, 1)
+        val state4 = gameSpec.fromModelInput(input, 2)
+        val state5 = gameSpec.fromModelInput(input, 3)
+
+        checkStatesEqual(state2, state1)
+        checkStatesEqual(state3, refl_1)
+        checkStatesEqual(state4, refl_2)
+        checkStatesEqual(state5, refl_3)
+    }
+
+    @Test
+    fun testLegalAndPolicy() {
+        val state1 = initBoard(white = Placement(k = "d1", b = "a2,e1", r = "b1"),
+                               black = Placement(k = "h8", p = "g7,h7,g5", b = "h6"), whiteMove = false)
+        val final = initBoard(white = Placement(k = "d1", b = "a2,h8", r = "b8"),
+                              black = Placement(p = "g6,h6,g5", b = "f8"), whiteMove = false)
+        val params = SearchParameters(exploration = 0.2, temperature = 0.01, iterations = 5000)
+        val search = MonteCarloTreeSearch(VanillaMctsStrategy(params), params)
+        val (_, slim) = search.next(state1)
+        val instance = slim!!.toTrainingInstance(final)
+
+        val (input, value, policy, legal) = initTrainingData(gameSpec, 4)
+        instance.toBatchTrainingInput(gameSpec, 0, 0, input, value, policy, legal)
+        instance.toBatchTrainingInput(gameSpec, 1, 1, input, value, policy, legal)
+        instance.toBatchTrainingInput(gameSpec, 2, 2, input, value, policy, legal)
+        instance.toBatchTrainingInput(gameSpec, 3, 3, input, value, policy, legal)
+
+        fun checkLegalAndPolicy(instance: Int, moves: IntArray) {
+            for (i in 0 until policySize(gameSpec)) {
+                val isLegal = moves.contains(i)
+                legal.getFloat(intArrayOf(instance, i)).shouldEqual(if (isLegal) 1f else -1f)
+                if (isLegal) {
+                    policy.getFloat(intArrayOf(instance, i)).shouldBeGreaterThan(0f)
+                } else {
+                    policy.getFloat(intArrayOf(instance, i)).shouldEqual(0f)
+                }
+            }
+        }
+
+        // Three legal moves:
+        val g5g4 = gameSpec.toPolicyIndex(MoveInfo(6, 4, 6, 3, 0))
+        val g7g6 = gameSpec.toPolicyIndex(MoveInfo(6, 6, 6, 5, 0))
+        val h8g8 = gameSpec.toPolicyIndex(MoveInfo(7, 7, 6, 7, 0))
+        checkLegalAndPolicy(0, intArrayOf(g5g4, g7g6, h8g8))
+
+        val b5b4 = gameSpec.toPolicyIndex(MoveInfo(1, 4, 1, 3, 0))
+        val b7b6 = gameSpec.toPolicyIndex(MoveInfo(1, 6, 1, 5, 0))
+        val a8b8 = gameSpec.toPolicyIndex(MoveInfo(0, 7, 1, 7, 0))
+        checkLegalAndPolicy(1, intArrayOf(b5b4, b7b6, a8b8))
+
+        val h1g1 = gameSpec.toPolicyIndex(MoveInfo(7, 0, 6, 0, 0))
+        val g2g3 = gameSpec.toPolicyIndex(MoveInfo(6, 1, 6, 2, 0))
+        val g4g5 = gameSpec.toPolicyIndex(MoveInfo(6, 3, 6, 4, 0))
+        checkLegalAndPolicy(2, intArrayOf(h1g1, g2g3, g4g5))
+
+        val a1b1 = gameSpec.toPolicyIndex(MoveInfo(0, 0, 1, 0, 0))
+        val b2b3 = gameSpec.toPolicyIndex(MoveInfo(1, 1, 1, 2, 0))
+        val b4b5 = gameSpec.toPolicyIndex(MoveInfo(1, 3, 1, 4, 0))
+        checkLegalAndPolicy(3, intArrayOf(a1b1, b2b3, b4b5))
+    }
+
+    @Test
+    fun testThreefoldRepetition() {
+        var state = GameState(gameSpec)
+        state = state.nextMoves.filter { it.desc() == "b1 -> a3" }.first()
+        state = state.nextMoves.filter { it.desc() == "b8 -> a6" }.first()
+        state = state.nextMoves.filter { it.desc() == "a3 -> b1" }.first()
+        state = state.nextMoves.filter { it.desc() == "a6 -> b8" }.first()
+        state = state.nextMoves.filter { it.desc() == "b1 -> a3" }.first()
+        state = state.nextMoves.filter { it.desc() == "b8 -> a6" }.first()
+        state = state.nextMoves.filter { it.desc() == "a3 -> b1" }.first()
+        state = state.nextMoves.filter { it.desc() == "a6 -> b8" }.first()
+        state.outcome.shouldEqual(Outcome.DRAW)
+    }
+
+    fun expectedValuePlusSdevs(wld: FloatArray, values: FloatArray, sdevs: Float): Float {
+        val n = wld.sum()
+        val e = values[0] * wld[0] / n +
+                values[1] * wld[1] / n +
+                values[2] * wld[2] / n
+        var varev = 0f  // accumulator for variance of expected value
+        val vdenom = n * n * (n + 1)  // dirichlet var/cov denominator
+        for (i in 0..2) for (j in 0..2) {
+            val cov_ij =
+                    if (i == j) wld[i] * (n - wld[i]) / vdenom
+                    else -wld[i] * wld[j] / vdenom
+            varev += cov_ij * values[i] * values[j]
+        }
+        return e + sqrt(varev) * sdevs
+    }
+
+//    @Test
+//    fun dirichlet() {
+//        println(expectedValuePlusSdevs(floatArrayOf(0.1f, 0.1f, 0.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+//        println(expectedValuePlusSdevs(floatArrayOf(1.1f, 0.1f, 0.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+//        println(expectedValuePlusSdevs(floatArrayOf(2.1f, 0.1f, 0.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+//        println(expectedValuePlusSdevs(floatArrayOf(3.1f, 0.1f, 0.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+//        println(expectedValuePlusSdevs(floatArrayOf(0.1f, 1.1f, 0.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+//        println(expectedValuePlusSdevs(floatArrayOf(0.1f, 2.1f, 0.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+//        println(expectedValuePlusSdevs(floatArrayOf(0.1f, 3.1f, 0.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+//        println(expectedValuePlusSdevs(floatArrayOf(0.1f, 0.1f, 1.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+//        println(expectedValuePlusSdevs(floatArrayOf(0.1f, 0.1f, 2.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+//        println(expectedValuePlusSdevs(floatArrayOf(0.1f, 0.1f, 3.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+//        println(expectedValuePlusSdevs(floatArrayOf(1.1f, 1.1f, 1.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+//        println(expectedValuePlusSdevs(floatArrayOf(2.1f, 2.1f, 2.1f), floatArrayOf(1.0f, 0.0f, 0.5f), 4f))
+//    }
+
 //    @Test
 //    fun searchTest() {
 //        val state = initBoard(
@@ -173,14 +368,18 @@ class TestChess() {
 open class TwoColorSetup(name: String) {
     val gameSpec = loadSpec(name)
 
-    fun initBoard(white: String, black: String, whiteMove: Boolean = true,
-                  model: ComputationGraph? = null): GameState {
-        val gameBoard = Array(gameSpec.boardSize, { IntArray(gameSpec.boardSize, { 0 }) })
+    init {
+        NeuralNetConfiguration.reinitMapperWithSubtypes(
+                Collections.singletonList(NamedType(PseudoSpherical::class.java)))
+    }
+
+    fun initBoard(white: String = "", black: String = "", whiteMove: Boolean = true): GameState {
+        val gameBoard = ByteArray(gameSpec.boardSize * gameSpec.boardSize) { 0 }
         fun place(placement: String, sign: Int) {
             for (j in placement.split(",")) {
                 val x = j.first() - 'a'
                 val y = j.substring(1).toInt() - 1
-                gameBoard[y][x] = sign
+                gameBoard[y * gameSpec.boardSize + x] = sign.toByte()
             }
         }
         if (white != "") place(white, 1)
@@ -212,8 +411,7 @@ class TestOthello() : TwoColorSetup("othello") {
         // Test chaining, exchanges, impressment
         // Impress one piece of the other, exchange for P2
         val states1 = initBoard(white = "c1,a3",
-                                black = "c2,b3")
-                .nextMoves
+                                black = "c2,b3").nextMoves
         states1.map { it.desc() }.sorted().shouldEqual(listOf("a3 -> c3", "c1 -> c3"))
         (states1[0].at(2, 1) * states1[0].at(1, 2)).shouldEqual(-1)
         (states1[1].at(2, 1) * states1[1].at(1, 2)).shouldEqual(-1)
@@ -253,85 +451,49 @@ class TestOthello() : TwoColorSetup("othello") {
     }
 }
 
-//
-//class TestTicTacToe() : TwoColorSetup("tictactoe") {
+class TestTicTacToe() : TwoColorSetup("tictactoe") {
+    fun check(initial: GameState, slim: SlimState?, final: GameState) {
+        val bos = ByteArrayOutputStream()
+        recordGame(final, arrayListOf(slim!!), bos)
+        val bis = ByteArrayInputStream(bos.toByteArray())
+        val dataset = maximum.industries.getBatch(gameSpec, StreamInstanceReader(bis),
+                                                  useValue = true, usePolicy = true, useLegal = false,
+                                                  batchSize = 1)
+
+        assert(initial.toModelInput().equals(dataset.features[0]))
+        assert(dataset.labels[0].getInt(0) == if (final.winFor(initial)) 1 else -1)
+        for (i in slim.treeSearchResults.indices) {
+            val tsr = slim.treeSearchResults[i]
+            assert(tsr.prob == dataset.labels[1].getFloat(0, tsr.index))
+        }
+    }
+
+    // This is tested more thoroughly in the chess test. And this is broken here due to reflections.
+
 //    @Test
 //    fun instanceSerialization() {
-//        val current = initBoard(white = "a1", black = "c1", whiteMove = true)
-//        val final = initBoard(white = "b2,b1,b3", black = "a1", whiteMove = true)
-//        treeSearch2Move(current, 1.0)
+//        val search = MonteCarloTreeSearch(VanillaMctsStrategy(
+//                1.0, 1.0), 100)
 //
-//        val bos = ByteArrayOutputStream()
-//        recordGame(final, arrayListOf(slim2(current)), bos)
+//        val whiteMove = initBoard(white = "a1",
+//                                  black = "c1",
+//                                  whiteMove = false)
+//        val blackMove = initBoard(white = "a1,a2",
+//                                  black = "c1",
+//                                  whiteMove = false)
+//        val winWhite = initBoard(white = "a1,a2,a3",
+//                                 black = "c1,c2",
+//                                 whiteMove = false)
+//        val winBlack = initBoard(white = "a1,a2,a3",
+//                                 black = "c1,c2",
+//                                 whiteMove = false)
 //
-//        val bis = ByteArrayInputStream(bos.toByteArray())
-//        val dataset = getBatch(gameSpec, StreamInstance2Reader(bis), 1)
+//        val (_, slimWhite) = search.next(whiteMove)
+//        check(whiteMove, slimWhite, winWhite)
+//        check(whiteMove, slimWhite, winBlack)
 //
-//        println("toModelInput")
-//        println(current.toModelInput())
-//        println("serialized/deserialized")
-//        println(dataset.features[0])
-//        println("pHat")
-//        println(dataset.labels[0])
-//        println(dataset.labels[1])
-//        println(dataset.labels[2])
+//        val (_, slimBlack) = search.next(blackMove)
+//        check(blackMove, slimBlack, winWhite)
+//        check(blackMove, slimBlack, winBlack)
 //    }
-//
-//    @Test
-//    fun modelEval() {
-//        val m0 = initBoard(
-//                white = "a2", black = "", whiteMove = false,
-//                model = ModelSerializer.restoreComputationGraph("prod_model.tictactoe"))
-//
-//        val m1 = treeSearchMove(m0, 1.0)
-//        val m2 = treeSearchMove(m1, 1.0)
-//        val m3 = treeSearchMove(m2, 1.0)
-//
-//        println("WhiteMove: ${m0.whiteMove} Value: ${m0.value}")
-//        m0.printBoard()
-//        for (next in m0.nextMoves) println("${next.toString()} ${next.prior} ${next.pi}")
-//
-//        println("WhiteMove: ${m1.whiteMove} Value: ${m1.value}")
-//        m1.printBoard()
-//        for (next in m1.nextMoves) println("${next.toString()} ${next.prior} ${next.pi}")
-//
-//        println("WhiteMove: ${m2.whiteMove} Value: ${m2.value}")
-//        m2.printBoard()
-//        for (next in m2.nextMoves) println("${next.toString()} ${next.prior} ${next.pi}")
-//
-//        println("WhiteMove: ${m3.whiteMove} Value: ${m3.predict().first}")
-//        m3.printBoard()
-//    }
-//
-//}
-//
-//class TestConnect4() : TwoColorSetup("connect4") {
-//    @Test
-//    fun modelEval() {
-//        var state = initBoard(white = "c1,d1",
-//                              black = "c2",
-//                              whiteMove = false,
-//                              model = ModelSerializer.restoreComputationGraph("prod_model.connect4"))
-//
-//        state.printBoard()
-//        println(state.toModelInput())
-//        treeSearchMove(state, 0.5)
-//        println(state.value)
-//        for (next in state.nextMoves) {
-//            println("${next.toString()} ${next.prior} ${next.pi}")
-//        }
-//    }
-//}
-
-
-class TestINDArray() {
-    @Test
-    fun testArray() {
-        val arr = Nd4j.zeros(2,2,3,3)
-        val ia = intArrayOf(0,0)
-        val onez = Nd4j.ones(3,3)
-        arr.put(arrayOf(NDArrayIndex.point(0), NDArrayIndex.point(0)), onez)
-        println(arr)
-    }
 }
-

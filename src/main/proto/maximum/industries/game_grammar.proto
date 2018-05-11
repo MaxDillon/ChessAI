@@ -36,6 +36,7 @@ enum Condition {
     BOARD_FULL = 3;
     N_IN_A_ROW = 4;
     MOVE_LIMIT = 5;
+    REPEATED_POSITION = 6;
 }
 
 enum GameDecision {

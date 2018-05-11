@@ -2,7 +2,10 @@ package maximum.industries
 
 import com.google.protobuf.ByteString
 import com.google.protobuf.TextFormat
+import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.util.ModelSerializer
+import org.nd4j.linalg.lossfunctions.impl.PseudoSpherical
+import org.nd4j.shade.jackson.databind.jsontype.NamedType
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.nio.file.Files
@@ -12,8 +15,70 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.util.*
 import java.util.function.BiPredicate
 
+fun Float.f1(): String = String.format("%.1f", this)
 fun Float.f3(): String = String.format("%.3f", this)
 
+interface GameSearchAlgo {
+    fun next(state: GameState): Pair<GameState, SlimState?>
+    fun gameOver()
+}
+
+fun play(gameSpec: GameGrammar.GameSpec,
+         white: GameSearchAlgo,
+         black: GameSearchAlgo,
+         stream: OutputStream) {
+    var state = GameState(gameSpec)
+    val history = ArrayList<SlimState>()
+
+    while (state.outcome == Outcome.UNDETERMINED) {
+        println("$state")
+        state.printBoard()
+        val (next, slim) = if (state.player.eq(Player.WHITE)) {
+            white.next(state)
+        } else {
+            black.next(state)
+        }
+        state = next
+        if (slim != null) history.add(slim)
+    }
+    recordGame(state, history, stream)
+    white.gameOver()
+    black.gameOver()
+
+    state.printBoard()
+    val outcome: Any = when (state.outcome) {
+        Outcome.WIN -> if (state.player.eq(Player.WHITE)) Player.WHITE else Player.BLACK
+        Outcome.LOSE -> if (state.player.eq(Player.BLACK)) Player.WHITE else Player.BLACK
+        else -> "DRAW"
+    }
+    println("""|####################################################
+               |Outcome: $outcome
+               |####################################################
+               |""".trimMargin())
+}
+
+fun recordGame(finalState: GameState, slimStates: ArrayList<SlimState>, outputStream: OutputStream) {
+    slimStates.forEach { slim ->
+        val slimWhite = slim.player.eq(Instance.Player.WHITE)
+        val finalWhite = finalState.player.eq(Player.WHITE)
+        Instance.TrainingInstance.newBuilder().apply {
+            boardState = ByteString.copyFrom(slim.state)
+            player = slim.player
+            gameLength = finalState.moveDepth.toInt()
+            outcome = when (finalState.outcome) {
+                Outcome.WIN -> if (slimWhite == finalWhite) 1 else -1
+                Outcome.LOSE -> if (slimWhite == finalWhite) -1 else 1
+                Outcome.DRAW -> 0
+                else -> throw(RuntimeException("undetermined state at end of game"))
+            }
+            slim.treeSearchResults.forEach {
+                addTreeSearchResult(it)
+            }
+        }.build().writeDelimitedTo(outputStream)
+    }
+}
+
+// A strategy allowing a human to play against an algorithm
 class HumanInput : GameSearchAlgo {
     override fun next(state: GameState): Pair<GameState, SlimState?> {
         fun parse(s: String) = Pair(s.first() - 'a', s.substring(1).toInt() - 1)
@@ -34,70 +99,25 @@ class HumanInput : GameSearchAlgo {
             println("Try again")
         }
     }
+
     override fun gameOver() {}
 }
 
-fun recordGame(finalState: GameState, slimStates: ArrayList<SlimState>, outputStream: OutputStream) {
-    slimStates.forEach { slim ->
-        Instance.TrainingInstance.newBuilder().apply {
-            boardState = ByteString.copyFrom(slim.state)
-            player = slim.player
-            gameLength = finalState.moveDepth
-            outcome = when (finalState.outcome) {
-                Outcome.WIN -> if (slim.player == finalState.player) 1 else -1
-                Outcome.LOSE -> if (slim.player == finalState.player) -1 else 1
-                Outcome.DRAW -> 0
-                else -> throw(RuntimeException("undetermined state at end of game"))
-            }
-            slim.treeSearchResults.forEach {
-                addTreeSearchResult(it)
-            }
-        }.build().writeDelimitedTo(outputStream)
-    }
-}
-
-fun play(gameSpec: GameGrammar.GameSpec,
-         white: GameSearchAlgo, black: GameSearchAlgo,
-         stream: OutputStream) {
-    var state = GameState(gameSpec)
-    val history = ArrayList<SlimState>()
-
-    while (state.outcome == Outcome.UNDETERMINED) {
-        println("$state")
-        state.printBoard()
-        val (next, slim) = if (state.player == Player.WHITE) {
-            white.next(state)
-        } else {
-            black.next(state)
-        }
-        state = next
-        if (slim != null) history.add(slim)
-    }
-    recordGame(state, history, stream)
-    white.gameOver()
-    black.gameOver()
-
-    state.printBoard()
-    val outcome: Any = when (state.outcome) {
-        Outcome.WIN -> if (state.player == Player.WHITE) Player.WHITE else Player.BLACK
-        Outcome.LOSE -> if (state.player == Player.BLACK) Player.WHITE else Player.BLACK
-        else -> "DRAW"
-    }
-    println("""|####################################################
-               |Outcome: $outcome
-               |####################################################
-               |""".trimMargin())
-}
-
-fun getAlgo(algo: String, iter: Int, exploration: Double, temperature: Double): GameSearchAlgo {
-    return when (algo) {
-        "mcts" -> MonteCarloTreeSearch(VanillaMctsStrategy(exploration, temperature), iter)
-        "human" -> HumanInput()
-        else -> {
-            val modelName = if (algo.endsWith(".*")) getLatest(algo) else algo
+fun getAlgo(algo: String, params: SearchParameters): GameSearchAlgo {
+    val toks = algo.split(":")
+    return when (toks[0]) {
+        "mcts" -> MonteCarloTreeSearch(VanillaMctsStrategy(params), params)
+        "amcts" -> MonteCarloTreeSearch(AlphaZeroMctsNoModelStrategy(params), params)
+        "dmcts" -> MonteCarloTreeSearch(DirichletMctsStrategy(params, floatArrayOf(1.0f, 0.0f, 0.5f)), params)
+        "model" -> {
+            val modelName = if (toks[1].endsWith(".*")) getLatest(toks[1]) else toks[1]
+            NeuralNetConfiguration.reinitMapperWithSubtypes(
+                    Collections.singletonList(NamedType(PseudoSpherical::class.java)))
             val model = ModelSerializer.restoreComputationGraph(modelName)
-            MonteCarloTreeSearch(AlphaZeroMctsStrategy(model, exploration, temperature), iter)
+            MonteCarloTreeSearch(AlphaZeroMctsStrategy(model, params), params)
         }
+        "human" -> HumanInput()
+        else -> throw RuntimeException("no algo specified")
     }
 }
 
@@ -122,14 +142,18 @@ fun getLatest(modelFile: String): String {
 fun appUsage() {
     println("""
         |java PlayKt <game>
-        |        [-white <model>]      Model for the white player. Default is mcts.
-        |        [-black <model>]      Model for the black player. Default is mcts.
-        |        [-n <n>]              The number of games to play. Default=100.
-        |        [-iter <iter>]        The number of mcts rollouts to perform.
-        |        [-exploration <e>     Governs exploration in tree search. Default=1
-        |        [-temperature <t>     Governs move selection exponent. Default=0.2
-        |        [-saveas <name>]      A name pattern for saved games. Default is <game>
+        |        [-white <model>]    Model for the white player. Default is mcts.
+        |        [-black <model>]    Model for the black player. Default is mcts.
+        |        [-n <n>]            The number of games to play. Default=100.
+        |        [-witer <iter>]     The number of rollouts/evals to perform for white.
+        |        [-biter <iter>]     The number of rollouts/evals to perform for black.
+        |        [-wexpl <e>         Governs exploration in tree search for white. Default=0.5
+        |        [-bexpl <e>         Governs exploration in tree search for black. Default=0.5
+        |        [-wtemp <t>         Governs move selection exponent for white. Default=0.1
+        |        [-btemp <t>         Governs move selection exponent for black. Default=0.1
+        |        [-saveas <name>]    A name pattern for saved games. Default is <game>
         |<model> may be 'mcts' to run with Monte Carlo tree search only,
+        |            or 'dmcts' to run with Dirichlet Monte Carlo tree search,
         |            or 'human' to enter moves manually
         |            or a model filename.
         |If the mode filename ends in .* then it will run against the latest version.
@@ -138,22 +162,34 @@ fun appUsage() {
 
 fun getArg(args: Array<String>, arg: String): String? {
     for (i in args.indices) {
-        if (args[i] == "-$arg" || args[i] == "--$arg") return args[i + 1]
+        if (args[i] == "-$arg" || args[i] == "--$arg") {
+            println("Using: -$arg = ${args[i+1]}")
+            return args[i + 1]
+        }
     }
     return null
 }
+
+data class SearchParameters(val iterations: Int = 100,
+                            val exploration: Double = 1.0,
+                            val temperature: Double = 0.3,
+                            val rampBy: Int = 10)
 
 fun main(args: Array<String>) {
     if (args.contains("-h")) {
         return appUsage()
     }
     val game = args[0]
+    val n = getArg(args, "n")?.toInt() ?: 100
     val white = getArg(args, "white") ?: "mcts"
     val black = getArg(args, "black") ?: "mcts"
-    val n = getArg(args, "n")?.toInt() ?: 100
-    val iter = getArg(args, "iter")?.toInt() ?: 1600
-    val temperature = getArg(args, "temperature")?.toDouble() ?: 0.2
-    val exploration = getArg(args, "exploration")?.toDouble() ?: 1.0
+    val witer = getArg(args, "witer")?.toInt() ?: 100
+    val biter = getArg(args, "biter")?.toInt() ?: 100
+    val wtemp = getArg(args, "wtemp")?.toDouble() ?: 0.1
+    val btemp = getArg(args, "btemp")?.toDouble() ?: 0.1
+    val wexpl = getArg(args, "wexpl")?.toDouble() ?: 0.5
+    val bexpl = getArg(args, "bexpl")?.toDouble() ?: 0.5
+    val ramp = getArg(args, "ramp")?.toInt() ?: 10
     val saveas = getArg(args, "saveas") ?: game
     val baseName = "data.$saveas.${System.currentTimeMillis()}"
     val workFile = "$baseName.work"
@@ -163,11 +199,11 @@ fun main(args: Array<String>) {
     val outputStream = FileOutputStream(workFile)
 
     val gameSpec = loadSpec(game)
+    val wParams = SearchParameters(witer, wexpl, wtemp, ramp)
+    val bParams = SearchParameters(biter, bexpl, btemp, ramp)
 
-    val whiteAlgo = getAlgo(white, iter, exploration, temperature)
-    val blackAlgo =
-            if (white == black) whiteAlgo
-            else getAlgo(black, iter, exploration, temperature)
+    val whiteAlgo = getAlgo(white, wParams)
+    val blackAlgo = if (white == black) whiteAlgo else getAlgo(black, bParams)
 
     for (i in 1..n) play(gameSpec, whiteAlgo, blackAlgo, outputStream)
     Files.move(Paths.get(workFile), Paths.get(doneFile))
