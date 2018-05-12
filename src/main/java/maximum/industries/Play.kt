@@ -29,7 +29,6 @@ fun play(gameSpec: GameGrammar.GameSpec,
          stream: OutputStream) {
     var state = GameState(gameSpec)
     val history = ArrayList<SlimState>()
-
     while (state.outcome == Outcome.UNDETERMINED) {
         println("$state")
         state.printBoard()
