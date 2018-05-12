@@ -569,7 +569,7 @@ class GameState {
                 val symbol = if (piece < 0) "-" else if (piece > 0) " " else " ".also { pieceStr = " " }
                 print("$b_  $symbol$pieceStr$symbol  $_h")
             }
-            println("\u001B[37m\u001B[40m  ${gameSpec.boardSize - row} \u001B[0m")
+            println("\u001B[37m\u001B[40m  ${row + 1} \u001B[0m")
 
             printRowTopOrBottom(row)
         }
