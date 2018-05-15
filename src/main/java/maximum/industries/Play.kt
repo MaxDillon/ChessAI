@@ -19,6 +19,7 @@ fun Float.f1(): String = String.format("%.1f", this)
 fun Float.f3(): String = String.format("%.3f", this)
 
 interface GameSearchAlgo {
+    fun index(num: Int) {}
     fun next(state: GameState): Pair<GameState, SlimState?>
     fun gameOver()
 }

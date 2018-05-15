@@ -26,8 +26,9 @@ fun main(args: Array<String>) {
     var state = GameState(gameSpec)
 
     val server = embeddedServer(Netty, port = 8080) {
-        val white = GuiInput()
-        val black = getAlgo("mcts",SearchParameters(1,1.0,1.0,1))
+        var white = getAlgo("mcts",SearchParameters(1,1.0,1.0,1))
+        var black = getAlgo("mcts",SearchParameters(1,1.0,1.0,1))
+        var playerTurnWhite = true
 
         install(ContentNegotiation) {
             gson {
@@ -37,15 +38,30 @@ fun main(args: Array<String>) {
         routing {
 
             post("/start") {
+                playerTurnWhite = call.receive<Boolean>()
+                println(playerTurnWhite)
                 state = GameState(gameSpec)
-                call.respond(state.toWireState())
+
+                if(playerTurnWhite) {
+                    white = GuiInput()
+                    black = getAlgo("mcts",SearchParameters(1,1.0,1.0,1))
+                    call.respond(state.toWireState())
+
+
+                } else {
+                    black = GuiInput()
+                    white = getAlgo("mcts",SearchParameters(1,1.0,1.0,1))
+                    call.respond(white.next(state).first.toWireState())
+
+                }
             }
 
             post("/move") {
                 val received = call.receive<WireState>()
                 val sig = received.state.hashCode()
                 if (true) {
-                    white.index(received.moveIndex)
+                    if (white is GuiInput) white.index(received.moveIndex)
+                    else black.index(received.moveIndex)
                     state = white.next(received.toGameState(gameSpec)).first
                     state = black.next(state).first
 
@@ -106,7 +122,7 @@ data class WireState(val state: ObjectState,
 
 class GuiInput : GameSearchAlgo {
     var moveIndex = 0
-    fun index(num:Int) {moveIndex=num}
+    override fun index(num:Int) {moveIndex=num}
     override fun next(state: GameState): Pair<GameState, SlimState?> {
         return Pair(state.nextMoves[moveIndex],null)
     }
