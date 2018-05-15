@@ -6,6 +6,7 @@ import maximum.industries.GameGrammar.MoveSource
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.indexing.NDArrayIndex
+import play.Play
 import kotlin.math.abs
 
 fun GameSpec.numRealPieces() = pieceCount - 1
@@ -145,6 +146,26 @@ fun SlimState.toTrainingInstance(finalState: GameState): Instance.TrainingInstan
         else -> throw(RuntimeException("undetermined state at end of game"))
     }
     return toTrainingInstance(outcome, finalState.moveDepth)
+}
+
+fun GameState.legalMovesToList(): IntArray {
+    val moves = arrayListOf<Int>()
+    for (move in nextMoves) {
+        moves.add(gameSpec.xyToIndex(Pair(move.x1,move.y1)))
+        moves.add(gameSpec.xyToIndex(Pair(move.x2,move.y2)))
+    }
+
+    return moves.toIntArray()
+}
+
+fun WireState.toGameState(spec: GameSpec): GameState {
+    val player = if (state.whiteMove) Player.WHITE else Player.BLACK
+    return GameState(spec,state.board,player,0,-1,-1,-1,-1,state.moveDepth.toShort())
+}
+
+fun GameState.toWireState(): WireState {
+    val obj = ObjectState(gameBoard, legalMovesToList(),player.eq(Player.WHITE),moveDepth.toInt())
+    return WireState( obj ,-1, obj.hashCode() )
 }
 
 fun Instance.TrainingInstance.toBatchTrainingInput(

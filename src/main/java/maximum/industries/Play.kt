@@ -77,6 +77,8 @@ fun recordGame(finalState: GameState, slimStates: ArrayList<SlimState>, outputSt
     }
 }
 
+
+
 // A strategy allowing a human to play against an algorithm
 class HumanInput : GameSearchAlgo {
     override fun next(state: GameState): Pair<GameState, SlimState?> {
@@ -116,6 +118,7 @@ fun getAlgo(algo: String, params: SearchParameters): GameSearchAlgo {
             MonteCarloTreeSearch(AlphaZeroMctsStrategy(model, params), params)
         }
         "human" -> HumanInput()
+        "gui" -> GuiInput()
         else -> throw RuntimeException("no algo specified")
     }
 }

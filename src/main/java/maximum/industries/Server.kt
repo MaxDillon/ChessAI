@@ -34,3 +34,4 @@ fun GameState.toStateMessage(): StateMessage {
     return StateMessage(array,moves,isWhite)
 }
 
+
