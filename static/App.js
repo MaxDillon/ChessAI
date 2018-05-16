@@ -13,10 +13,10 @@ var formatBoard = function(board,side) {
     return newBoard 
 }
 
-var app = angular.module('myApp', []);
+var app = angular.module('boardApp', []);
     app.controller('myCtrl', function($scope, $http) {
-        $scope.whiteSide = true;
-
+        $scope.whiteSide = false;
+        $scope.boardPixels = 480;
         $scope.getColor = function(num) { return (Math.sign(-num.value)+1)/2 };
         $scope.getPiece = function(num) { return Math.abs(num.value)-1 };
         $scope.getRow = function(index) { return (index+Math.floor(index/$scope.size))%2 };
@@ -29,7 +29,7 @@ var app = angular.module('myApp', []);
         $scope.updateBoard = function(data) { 
 
             $scope.currentObject = data
-            $scope.boardState = formatBoard(data.state.board,$scope.whiteSide)
+            $scope.boardState = formatBoard(data.state.board, $scope.whiteSide)
             $scope.currentSignature = data.signature
 
             $scope.currentMoves = data.state.moves
@@ -38,8 +38,10 @@ var app = angular.module('myApp', []);
         }; 
 
         $http.post("http://localhost:8080/start",$scope.whiteSide,{ headers: {"Content-Type" : "application/json"}}).then(function(data){
-            $scope.updateBoard(data.data)
-            $scope.size = Math.sqrt($scope.boardState.length)
+            $scope.updateBoard(data.data.first)
+            $scope.gameSpec = data.data.second
+            $scope.gameName = $scope.gameSpec.name_
+            $scope.size = $scope.gameSpec.boardSize_
         });
         $scope.findMoveIndex = function(a, b) {
 

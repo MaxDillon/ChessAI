@@ -105,7 +105,7 @@ class HumanInput : GameSearchAlgo {
     override fun gameOver() {}
 }
 
-fun getAlgo(algo: String, params: SearchParameters): GameSearchAlgo {
+fun getAlgo(algo: String, params: SearchParameters = SearchParameters(1,1.0,1.0,1)): GameSearchAlgo {
     val toks = algo.split(":")
     return when (toks[0]) {
         "mcts" -> MonteCarloTreeSearch(VanillaMctsStrategy(params), params)

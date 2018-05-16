@@ -37,45 +37,48 @@ fun main(args: Array<String>) {
         }
         routing {
 
+
             post("/start") {
                 playerTurnWhite = call.receive<Boolean>()
-                println(playerTurnWhite)
                 state = GameState(gameSpec)
+                val whiteAlgo = if (playerTurnWhite) "gui" else "mcts"
+                white = getAlgo(whiteAlgo)
 
-                if(playerTurnWhite) {
-                    white = GuiInput()
-                    black = getAlgo("mcts",SearchParameters(1,1.0,1.0,1))
-                    call.respond(state.toWireState())
+                val blackAlgo = if (playerTurnWhite) "mcts" else "gui".also { state = white.next(state).first}
+                black = getAlgo(blackAlgo)
 
-
-                } else {
-                    black = GuiInput()
-                    white = getAlgo("mcts",SearchParameters(1,1.0,1.0,1))
-                    call.respond(white.next(state).first.toWireState())
-
-                }
+                call.respond(Pair(state.toWireState(),gameSpec))
             }
+
 
             post("/move") {
                 val received = call.receive<WireState>()
                 val sig = received.state.hashCode()
                 if (true) {
-                    if (white is GuiInput) white.index(received.moveIndex)
-                    else black.index(received.moveIndex)
-                    state = white.next(received.toGameState(gameSpec)).first
-                    state = black.next(state).first
+                    if (playerTurnWhite) {
+                        white.index(received.moveIndex)
+                        state = white.next(received.toGameState(gameSpec)).first
+                        state = black.next(state).first
+                    }
+                    else {
+                        black.index(received.moveIndex)
+                        state = black.next(received.toGameState(gameSpec)).first
+                        state = white.next(state).first
+                    }
 
                     call.respond(state.toWireState())
 
                 } else {
                     call.respond(received)
                 }
+
             }
 
             static ("/") {
-                default("static/page.html")
+                default("static/webpage.html")
                 files("static")
             }
+
         }
     }
     server.start(wait = true)
@@ -118,6 +121,7 @@ data class WireState(val state: ObjectState,
     }
 
 }
+
 
 
 class GuiInput : GameSearchAlgo {
