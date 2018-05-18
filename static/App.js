@@ -25,9 +25,10 @@ var reloadBoard = function(board) {
 
 
 
+
 var app = angular.module('boardApp', []);
     app.controller('myCtrl', function($scope, $http) {
-        $scope.whiteSide = false;
+        $scope.whiteSide = true;
         $scope.sign = Math.sign(($scope.whiteSide?1:0)*2-1)
         $scope.boardPixels = 480;
         $scope.selected = null;
