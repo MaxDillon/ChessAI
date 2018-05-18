@@ -16,6 +16,8 @@ import org.deeplearning4j.ui.stats.StatsListener
 import org.deeplearning4j.ui.storage.InMemoryStatsStorage
 import org.deeplearning4j.util.ModelSerializer
 import org.nd4j.linalg.activations.Activation
+import org.nd4j.linalg.api.buffer.DataBuffer
+import org.nd4j.linalg.api.buffer.util.DataTypeUtil
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.dataset.MultiDataSet
 import org.nd4j.linalg.factory.Nd4j
@@ -127,7 +129,9 @@ class LayerQueue {
 }
 
 interface IModel {
-    fun newModel(gameSpec: GameGrammar.GameSpec): ComputationGraph
+    fun newModel(gameSpec: GameGrammar.GameSpec,
+                 learningRateOverride: Double? = null,
+                 regularizationOverride: Double? = null): ComputationGraph
 }
 
 fun modelHas(model: ComputationGraph, layerName: String): Boolean {
@@ -139,7 +143,7 @@ fun modelHas(model: ComputationGraph, layerName: String): Boolean {
 
 fun loadModel(modelName: String): Triple<ComputationGraph, String, Int>? {
     try {
-        val model = ModelSerializer.restoreComputationGraph(modelName)
+        val model = ModelSerializer.restoreComputationGraph(modelName, false)
         val tokens = modelName.split(".").toMutableList()
         if (tokens.first() == "model") tokens.removeAt(0)
         val batch = tokens.last().toIntOrNull() ?: 0
@@ -150,12 +154,14 @@ fun loadModel(modelName: String): Triple<ComputationGraph, String, Int>? {
     }
 }
 
-fun newModel(modelName: String, gameSpec: GameSpec): ComputationGraph? {
+fun newModel(modelName: String, gameSpec: GameSpec,
+             learningRateOverride: Double?,
+             regularizationOverride: Double?): ComputationGraph? {
     try {
         val factory: IModel =
                 Class.forName("maximum.industries.models.$modelName")
                         .newInstance() as IModel
-        return factory.newModel(gameSpec)
+        return factory.newModel(gameSpec, learningRateOverride, regularizationOverride)
     } catch (e: Exception) {
         return null
     }
@@ -168,7 +174,7 @@ fun trainUsage() {
         |                              package identifying a factory to construct a new model.
         |        [-from <model>]       An existing model to continue training. If a -new argument
         |                              is also provided, then the weights from the existing model
-        |                              wil be used to initalize the new one (which will only work
+        |                              will be used to initalize the new one (which will only work
         |                              if the architectures are the same).
         |        [-saveas <name>]      A name pattern for saved models. Default is <game>.<model>
         |                              or a continuation of the pattern from a loaded model.
@@ -191,15 +197,20 @@ fun main(args: Array<String>) {
     val gameName = args[0]
     val gameSpec = loadSpec(gameName)
 
+    val learningRateOverride = getArg(args, "rate")?.toDouble()
+    val regularizationOverride = getArg(args, "regu")?.toDouble()
+
     val from = getArg(args, "from")
     val priorModelInfo = if (from != null) loadModel(from) else null
 
     val new = getArg(args, "new")
-    val newModel = if (new != null) newModel(new, gameSpec) else null
+    val newModel = if (new != null) newModel(new, gameSpec,
+                                             learningRateOverride,
+                                             regularizationOverride) else null
 
-    var defaultSaveAs = gameName
+    var defaultSaveAs = ""
     var startingBatch = 0
-    val model_ =
+    val model =
             if (newModel == null) {
                 if (priorModelInfo == null) {
                     println("Error: no model specified or could not load model")
@@ -211,19 +222,19 @@ fun main(args: Array<String>) {
                 }
             } else {
                 if (priorModelInfo != null) {
-                    newModel.init(priorModelInfo.first.params(), true)
+                    newModel.init(priorModelInfo.first.params(true),
+                                  true)
+                    defaultSaveAs = priorModelInfo.second
                     startingBatch = priorModelInfo.third
+                } else {
+                    defaultSaveAs = "$gameName.${new!!}"
+                    newModel.init()
                 }
-                defaultSaveAs = "$gameName.${new!!}"
                 newModel
             }
 
-    val rate = getArg(args, "rate")?.toDouble() ?: -1.0
-    val model = if (rate < 0) {
-        model_
-    } else {
-        val fineTune = FineTuneConfiguration.Builder().learningRate(rate).build()
-        TransferLearning.GraphBuilder(model_).fineTuneConfiguration(fineTune).build()
+    if (learningRateOverride != null) {
+        model.setLearningRate(learningRateOverride)
     }
 
     val useValue = modelHas(model, "value")
@@ -236,13 +247,13 @@ fun main(args: Array<String>) {
     val drawWeight = getArg(args, "drawweight")?.toDouble() ?: 1.0
     val batchSize = getArg(args, "batch")?.toInt() ?: 200
     val logFile = getArg(args, "logfile") ?: "log.$saveAs"
+    var updates = getArg(args, "updates")?.toInt() ?: 100
     var batchCount = startingBatch
 
     val uiServer = UIServer.getInstance()
     val statsStorage = InMemoryStatsStorage()
     uiServer.attach(statsStorage)
     model.setListeners(StatsListener(statsStorage))
-    model.init()
 
     val trainReader = FileInstanceReader(0.2, drawWeight, lastN, dataPattern, "done")
     val testReader = FileInstanceReader(0.2, drawWeight, lastN, dataPattern, "test")
@@ -269,8 +280,9 @@ fun main(args: Array<String>) {
         model.fit(train_batch)
 
         batchCount++
-        if (batchCount % 1000 == 0) {
+        if (batchCount % 200 == 0) {
             ModelSerializer.writeModel(model, "model.$saveAs.$batchCount", true)
+            if (--updates == 0) System.exit(0)
         }
     }
 }

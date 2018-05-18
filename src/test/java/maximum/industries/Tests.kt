@@ -3,6 +3,7 @@ package maximum.industries
 import org.amshove.kluent.shouldBeGreaterThan
 import org.amshove.kluent.shouldEqual
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
+import org.deeplearning4j.util.ModelSerializer
 import org.junit.Test
 import org.nd4j.linalg.lossfunctions.impl.PseudoSpherical
 import org.nd4j.shade.jackson.databind.jsontype.NamedType
@@ -56,24 +57,35 @@ class TestChess() {
                          0, 0, 0, 0, 0, depth)
     }
 
-//    @Test
-//    fun modelEval() {
-//        val state = initBoard(white = Placement(k = "e2", n = "c6", b = "c8", p = "h3,g4"),
-//                              black = Placement(k = "b6", n = "f6", b = "f8", r = "h8", p = "b5,b5,d5"),
-//                              whiteMove = false)
-//
-//        val model = ModelSerializer.restoreComputationGraph("model.Model008i.7000")
-//        val search = MonteCarloTreeSearch(
-//                AlphaZeroMctsStrategy(model, 0.3, 0.1), 500)
+    @Test
+    fun modelEval() {
+        val state = initBoard(white = Placement(k = "c8"),
+                              black = Placement(k = "g4", q = "h7", b = "c6", p = "b4"),
+                              whiteMove = true)
+
+        val model1 = ModelSerializer.restoreComputationGraph("model.zero.17000")
+        val output1 = model1.output(state.toModelInput())
+
+        val model2 = ModelSerializer.restoreComputationGraph("model.zero.10000")
+        val output2 = model2.output(state.toModelInput())
+
+        val indices1 = ArrayList<MoveInfo>()
+        for (i in 0 until policySize(gameSpec))
+            if (output1[1].getFloat(0, i) > 0.002) indices1.add(gameSpec.expandPolicyIndex(i))
+
+        val indices2 = ArrayList<MoveInfo>()
+        for (i in 0 until policySize(gameSpec))
+            if (output2[1].getFloat(0, i) > 0.002) indices2.add(gameSpec.expandPolicyIndex(i))
+
+        val params = SearchParameters()
+//        val search = MonteCarloTreeSearch(AlphaZeroMctsStrategy(model, params), params)
 //
 //        state.printBoard()
 //        val (next, slim) = search.next(state)
-//        next.printBoard()
-//        println(slim!!.player)
 //        for (tsr in slim!!.treeSearchResults) {
-//            println("${tsr.index} ${tsr.prob}")
+//            println("${gameSpec.expandPolicyIndex(tsr.index)} ${tsr.prob} ${output[1].getFloat(0, tsr.index)}")
 //        }
-//    }
+    }
 
     @Test
     fun pawnMoves() {

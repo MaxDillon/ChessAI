@@ -8,13 +8,18 @@ import org.deeplearning4j.nn.conf.inputs.InputType
 import org.deeplearning4j.nn.graph.ComputationGraph
 import org.deeplearning4j.nn.weights.WeightInit
 import org.nd4j.linalg.activations.Activation
+import org.nd4j.linalg.learning.config.Nesterovs
 import org.nd4j.linalg.lossfunctions.LossFunctions
 
 /**
  * Attempt to use newly defined pseudo-spherical loss
  */
 class Model009 : IModel {
-    override fun newModel(gameSpec: GameGrammar.GameSpec): ComputationGraph {
+    override fun newModel(gameSpec: GameGrammar.GameSpec,
+                          learningRateOverride: Double?,
+                          regularizationOverride: Double?): ComputationGraph {
+        val learningRate = learningRateOverride ?: 1e-6
+        val regularization = regularizationOverride ?: 0.001
         val sz = gameSpec.boardSize
         val inChannels = inputChannels(gameSpec)
         val policyChannels = policyChannels(gameSpec)
@@ -25,9 +30,8 @@ class Model009 : IModel {
 
         val config = NeuralNetConfiguration.Builder()
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .regularization(true).l2(0.001)
-                .updater(Updater.NESTEROVS)
-                .learningRate(1e-6)
+                .l2(regularization)
+                .updater(Nesterovs(learningRate))
                 .graphBuilder()
                 .addInputs("input")
                 .setInputTypes(InputType.convolutional(sz, sz, inChannels))
@@ -78,7 +82,7 @@ class Model009 : IModel {
                 .setOutputs("value", "policy")
                 .build()
 
-        return ComputationGraph(config).apply { init() }
+        return ComputationGraph(config)
     }
 }
 

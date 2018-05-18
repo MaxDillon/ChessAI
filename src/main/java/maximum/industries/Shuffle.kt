@@ -12,9 +12,10 @@ import java.util.function.BiPredicate
 fun main(args: Array<String>) {
     val inpattern = args[0]
     val outpattern = args[1]
-    val extension = if (args.size > 2) args[2] else "done"
 
-    var numout = 0
+    val extension = getArg(args, "extension") ?: "done"
+    var idx = getArg(args, "startidx")?.toInt() ?: 0
+
     var states = 0
     var error = 0
 
@@ -22,7 +23,7 @@ fun main(args: Array<String>) {
 
     fun SaveInstances() {
         instances.shuffle()
-        val outstream = FileOutputStream("$outpattern.${(numout++).toString().padStart(8,'0')}.$extension")
+        val outstream = FileOutputStream("$outpattern.${(idx++).toString().padStart(8, '0')}.$extension")
         for (instance in instances) {
             instance.writeDelimitedTo(outstream)
         }
@@ -51,6 +52,6 @@ fun main(args: Array<String>) {
         }
     }
     SaveInstances()
-    println("Shuffled $states states into $numout files. $error errors.")
+    println("Shuffled $states states into $idx files. $error errors.")
 }
 

@@ -8,6 +8,7 @@ import org.deeplearning4j.nn.conf.inputs.InputType
 import org.deeplearning4j.nn.graph.ComputationGraph
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.learning.config.Adam
+import org.nd4j.linalg.learning.config.Nesterovs
 import org.nd4j.linalg.lossfunctions.LossFunctions
 
 /**
@@ -39,7 +40,11 @@ import org.nd4j.linalg.lossfunctions.LossFunctions
  *
  */
 class Model007 : IModel {
-    override fun newModel(gameSpec: GameGrammar.GameSpec): ComputationGraph {
+    override fun newModel(gameSpec: GameGrammar.GameSpec,
+                          learningRateOverride: Double?,
+                          regularizationOverride: Double?): ComputationGraph {
+        val learningRate = learningRateOverride ?: 5e-3
+        val regularization = regularizationOverride ?: 1e-6
         val sz = gameSpec.boardSize
         val inChannels = inputChannels(gameSpec)
         val policyChannels = policyChannels(gameSpec)
@@ -47,9 +52,8 @@ class Model007 : IModel {
 
         val config = NeuralNetConfiguration.Builder()
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .regularization(true).l2(1e-6)
-                .updater(Updater.NESTEROVS)
-                .learningRate(5e-3)
+                .l2(regularization)
+                .updater(Nesterovs(learningRate))
                 .graphBuilder()
                 .addInputs("input")
                 .setInputTypes(InputType.convolutional(sz, sz, inChannels))
@@ -95,7 +99,7 @@ class Model007 : IModel {
                 .setOutputs("value", "policy")
                 .build()
 
-        return ComputationGraph(config).apply { init() }
+        return ComputationGraph(config)
     }
 }
 

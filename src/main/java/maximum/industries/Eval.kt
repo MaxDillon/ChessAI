@@ -15,7 +15,7 @@ import java.util.*
 
 fun checkModelConsistency(gameSpec: GameSpec, model: ComputationGraph,
                           maxStates: Int, maxBatch: Int, minDepth: Int, maxDepth: Int) {
-    println(" *\tPlayer\t+Mass\t-Mass\tCorrel\t+Pos\t-Pos\tFrac+")
+    println(" *\tPlayer\t+Mass\tCorrel\t+Pos\t-Pos\tFrac+")
     checkModelConsistency(gameSpec, model, maxStates, maxBatch, minDepth, maxDepth, Player.WHITE)
     checkModelConsistency(gameSpec, model, maxStates, maxBatch, minDepth, maxDepth, Player.BLACK)
 }
@@ -116,7 +116,7 @@ fun checkModelConsistency(gameSpec: GameSpec, model: ComputationGraph,
     val legalFrac = numNextLegal.toFloat() / (numNextLegal + numNextIllegal)
     var correlation = sumCorrelation / numCorrelated
 
-    print(" *\t$player\t${avgLegalMass.f3()}\t${avgIllegalMass.f3()}\t${correlation.f3()}\t")
+    print(" *\t$player\t${avgLegalMass.f3()}\t${correlation.f3()}\t")
     print("${legalPosFrac.f3()}\t${illegalPosFrac.f3()}\t${legalFrac.f3()}")
     println()
 }
@@ -134,4 +134,5 @@ fun main(args: Array<String>) {
     val numstates = getArg(args, "states")?.toInt() ?: 500
 
     checkModelConsistency(gameSpec, model, numstates, maxbatch, mindepth, maxdepth)
+    println("##############################################################")
 }
