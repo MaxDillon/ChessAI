@@ -1,4 +1,4 @@
-name: "chess"
+name: "Chess"
 board_size: 8
 board_symmetry: REFLECT
 
@@ -144,7 +144,7 @@ piece {
     name: "Q"
     count: 1
     min: 0
-    placement: "x4y1"
+    placement: "x5y1"
     move {
         template: "+cross_0"
         template: "+plus_0"
@@ -164,7 +164,7 @@ piece {
     name: "K"
     count: 1
     min: 1
-    placement: "x5y1"
+    placement: "x4y1"
     move {
         template: "+square_1"
         land {
