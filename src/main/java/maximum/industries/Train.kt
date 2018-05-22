@@ -94,12 +94,16 @@ class LayerQueue {
                     kernel: Int = 3, pad: Int = 1, stride: Int = 1,
                     activation: Activation = Activation.RELU,
                     init: WeightInit = WeightInit.RELU,
+                    dropoutRetain: Double = 1.0,
                     norm: Boolean = true) {
         if (norm) queueLayer(BatchNormalization())
         queueLayer(ConvolutionLayer.Builder(kernel, kernel)
                            .nIn(inChannels).nOut(filters)
                            .padding(pad, pad).stride(stride, stride)
-                           .activation(activation).weightInit(init).build())
+                           .activation(activation)
+                           .weightInit(init)
+                           .dropOut(dropoutRetain)
+                           .build())
     }
 
     fun dense(units: Int,
@@ -188,8 +192,12 @@ fun trainUsage() {
 }
 
 fun main(args: Array<String>) {
-    NeuralNetConfiguration.reinitMapperWithSubtypes(
-            Collections.singletonList(NamedType(PseudoSpherical::class.java)))
+    // use half precision floats for all tensors
+    Nd4j.setDataType(DataBuffer.Type.HALF);
+    DataTypeUtil.setDTypeForContext(DataBuffer.Type.FLOAT);
+
+//    NeuralNetConfiguration.reinitMapperWithSubtypes(
+//            Collections.singletonList(NamedType(PseudoSpherical::class.java)))
 
     if (args.contains("-h")) {
         return trainUsage()
@@ -247,6 +255,7 @@ fun main(args: Array<String>) {
     val drawWeight = getArg(args, "drawweight")?.toDouble() ?: 1.0
     val batchSize = getArg(args, "batch")?.toInt() ?: 200
     val logFile = getArg(args, "logfile") ?: "log.$saveAs"
+    var saveevery = getArg(args, "saveevery")?.toInt() ?: 1000
     var updates = getArg(args, "updates")?.toInt() ?: 100
     var batchCount = startingBatch
 
@@ -280,7 +289,7 @@ fun main(args: Array<String>) {
         model.fit(train_batch)
 
         batchCount++
-        if (batchCount % 200 == 0) {
+        if (batchCount % saveevery == 0) {
             ModelSerializer.writeModel(model, "model.$saveAs.$batchCount", true)
             if (--updates == 0) System.exit(0)
         }

@@ -78,8 +78,6 @@ fun recordGame(finalState: GameState, slimStates: ArrayList<SlimState>, outputSt
     }
 }
 
-
-
 // A strategy allowing a human to play against an algorithm
 class HumanInput : GameSearchAlgo {
     override fun next(state: GameState): Pair<GameState, SlimState?> {
@@ -113,10 +111,17 @@ fun getAlgo(algo: String, params: SearchParameters): GameSearchAlgo {
         "dmcts" -> MonteCarloTreeSearch(DirichletMctsStrategy(params, floatArrayOf(1.0f, 0.0f, 0.5f)), params)
         "model" -> {
             val modelName = if (toks[1].endsWith(".*")) getLatest(toks[1]) else toks[1]
-            NeuralNetConfiguration.reinitMapperWithSubtypes(
-                    Collections.singletonList(NamedType(PseudoSpherical::class.java)))
+//            NeuralNetConfiguration.reinitMapperWithSubtypes(
+//                    Collections.singletonList(NamedType(PseudoSpherical::class.java)))
             val model = ModelSerializer.restoreComputationGraph(modelName)
             MonteCarloTreeSearch(AlphaZeroMctsStrategy(model, params), params)
+        }
+        "model0" -> {
+            val modelName = if (toks[1].endsWith(".*")) getLatest(toks[1]) else toks[1]
+//            NeuralNetConfiguration.reinitMapperWithSubtypes(
+//                    Collections.singletonList(NamedType(PseudoSpherical::class.java)))
+            val model = ModelSerializer.restoreComputationGraph(modelName)
+            MonteCarloTreeSearch(AlphaZeroMctsStrategy0(model, params), params)
         }
         "human" -> HumanInput()
         "gui" -> GuiInput()

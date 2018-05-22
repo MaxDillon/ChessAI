@@ -226,6 +226,57 @@ open class VanillaMctsStrategy(val params: SearchParameters) : MctsStrategy {
     }
 }
 
+/*
+
+    want to have the predicted policy *mean* something independent of temperature, cardinality, etc.
+    not predicting which move you'll likely take, but rather what's the likely value of each move.
+    one problem: we are predicting softmax for the whole dist.
+
+    suppose we map priors to quality.
+
+    q(p) =
+
+ */
+
+
+
+open class AlphaZeroMctsNoModelStrategy0(params: SearchParameters) : VanillaMctsStrategy(params) {
+    override fun searchPriority(s1: GameState, s2: GameState): Double {
+        val s1Info = info(s1)
+        val s2Info = info(s2)
+        // the estimated child node value, sign adjusted to be value for current player
+        val nodeValue = sign(s1, s2) * s2Info.Q
+        val termValue =
+                if (s2.winFor(s1)) 100.0 // during search always take immediate wins
+                else if (s2.lossFor(s1)) -100.0 else 0.0 // and avoid immediate losses
+        val infoValue =
+                if (s2.outcome != Outcome.UNDETERMINED) 0.0 // no info value for terminals
+                else params.exploration * s2Info.P * sqrt(s1Info.N.toDouble()) / (1 + s2Info.N)
+        return nodeValue + termValue + infoValue
+    }
+}
+
+open class AlphaZeroMctsStrategy0(val model: ComputationGraph, params: SearchParameters) :
+        AlphaZeroMctsNoModelStrategy0(params) {
+    override fun expand(state: GameState) {
+        val sInfo = info(state)
+        if (state.outcome == Outcome.UNDETERMINED) {
+            val outputs = model.output(state.toModelInput())
+            val output_value = outputs[0]
+            val output_policy = outputs[1]
+            sInfo.Q = output_value.getFloat(0 /* batch index */)
+            for (next in state.nextMoves) {
+                val nInfo = info(next)
+                nInfo.Q = next.initialSelfValue()
+                nInfo.P = output_policy.getFloat(intArrayOf(0 /* batch index */,
+                                                            next.toPolicyIndex()))
+            }
+        }
+        sInfo.N += 1
+        sInfo.expanded = true
+    }
+}
+
 open class AlphaZeroMctsNoModelStrategy(params: SearchParameters) : VanillaMctsStrategy(params) {
     override fun searchPriority(s1: GameState, s2: GameState): Double {
         val s1Info = info(s1)
@@ -237,7 +288,6 @@ open class AlphaZeroMctsNoModelStrategy(params: SearchParameters) : VanillaMctsS
                 else if (s2.lossFor(s1)) -100.0 else 0.0 // and avoid immediate losses
         val infoValue =
                 if (s2.outcome != Outcome.UNDETERMINED) 0.0 // no info value for terminals
-//                else params.exploration * s2Info.P * sqrt(s1Info.N.toDouble()) / (1 + s2Info.N)
                 else params.exploration * s1Info.N *   (1.0 + s2Info.P * s1.nextMoves.size) / 2.0 /
                      s1.nextMoves.size / (1 + s2Info.N) / (1 + s2Info.N)
         return nodeValue + termValue + infoValue

@@ -41,11 +41,11 @@ fun main(args: Array<String>) {
             post("/start") {
                 playerWhite = call.receive<Boolean>()
                 state = GameState(gameSpec)
-                val whiteAlgo = if (playerWhite) "gui" else "amcts"
-                white = getAlgo(whiteAlgo, SearchParameters(5000))
+                val whiteAlgo = if (playerWhite) "gui" else "model:model.chess.Model010.41800"
+                white = getAlgo(whiteAlgo, SearchParameters(500))
 
-                val blackAlgo = if (playerWhite) "amcts" else "gui"
-                black = getAlgo(blackAlgo,SearchParameters(5000))
+                val blackAlgo = if (playerWhite) "model:model.chess.Model010.41800" else "gui"
+                black = getAlgo(blackAlgo,SearchParameters(500))
                 call.respond(Pair(state.toWireState(),gameSpec))
             }
 

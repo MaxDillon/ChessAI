@@ -63,7 +63,7 @@ class TestChess() {
                               black = Placement(k = "g4", q = "h7", b = "c6", p = "b4"),
                               whiteMove = true)
 
-        val model1 = ModelSerializer.restoreComputationGraph("model.zero.17000")
+        val model1 = ModelSerializer.restoreComputationGraph("prod_model.chess")
         val output1 = model1.output(state.toModelInput())
 
         val model2 = ModelSerializer.restoreComputationGraph("model.zero.10000")

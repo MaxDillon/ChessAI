@@ -122,8 +122,8 @@ fun checkModelConsistency(gameSpec: GameSpec, model: ComputationGraph,
 }
 
 fun main(args: Array<String>) {
-    NeuralNetConfiguration.reinitMapperWithSubtypes(
-            Collections.singletonList(NamedType(PseudoSpherical::class.java)))
+//    NeuralNetConfiguration.reinitMapperWithSubtypes(
+//            Collections.singletonList(NamedType(PseudoSpherical::class.java)))
 
     val gameSpec = loadSpec(args[0])
     val model = ModelSerializer.restoreComputationGraph(args[1])
