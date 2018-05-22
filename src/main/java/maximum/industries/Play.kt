@@ -19,15 +19,20 @@ fun Float.f1(): String = String.format("%.1f", this)
 fun Float.f3(): String = String.format("%.3f", this)
 
 interface GameSearchAlgo {
+
     fun index(num: Int) {}
     fun next(state: GameState): Pair<GameState, SlimState?>
     fun gameOver()
 }
 
+//fun runGame()
+
+
+
 fun play(gameSpec: GameGrammar.GameSpec,
          white: GameSearchAlgo,
          black: GameSearchAlgo,
-         stream: OutputStream) {
+         stream: OutputStream?): Double {
     var state = GameState(gameSpec)
     val history = ArrayList<SlimState>()
     while (state.outcome == Outcome.UNDETERMINED) {
@@ -41,20 +46,33 @@ fun play(gameSpec: GameGrammar.GameSpec,
         state = next
         if (slim != null) history.add(slim)
     }
-    recordGame(state, history, stream)
+    if (stream!=null) recordGame(state, history, stream)
     white.gameOver()
     black.gameOver()
 
     state.printBoard()
+
+    var out = 0.5
     val outcome: Any = when (state.outcome) {
-        Outcome.WIN -> if (state.player.eq(Player.WHITE)) Player.WHITE else Player.BLACK
-        Outcome.LOSE -> if (state.player.eq(Player.BLACK)) Player.WHITE else Player.BLACK
-        else -> "DRAW"
+        Outcome.WIN ->
+            if (state.player.eq(Player.WHITE)) {
+                Player.WHITE.also { out=1.0 }
+            } else {
+                Player.BLACK.also { out=0.0 }
+            }
+        Outcome.LOSE -> if (state.player.eq(Player.BLACK)) {
+            Player.WHITE.also { out=1.0 }
+        } else {
+            Player.BLACK.also { out=0.0 }
+        }
+        else -> "DRAW".also { out = 0.5 }
     }
     println("""|####################################################
                |Outcome: $outcome
                |####################################################
                |""".trimMargin())
+
+    return out
 }
 
 fun recordGame(finalState: GameState, slimStates: ArrayList<SlimState>, outputStream: OutputStream) {
