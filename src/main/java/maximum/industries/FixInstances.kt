@@ -42,7 +42,7 @@ fun main(args: Array<String>) {
                     oldTsrIndex(gameSpec, info) == it.index
                 }.first()!!.prob
             }
-            var fixed = slim.toTrainingInstance(inst.outcome, inst.gameLength.toShort())
+            val fixed = slim.toTrainingInstance(inst.outcome, inst.gameLength.toShort())
             fixed.writeDelimitedTo(outstream)
 
             states += 1

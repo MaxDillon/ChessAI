@@ -118,7 +118,7 @@ class LayerQueue {
     fun loss(activation: Activation = Activation.TANH,
              loss: LossFunction = LossFunction.L2) {
         queueLayer(LossLayer.Builder().activation(activation)
-                           .lossFunction(loss).build())
+                           .lossFunction(loss.iLossFunction).build())
     }
 
     fun output(nOut: Int,
@@ -128,7 +128,7 @@ class LayerQueue {
                norm: Boolean = true) {
         if (norm) queueLayer(BatchNormalization())
         queueLayer(OutputLayer.Builder().nOut(nOut).activation(activation)
-                           .lossFunction(loss).weightInit(init).build())
+                           .lossFunction(loss.iLossFunction).weightInit(init).build())
     }
 }
 
