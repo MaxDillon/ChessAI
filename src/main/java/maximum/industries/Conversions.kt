@@ -31,7 +31,7 @@ data class MoveInfo(var x1: Int, var y1: Int, var x2: Int, var y2: Int, var p1: 
 
 fun GameSpec.toPolicyIndex(info: MoveInfo): Int {
     val dst = xyToIndex(Pair(info.x2, info.y2))
-    val src = if (moveSource == MoveSource.ENDS) {
+    val src = if (moveSource == MoveSource.MOVESOURCE_ENDS) {
         abs(info.p1) - 1 // subtract out the virtual piece added to all gamespecs
     } else {
         xyToIndex(Pair(info.x1, info.y1))
@@ -43,7 +43,7 @@ fun GameSpec.expandPolicyIndex(index: Int): MoveInfo {
     val dst = index % (boardSize * boardSize)
     val (x2, y2) = indexToXy(dst)
     val src = index / (boardSize * boardSize)
-    if (moveSource == MoveSource.ENDS) {
+    if (moveSource == MoveSource.MOVESOURCE_ENDS) {
         return MoveInfo(0, 0, x2, y2, src + 1)
     } else {
         val (x1, y1) = indexToXy(src)
@@ -60,7 +60,7 @@ fun GameSpec.flip(xy: Pair<Int, Int>, leftRight: Boolean, sides: Boolean): Pair<
 fun GameSpec.flipPolicyIndex(index: Int, leftRight: Boolean, sides: Boolean): Int {
     val (x1i, y1i, x2i, y2i, p1) = expandPolicyIndex(index)
     val (x2, y2) = flip(Pair(x2i, y2i), leftRight, sides)
-    if (moveSource == MoveSource.ENDS) {
+    if (moveSource == MoveSource.MOVESOURCE_ENDS) {
         return toPolicyIndex(MoveInfo(0, 0, x2, y2, p1))
     } else {
         val (x1, y1) = flip(Pair(x1i, y1i), leftRight, sides)

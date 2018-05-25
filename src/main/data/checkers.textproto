@@ -1,7 +1,7 @@
-
 name: "checkers"
 board_size: 8
-board_symmetry: ROTATE
+board_symmetry: SYMMETRY_ROTATE
+augmentation: AUGMENTATION_FRONT_BACK
 
 piece {
     name: "P"

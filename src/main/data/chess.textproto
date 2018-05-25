@@ -1,6 +1,7 @@
 name: "Chess"
 board_size: 8
-board_symmetry: REFLECT
+board_symmetry: SYMMETRY_REFLECT
+augmentation: AUGMENTATION_BOTH
 
 piece {
     name: "p"

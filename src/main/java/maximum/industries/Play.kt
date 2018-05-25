@@ -2,10 +2,7 @@ package maximum.industries
 
 import com.google.protobuf.ByteString
 import com.google.protobuf.TextFormat
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.util.ModelSerializer
-import org.nd4j.linalg.lossfunctions.impl.PseudoSpherical
-import org.nd4j.shade.jackson.databind.jsontype.NamedType
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.nio.file.Files
@@ -25,15 +22,12 @@ interface GameSearchAlgo {
     fun gameOver()
 }
 
-//fun runGame()
-
-
-
 fun play(gameSpec: GameGrammar.GameSpec,
          white: GameSearchAlgo,
          black: GameSearchAlgo,
          stream: OutputStream?): Double {
-    var state = GameState(gameSpec)
+
+    var state = newGame(gameSpec)
     val history = ArrayList<SlimState>()
     while (state.outcome == Outcome.UNDETERMINED) {
         println("$state")
@@ -46,7 +40,7 @@ fun play(gameSpec: GameGrammar.GameSpec,
         state = next
         if (slim != null) history.add(slim)
     }
-    if (stream!=null) recordGame(state, history, stream)
+    if (stream != null) recordGame(state, history, stream)
     white.gameOver()
     black.gameOver()
 
@@ -56,14 +50,14 @@ fun play(gameSpec: GameGrammar.GameSpec,
     val outcome: Any = when (state.outcome) {
         Outcome.WIN ->
             if (state.player.eq(Player.WHITE)) {
-                Player.WHITE.also { out=1.0 }
+                Player.WHITE.also { out = 1.0 }
             } else {
-                Player.BLACK.also { out=0.0 }
+                Player.BLACK.also { out = 0.0 }
             }
         Outcome.LOSE -> if (state.player.eq(Player.BLACK)) {
-            Player.WHITE.also { out=1.0 }
+            Player.WHITE.also { out = 1.0 }
         } else {
-            Player.BLACK.also { out=0.0 }
+            Player.BLACK.also { out = 0.0 }
         }
         else -> "DRAW".also { out = 0.5 }
     }
@@ -127,6 +121,13 @@ fun getAlgo(algo: String, params: SearchParameters): GameSearchAlgo {
         "mcts" -> MonteCarloTreeSearch(VanillaMctsStrategy(params), params)
         "amcts" -> MonteCarloTreeSearch(AlphaZeroMctsNoModelStrategy(params), params)
         "dmcts" -> MonteCarloTreeSearch(DirichletMctsStrategy(params, floatArrayOf(1.0f, 0.0f, 0.5f)), params)
+        "model0" -> {
+            val modelName = if (toks[1].endsWith(".*")) getLatest(toks[1]) else toks[1]
+//            NeuralNetConfiguration.reinitMapperWithSubtypes(
+//                    Collections.singletonList(NamedType(PseudoSpherical::class.java)))
+            val model = ModelSerializer.restoreComputationGraph(modelName)
+            MonteCarloTreeSearch(AlphaZeroMctsStrategy0(model, params), params)
+        }
         "model" -> {
             val modelName = if (toks[1].endsWith(".*")) getLatest(toks[1]) else toks[1]
 //            NeuralNetConfiguration.reinitMapperWithSubtypes(
@@ -134,12 +135,12 @@ fun getAlgo(algo: String, params: SearchParameters): GameSearchAlgo {
             val model = ModelSerializer.restoreComputationGraph(modelName)
             MonteCarloTreeSearch(AlphaZeroMctsStrategy(model, params), params)
         }
-        "model0" -> {
+        "model1" -> {
             val modelName = if (toks[1].endsWith(".*")) getLatest(toks[1]) else toks[1]
 //            NeuralNetConfiguration.reinitMapperWithSubtypes(
 //                    Collections.singletonList(NamedType(PseudoSpherical::class.java)))
             val model = ModelSerializer.restoreComputationGraph(modelName)
-            MonteCarloTreeSearch(AlphaZeroMctsStrategy0(model, params), params)
+            MonteCarloTreeSearch(AlphaZeroMctsStrategy1(model, params), params)
         }
         "human" -> HumanInput()
         "gui" -> GuiInput()
@@ -154,6 +155,16 @@ fun loadSpec(game: String): GameGrammar.GameSpec {
         TextFormat.getParser().merge(specStr, this)
         addPieceBuilder(0) // hack: inserting null piece at index 0
     }.build()
+}
+
+fun newGame(gameSpec: GameGrammar.GameSpec): GameState {
+    return if (gameSpec.implementingClass == "") {
+        GameState(gameSpec)
+    } else {
+        Class.forName(gameSpec.implementingClass)
+                .getConstructor(gameSpec.javaClass)
+                .newInstance(gameSpec) as GameState
+    }
 }
 
 fun getLatest(modelFile: String): String {
@@ -189,7 +200,7 @@ fun appUsage() {
 fun getArg(args: Array<String>, arg: String): String? {
     for (i in args.indices) {
         if (args[i] == "-$arg" || args[i] == "--$arg") {
-            println("Using: -$arg = ${args[i+1]}")
+            println("Using: -$arg = ${args[i + 1]}")
             return args[i + 1]
         }
     }
@@ -209,12 +220,12 @@ fun main(args: Array<String>) {
     val n = getArg(args, "n")?.toInt() ?: 100
     val white = getArg(args, "white") ?: "mcts"
     val black = getArg(args, "black") ?: "mcts"
-    val witer = getArg(args, "witer")?.toInt() ?: 100
-    val biter = getArg(args, "biter")?.toInt() ?: 100
+    val witer = getArg(args, "witer")?.toInt() ?: 200
+    val biter = getArg(args, "biter")?.toInt() ?: 200
     val wtemp = getArg(args, "wtemp")?.toDouble() ?: 0.1
     val btemp = getArg(args, "btemp")?.toDouble() ?: 0.1
-    val wexpl = getArg(args, "wexpl")?.toDouble() ?: 0.5
-    val bexpl = getArg(args, "bexpl")?.toDouble() ?: 0.5
+    val wexpl = getArg(args, "wexpl")?.toDouble() ?: 0.1
+    val bexpl = getArg(args, "bexpl")?.toDouble() ?: 0.1
     val ramp = getArg(args, "ramp")?.toInt() ?: 10
     val saveas = getArg(args, "saveas") ?: game
     val baseName = "data.$saveas.${System.currentTimeMillis()}"

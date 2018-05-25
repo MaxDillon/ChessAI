@@ -61,20 +61,35 @@ val parseTemplate = Memoize { template: String ->
 
 //=================================================================================
 
-class GameState {
+open class GameState {
     val gameSpec: GameSpec
     val gameBoard: ByteArray
     val player: Player
     val _p1: Byte // the piece that was moved (needed to construct input channels)
-    val p1: Int get() { return _p1.toInt() }
+    val p1: Int
+        get() {
+            return _p1.toInt()
+        }
     val _x1: Byte
-    val x1: Int get() { return _x1.toInt() }
+    val x1: Int
+        get() {
+            return _x1.toInt()
+        }
     val _y1: Byte
-    val y1: Int get() { return _y1.toInt() }
+    val y1: Int
+        get() {
+            return _y1.toInt()
+        }
     val _x2: Byte
-    val x2: Int get() { return _x2.toInt() }
+    val x2: Int
+        get() {
+            return _x2.toInt()
+        }
     val _y2: Byte
-    val y2: Int get() { return _y2.toInt() }
+    val y2: Int
+        get() {
+            return _y2.toInt()
+        }
     val moveDepth: Short
     val history: IntArray
     private var _nextMoves: ArrayList<GameState>? = null
@@ -98,7 +113,7 @@ class GameState {
                 val (x, y) = placement.substring(1).split("y").map { it.toInt() - 1 }
                 if (get(x, y) == 0) {
                     set(x, y, pieceType)
-                    val oppositeX = if (gameSpec.boardSymmetry == Symmetry.ROTATE)
+                    val oppositeX = if (gameSpec.boardSymmetry == Symmetry.SYMMETRY_ROTATE)
                         gameSpec.boardSize - 1 - x else x
                     val oppositeY = gameSpec.boardSize - 1 - y
                     set(oppositeX, oppositeY, -pieceType)
@@ -315,7 +330,7 @@ class GameState {
                                   x1: Int, y1: Int, srcPiece: Int = at(x1, y1)) {
         val piece = getPieceDefinition(srcPiece)
         val forwardSign: Int =
-                if (gameSpec.boardSymmetry == Symmetry.NONE || player.eq(Player.WHITE)) 1 else -1
+                if (gameSpec.boardSymmetry == Symmetry.SYMMETRY_NONE || player.eq(Player.WHITE)) 1 else -1
 
         for (move in piece.moveList) {
             val targetSquares = arrayListOf<Pair<Int, Int>>()
@@ -334,7 +349,7 @@ class GameState {
                     "forward" -> forward(Pair(size, forwardSign)).map(::toBoard)
                     "backward" -> forward(Pair(size, -forwardSign)).map(::toBoard)
                     "rank" -> {
-                        val row = if (player.eq(Player.WHITE) || gameSpec.boardSymmetry == Symmetry.NONE) {
+                        val row = if (player.eq(Player.WHITE) || gameSpec.boardSymmetry == Symmetry.SYMMETRY_NONE) {
                             size - 1
                         } else {
                             gameSpec.boardSize - size
@@ -366,23 +381,23 @@ class GameState {
         }
     }
 
-    // Note: initNextMoves() is for lazy init of nextMoves. should not be called directly
-    private fun initNextMoves(): ArrayList<GameState> {
+    // for lazy init of nextMoves. Should not be called directly
+    open fun initNextMoves(): ArrayList<GameState> {
         val states = TreeMap<Int, ArrayList<GameState>>() // map of priorities => lists of states
         val playerSign = if (player.eq(Player.WHITE)) 1 else -1
 
         when (gameSpec.moveSource) {
-            MoveSource.PIECES_ON_BOARD -> {
+            MoveSource.MOVESOURCE_PIECES_ON_BOARD -> {
                 for (i in 0 until gameBoard.size) {
                     val x = i % gameSpec.boardSize
                     val y = i / gameSpec.boardSize
                     val p = gameBoard[i]
                     if ((p.toInt()).sign == playerSign) {
-                        collectNextStates(states, x, y)
+                        collectNextStates(states, x, y, at(x, y))
                     }
                 }
             }
-            MoveSource.ENDS -> {
+            MoveSource.MOVESOURCE_ENDS -> {
                 for (x in 0 until gameSpec.boardSize) {
                     for (pieceId in gameSpec.pieceList.indices) {
                         collectNextStates(
@@ -468,8 +483,8 @@ class GameState {
         }
     }
 
-    // for lazy init of outcome. should not be called directly
-    private fun gameOutcome(): Outcome {
+    // for lazy init of outcome. Should not be called directly
+    open fun gameOutcome(): Outcome {
         val (whiteCounts, blackCounts) = pieceCounts()
         for (game_over in gameSpec.gameOverList) {
             when (game_over.condition) {

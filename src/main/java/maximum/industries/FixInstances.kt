@@ -7,7 +7,7 @@ import kotlin.math.abs
 fun oldTsrIndex(gameSpec: GameGrammar.GameSpec, info: MoveInfo): Int {
    var dim = gameSpec.boardSize
     val dst = info.y2 + dim * info.x2
-    val src = if (gameSpec.moveSource == GameGrammar.MoveSource.ENDS) {
+    val src = if (gameSpec.moveSource == GameGrammar.MoveSource.MOVESOURCE_ENDS) {
         abs(info.p1) - 1 // subtract out the virtual piece added to all gamespecs
     } else {
         info.y1 + info.x1 * dim

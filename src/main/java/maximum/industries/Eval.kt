@@ -55,7 +55,7 @@ fun checkModelConsistency(gameSpec: GameSpec, model: ComputationGraph,
     var numCorrelated = 0
 
     while (numStates < maxStates) {
-        var state = GameState(gameSpec)
+        var state = newGame(gameSpec)
         while (state.outcome == Outcome.UNDETERMINED && state.moveDepth < maxDepth && numStates < maxStates) {
             if (player.eq(state.player) && state.moveDepth >= minDepth && state.nextMoves.size < maxBatch) {
                 numStates += 1
@@ -105,6 +105,7 @@ fun checkModelConsistency(gameSpec: GameSpec, model: ComputationGraph,
                     numNextIllegalPos += estLegal.mul(notLegal).cond(GreaterThan(0f)).sumNumber().toInt()
                 }
             }
+            if (state.nextMoves.size == 0) state.printBoard()
             state = state.nextMoves[rand.nextInt(state.nextMoves.size)]
         }
     }

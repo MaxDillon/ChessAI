@@ -1,14 +1,9 @@
 package maximum.industries
 
-import maximum.industries.GameGrammar.MoveSource
 import org.deeplearning4j.nn.graph.ComputationGraph
-import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.indexing.NDArrayIndex
 import java.lang.Math.pow
 import java.security.SecureRandom
 import java.util.*
-import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
@@ -18,6 +13,7 @@ val rand = Random(SecureRandom().nextLong())
 // Extension methods for type-safe equality checking for similar enums, so compiler
 // will prevent mistakes like (inst.player == state.player)
 fun Player.eq(other: Player): Boolean = this == other
+
 fun Instance.Player.eq(other: Instance.Player): Boolean = this == other
 
 class MonteCarloTreeSearch(val strategy: MctsStrategy,
@@ -226,20 +222,6 @@ open class VanillaMctsStrategy(val params: SearchParameters) : MctsStrategy {
     }
 }
 
-/*
-
-    want to have the predicted policy *mean* something independent of temperature, cardinality, etc.
-    not predicting which move you'll likely take, but rather what's the likely value of each move.
-    one problem: we are predicting softmax for the whole dist.
-
-    suppose we map priors to quality.
-
-    q(p) =
-
- */
-
-
-
 open class AlphaZeroMctsNoModelStrategy0(params: SearchParameters) : VanillaMctsStrategy(params) {
     override fun searchPriority(s1: GameState, s2: GameState): Double {
         val s1Info = info(s1)
@@ -288,7 +270,7 @@ open class AlphaZeroMctsNoModelStrategy(params: SearchParameters) : VanillaMctsS
                 else if (s2.lossFor(s1)) -100.0 else 0.0 // and avoid immediate losses
         val infoValue =
                 if (s2.outcome != Outcome.UNDETERMINED) 0.0 // no info value for terminals
-                else params.exploration * s1Info.N *   (1.0 + s2Info.P * s1.nextMoves.size) / 2.0 /
+                else params.exploration * s1Info.N * (1.0 + s2Info.P * s1.nextMoves.size) / 2.0 /
                      s1.nextMoves.size / (1 + s2Info.N) / (1 + s2Info.N)
         return nodeValue + termValue + infoValue
     }
@@ -312,6 +294,45 @@ open class AlphaZeroMctsStrategy(val model: ComputationGraph, params: SearchPara
         }
         sInfo.N += 1
         sInfo.expanded = true
+    }
+}
+
+open class AlphaZeroMctsStrategy1(model: ComputationGraph, params: SearchParameters) :
+        AlphaZeroMctsStrategy(model, params) {
+    override fun backprop(stack: List<GameState>, expanded: GameState) {
+        val eInfo = info(expanded)
+        for (ancestor in stack) {
+            val diff = expanded.moveDepth - ancestor.moveDepth
+            val discount = Math.pow(0.9, diff.toDouble()).toFloat()
+            val aInfo = info(ancestor)
+            aInfo.Q = (aInfo.Q * aInfo.N + discount * eInfo.Q * sign(ancestor, expanded)) / (aInfo.N + 1)
+            aInfo.N += 1
+        }
+    }
+
+    override fun pickMove(state: GameState): Pair<GameState, SlimState> {
+        println("Value: ${info(state).Q}")
+        for (next in state.nextMoves) {
+            val nInfo = info(next)
+            println("$next:\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
+        }
+        val sz = state.nextMoves.size
+        val policy = DoubleArray(sz) {
+            max(0.0,
+                info(state.nextMoves[it]).N.toDouble() +
+                info(state.nextMoves[it]).Q.toDouble() * 0.75)
+        }
+        val policySum = policy.sum()
+        for (i in 0 until sz) policy[i] /= policySum
+        // record non-exponentiated normalized policy in slim state. we don't want
+        // model inputs to depend on temperature, or have most values driven to zero.
+        val slim = state.toSlimState { i, tsr -> tsr.prob = policy[i].toFloat() }
+        // now exponentiate to get weights for picking actual move
+        for (i in 0 until sz) policy[i] = pow(policy[i], 1 / temperature(state.moveDepth))
+        val next = pickChildByProbs(state, policy)
+        allInfo.remove(state.moveDepth) // won't be needing these anymore
+        allInfo.remove((state.moveDepth - 1).toShort()) // or these, which might exist if there are two algos
+        return Pair(next, slim)
     }
 }
 
@@ -398,7 +419,7 @@ class DirichletMctsStrategy(params: SearchParameters, val values: FloatArray) :
         val sz = state.nextMoves.size
         val values = DoubleArray(sz) {
             pow(expectedValuePlusSdevs(info(state.nextMoves[it]).wld, -1f).toDouble(),
-                    1 / temperature(state.moveDepth))
+                1 / temperature(state.moveDepth))
         }
         val next = pickChildByProbs(state, values)
         val slim = state.toSlimState { i, tsr ->

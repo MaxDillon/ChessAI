@@ -3,20 +3,27 @@ syntax = "proto3";
 package maximum.industries;
 
 enum Topology {
-    SQUARE = 0;
-    CYLINDER = 1;
-    TORUS = 2;
+    TOPOLOGY_SQUARE = 0;
+    TOPOLOGY_CYLINDER = 1;
+    TOPOLOGY_TORUS = 2;
 }
 
 enum Symmetry {
-    ROTATE = 0;
-    REFLECT = 1;
-    NONE = 2;
+    SYMMETRY_ROTATE = 0;
+    SYMMETRY_REFLECT = 1;
+    SYMMETRY_NONE = 2;
+}
+
+enum Augmentation {
+    AUGMENTATION_NONE = 0;
+    AUGMENTATION_LEFT_RIGHT = 1;
+    AUGMENTATION_FRONT_BACK = 2;
+    AUGMENTATION_BOTH = 3;
 }
 
 enum MoveSource {
-    PIECES_ON_BOARD = 0;
-    ENDS = 1;
+    MOVESOURCE_PIECES_ON_BOARD = 0;
+    MOVESOURCE_ENDS = 1;
 }
 
 enum Outcome {
@@ -83,4 +90,6 @@ message GameSpec {
     MoveSource move_source = 5;
     repeated Piece piece = 6;
     repeated GameOver game_over = 7;
+    Augmentation augmentation = 8;
+    string implementing_class = 9;
 }

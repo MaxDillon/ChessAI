@@ -44,7 +44,7 @@ fun inputChannels(gameSpec: GameSpec): Int {
 fun policyChannels(gameSpec: GameSpec): Int {
     val N = gameSpec.boardSize
     val P = gameSpec.pieceCount - 1
-    return if (gameSpec.moveSource == GameGrammar.MoveSource.ENDS) P else N * N
+    return if (gameSpec.moveSource == GameGrammar.MoveSource.MOVESOURCE_ENDS) P else N * N
 }
 
 fun policySize(gameSpec: GameSpec): Int {

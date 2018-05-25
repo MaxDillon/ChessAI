@@ -1,8 +1,8 @@
-
 name: "connect4"
 board_size: 7
-board_symmetry: NONE
-move_source: ENDS
+board_symmetry: SYMMETRY_NONE
+move_source: MOVESOURCE_ENDS
+augmentation: AUGMENTATION_LEFT_RIGHT
 
 piece {
     name: "O"

@@ -1,0 +1,46 @@
+name: "Chess"
+board_size: 8
+board_symmetry: SYMMETRY_REFLECT
+augmentation: AUGMENTATION_BOTH
+implementing_class: "maximum.industries.games.ChessState"
+
+piece {
+    name: "p"
+    placement: "x1y2"
+    placement: "x2y2"
+    placement: "x3y2"
+    placement: "x4y2"
+    placement: "x5y2"
+    placement: "x6y2"
+    placement: "x7y2"
+    placement: "x8y2"
+}
+piece {
+    name: "N"
+    placement: "x2y1"
+    placement: "x7y1"
+}
+piece {
+    name: "B"
+    placement: "x3y1"
+    placement: "x6y1"
+}
+piece {
+    name: "R"
+}
+piece {
+    name: "Q"
+    placement: "x5y1"
+}
+piece {
+    name: "K"
+}
+piece {
+    name: "r"
+    placement: "x8y1"
+    placement: "x1y1"
+}
+piece {
+    name: "k"
+    placement: "x4y1"
+}

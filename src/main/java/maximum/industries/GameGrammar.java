@@ -20,32 +20,32 @@ public final class GameGrammar {
   public enum Topology
       implements com.google.protobuf.ProtocolMessageEnum {
     /**
-     * <code>SQUARE = 0;</code>
+     * <code>TOPOLOGY_SQUARE = 0;</code>
      */
-    SQUARE(0),
+    TOPOLOGY_SQUARE(0),
     /**
-     * <code>CYLINDER = 1;</code>
+     * <code>TOPOLOGY_CYLINDER = 1;</code>
      */
-    CYLINDER(1),
+    TOPOLOGY_CYLINDER(1),
     /**
-     * <code>TORUS = 2;</code>
+     * <code>TOPOLOGY_TORUS = 2;</code>
      */
-    TORUS(2),
+    TOPOLOGY_TORUS(2),
     UNRECOGNIZED(-1),
     ;
 
     /**
-     * <code>SQUARE = 0;</code>
+     * <code>TOPOLOGY_SQUARE = 0;</code>
      */
-    public static final int SQUARE_VALUE = 0;
+    public static final int TOPOLOGY_SQUARE_VALUE = 0;
     /**
-     * <code>CYLINDER = 1;</code>
+     * <code>TOPOLOGY_CYLINDER = 1;</code>
      */
-    public static final int CYLINDER_VALUE = 1;
+    public static final int TOPOLOGY_CYLINDER_VALUE = 1;
     /**
-     * <code>TORUS = 2;</code>
+     * <code>TOPOLOGY_TORUS = 2;</code>
      */
-    public static final int TORUS_VALUE = 2;
+    public static final int TOPOLOGY_TORUS_VALUE = 2;
 
 
     public final int getNumber() {
@@ -66,9 +66,9 @@ public final class GameGrammar {
 
     public static Topology forNumber(int value) {
       switch (value) {
-        case 0: return SQUARE;
-        case 1: return CYLINDER;
-        case 2: return TORUS;
+        case 0: return TOPOLOGY_SQUARE;
+        case 1: return TOPOLOGY_CYLINDER;
+        case 2: return TOPOLOGY_TORUS;
         default: return null;
       }
     }
@@ -127,32 +127,32 @@ public final class GameGrammar {
   public enum Symmetry
       implements com.google.protobuf.ProtocolMessageEnum {
     /**
-     * <code>ROTATE = 0;</code>
+     * <code>SYMMETRY_ROTATE = 0;</code>
      */
-    ROTATE(0),
+    SYMMETRY_ROTATE(0),
     /**
-     * <code>REFLECT = 1;</code>
+     * <code>SYMMETRY_REFLECT = 1;</code>
      */
-    REFLECT(1),
+    SYMMETRY_REFLECT(1),
     /**
-     * <code>NONE = 2;</code>
+     * <code>SYMMETRY_NONE = 2;</code>
      */
-    NONE(2),
+    SYMMETRY_NONE(2),
     UNRECOGNIZED(-1),
     ;
 
     /**
-     * <code>ROTATE = 0;</code>
+     * <code>SYMMETRY_ROTATE = 0;</code>
      */
-    public static final int ROTATE_VALUE = 0;
+    public static final int SYMMETRY_ROTATE_VALUE = 0;
     /**
-     * <code>REFLECT = 1;</code>
+     * <code>SYMMETRY_REFLECT = 1;</code>
      */
-    public static final int REFLECT_VALUE = 1;
+    public static final int SYMMETRY_REFLECT_VALUE = 1;
     /**
-     * <code>NONE = 2;</code>
+     * <code>SYMMETRY_NONE = 2;</code>
      */
-    public static final int NONE_VALUE = 2;
+    public static final int SYMMETRY_NONE_VALUE = 2;
 
 
     public final int getNumber() {
@@ -173,9 +173,9 @@ public final class GameGrammar {
 
     public static Symmetry forNumber(int value) {
       switch (value) {
-        case 0: return ROTATE;
-        case 1: return REFLECT;
-        case 2: return NONE;
+        case 0: return SYMMETRY_ROTATE;
+        case 1: return SYMMETRY_REFLECT;
+        case 2: return SYMMETRY_NONE;
         default: return null;
       }
     }
@@ -229,29 +229,145 @@ public final class GameGrammar {
   }
 
   /**
+   * Protobuf enum {@code maximum.industries.Augmentation}
+   */
+  public enum Augmentation
+      implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <code>AUGMENTATION_NONE = 0;</code>
+     */
+    AUGMENTATION_NONE(0),
+    /**
+     * <code>AUGMENTATION_LEFT_RIGHT = 1;</code>
+     */
+    AUGMENTATION_LEFT_RIGHT(1),
+    /**
+     * <code>AUGMENTATION_FRONT_BACK = 2;</code>
+     */
+    AUGMENTATION_FRONT_BACK(2),
+    /**
+     * <code>AUGMENTATION_BOTH = 3;</code>
+     */
+    AUGMENTATION_BOTH(3),
+    UNRECOGNIZED(-1),
+    ;
+
+    /**
+     * <code>AUGMENTATION_NONE = 0;</code>
+     */
+    public static final int AUGMENTATION_NONE_VALUE = 0;
+    /**
+     * <code>AUGMENTATION_LEFT_RIGHT = 1;</code>
+     */
+    public static final int AUGMENTATION_LEFT_RIGHT_VALUE = 1;
+    /**
+     * <code>AUGMENTATION_FRONT_BACK = 2;</code>
+     */
+    public static final int AUGMENTATION_FRONT_BACK_VALUE = 2;
+    /**
+     * <code>AUGMENTATION_BOTH = 3;</code>
+     */
+    public static final int AUGMENTATION_BOTH_VALUE = 3;
+
+
+    public final int getNumber() {
+      if (this == UNRECOGNIZED) {
+        throw new java.lang.IllegalArgumentException(
+            "Can't get the number of an unknown enum value.");
+      }
+      return value;
+    }
+
+    /**
+     * @deprecated Use {@link #forNumber(int)} instead.
+     */
+    @java.lang.Deprecated
+    public static Augmentation valueOf(int value) {
+      return forNumber(value);
+    }
+
+    public static Augmentation forNumber(int value) {
+      switch (value) {
+        case 0: return AUGMENTATION_NONE;
+        case 1: return AUGMENTATION_LEFT_RIGHT;
+        case 2: return AUGMENTATION_FRONT_BACK;
+        case 3: return AUGMENTATION_BOTH;
+        default: return null;
+      }
+    }
+
+    public static com.google.protobuf.Internal.EnumLiteMap<Augmentation>
+        internalGetValueMap() {
+      return internalValueMap;
+    }
+    private static final com.google.protobuf.Internal.EnumLiteMap<
+        Augmentation> internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<Augmentation>() {
+            public Augmentation findValueByNumber(int number) {
+              return Augmentation.forNumber(number);
+            }
+          };
+
+    public final com.google.protobuf.Descriptors.EnumValueDescriptor
+        getValueDescriptor() {
+      return getDescriptor().getValues().get(ordinal());
+    }
+    public final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptorForType() {
+      return getDescriptor();
+    }
+    public static final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptor() {
+      return maximum.industries.GameGrammar.getDescriptor().getEnumTypes().get(2);
+    }
+
+    private static final Augmentation[] VALUES = values();
+
+    public static Augmentation valueOf(
+        com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+      if (desc.getType() != getDescriptor()) {
+        throw new java.lang.IllegalArgumentException(
+          "EnumValueDescriptor is not for this type.");
+      }
+      if (desc.getIndex() == -1) {
+        return UNRECOGNIZED;
+      }
+      return VALUES[desc.getIndex()];
+    }
+
+    private final int value;
+
+    private Augmentation(int value) {
+      this.value = value;
+    }
+
+    // @@protoc_insertion_point(enum_scope:maximum.industries.Augmentation)
+  }
+
+  /**
    * Protobuf enum {@code maximum.industries.MoveSource}
    */
   public enum MoveSource
       implements com.google.protobuf.ProtocolMessageEnum {
     /**
-     * <code>PIECES_ON_BOARD = 0;</code>
+     * <code>MOVESOURCE_PIECES_ON_BOARD = 0;</code>
      */
-    PIECES_ON_BOARD(0),
+    MOVESOURCE_PIECES_ON_BOARD(0),
     /**
-     * <code>ENDS = 1;</code>
+     * <code>MOVESOURCE_ENDS = 1;</code>
      */
-    ENDS(1),
+    MOVESOURCE_ENDS(1),
     UNRECOGNIZED(-1),
     ;
 
     /**
-     * <code>PIECES_ON_BOARD = 0;</code>
+     * <code>MOVESOURCE_PIECES_ON_BOARD = 0;</code>
      */
-    public static final int PIECES_ON_BOARD_VALUE = 0;
+    public static final int MOVESOURCE_PIECES_ON_BOARD_VALUE = 0;
     /**
-     * <code>ENDS = 1;</code>
+     * <code>MOVESOURCE_ENDS = 1;</code>
      */
-    public static final int ENDS_VALUE = 1;
+    public static final int MOVESOURCE_ENDS_VALUE = 1;
 
 
     public final int getNumber() {
@@ -272,8 +388,8 @@ public final class GameGrammar {
 
     public static MoveSource forNumber(int value) {
       switch (value) {
-        case 0: return PIECES_ON_BOARD;
-        case 1: return ENDS;
+        case 0: return MOVESOURCE_PIECES_ON_BOARD;
+        case 1: return MOVESOURCE_ENDS;
         default: return null;
       }
     }
@@ -300,7 +416,7 @@ public final class GameGrammar {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return maximum.industries.GameGrammar.getDescriptor().getEnumTypes().get(2);
+      return maximum.industries.GameGrammar.getDescriptor().getEnumTypes().get(3);
     }
 
     private static final MoveSource[] VALUES = values();
@@ -443,7 +559,7 @@ public final class GameGrammar {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return maximum.industries.GameGrammar.getDescriptor().getEnumTypes().get(3);
+      return maximum.industries.GameGrammar.getDescriptor().getEnumTypes().get(4);
     }
 
     private static final Outcome[] VALUES = values();
@@ -586,7 +702,7 @@ public final class GameGrammar {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return maximum.industries.GameGrammar.getDescriptor().getEnumTypes().get(4);
+      return maximum.industries.GameGrammar.getDescriptor().getEnumTypes().get(5);
     }
 
     private static final Condition[] VALUES = values();
@@ -711,7 +827,7 @@ public final class GameGrammar {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return maximum.industries.GameGrammar.getDescriptor().getEnumTypes().get(5);
+      return maximum.industries.GameGrammar.getDescriptor().getEnumTypes().get(6);
     }
 
     private static final GameDecision[] VALUES = values();
@@ -4531,6 +4647,25 @@ public final class GameGrammar {
      */
     maximum.industries.GameGrammar.GameOverOrBuilder getGameOverOrBuilder(
         int index);
+
+    /**
+     * <code>.maximum.industries.Augmentation augmentation = 8;</code>
+     */
+    int getAugmentationValue();
+    /**
+     * <code>.maximum.industries.Augmentation augmentation = 8;</code>
+     */
+    maximum.industries.GameGrammar.Augmentation getAugmentation();
+
+    /**
+     * <code>string implementing_class = 9;</code>
+     */
+    java.lang.String getImplementingClass();
+    /**
+     * <code>string implementing_class = 9;</code>
+     */
+    com.google.protobuf.ByteString
+        getImplementingClassBytes();
   }
   /**
    * Protobuf type {@code maximum.industries.GameSpec}
@@ -4551,6 +4686,8 @@ public final class GameGrammar {
       moveSource_ = 0;
       piece_ = java.util.Collections.emptyList();
       gameOver_ = java.util.Collections.emptyList();
+      augmentation_ = 0;
+      implementingClass_ = "";
     }
 
     @java.lang.Override
@@ -4623,6 +4760,18 @@ public final class GameGrammar {
               }
               gameOver_.add(
                   input.readMessage(maximum.industries.GameGrammar.GameOver.parser(), extensionRegistry));
+              break;
+            }
+            case 64: {
+              int rawValue = input.readEnum();
+
+              augmentation_ = rawValue;
+              break;
+            }
+            case 74: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              implementingClass_ = s;
               break;
             }
           }
@@ -4816,6 +4965,56 @@ public final class GameGrammar {
       return gameOver_.get(index);
     }
 
+    public static final int AUGMENTATION_FIELD_NUMBER = 8;
+    private int augmentation_;
+    /**
+     * <code>.maximum.industries.Augmentation augmentation = 8;</code>
+     */
+    public int getAugmentationValue() {
+      return augmentation_;
+    }
+    /**
+     * <code>.maximum.industries.Augmentation augmentation = 8;</code>
+     */
+    public maximum.industries.GameGrammar.Augmentation getAugmentation() {
+      maximum.industries.GameGrammar.Augmentation result = maximum.industries.GameGrammar.Augmentation.valueOf(augmentation_);
+      return result == null ? maximum.industries.GameGrammar.Augmentation.UNRECOGNIZED : result;
+    }
+
+    public static final int IMPLEMENTING_CLASS_FIELD_NUMBER = 9;
+    private volatile java.lang.Object implementingClass_;
+    /**
+     * <code>string implementing_class = 9;</code>
+     */
+    public java.lang.String getImplementingClass() {
+      java.lang.Object ref = implementingClass_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        implementingClass_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string implementing_class = 9;</code>
+     */
+    public com.google.protobuf.ByteString
+        getImplementingClassBytes() {
+      java.lang.Object ref = implementingClass_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        implementingClass_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -4834,13 +5033,13 @@ public final class GameGrammar {
       if (boardSize_ != 0) {
         output.writeUInt32(2, boardSize_);
       }
-      if (boardTopology_ != maximum.industries.GameGrammar.Topology.SQUARE.getNumber()) {
+      if (boardTopology_ != maximum.industries.GameGrammar.Topology.TOPOLOGY_SQUARE.getNumber()) {
         output.writeEnum(3, boardTopology_);
       }
-      if (boardSymmetry_ != maximum.industries.GameGrammar.Symmetry.ROTATE.getNumber()) {
+      if (boardSymmetry_ != maximum.industries.GameGrammar.Symmetry.SYMMETRY_ROTATE.getNumber()) {
         output.writeEnum(4, boardSymmetry_);
       }
-      if (moveSource_ != maximum.industries.GameGrammar.MoveSource.PIECES_ON_BOARD.getNumber()) {
+      if (moveSource_ != maximum.industries.GameGrammar.MoveSource.MOVESOURCE_PIECES_ON_BOARD.getNumber()) {
         output.writeEnum(5, moveSource_);
       }
       for (int i = 0; i < piece_.size(); i++) {
@@ -4848,6 +5047,12 @@ public final class GameGrammar {
       }
       for (int i = 0; i < gameOver_.size(); i++) {
         output.writeMessage(7, gameOver_.get(i));
+      }
+      if (augmentation_ != maximum.industries.GameGrammar.Augmentation.AUGMENTATION_NONE.getNumber()) {
+        output.writeEnum(8, augmentation_);
+      }
+      if (!getImplementingClassBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 9, implementingClass_);
       }
     }
 
@@ -4863,15 +5068,15 @@ public final class GameGrammar {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(2, boardSize_);
       }
-      if (boardTopology_ != maximum.industries.GameGrammar.Topology.SQUARE.getNumber()) {
+      if (boardTopology_ != maximum.industries.GameGrammar.Topology.TOPOLOGY_SQUARE.getNumber()) {
         size += com.google.protobuf.CodedOutputStream
           .computeEnumSize(3, boardTopology_);
       }
-      if (boardSymmetry_ != maximum.industries.GameGrammar.Symmetry.ROTATE.getNumber()) {
+      if (boardSymmetry_ != maximum.industries.GameGrammar.Symmetry.SYMMETRY_ROTATE.getNumber()) {
         size += com.google.protobuf.CodedOutputStream
           .computeEnumSize(4, boardSymmetry_);
       }
-      if (moveSource_ != maximum.industries.GameGrammar.MoveSource.PIECES_ON_BOARD.getNumber()) {
+      if (moveSource_ != maximum.industries.GameGrammar.MoveSource.MOVESOURCE_PIECES_ON_BOARD.getNumber()) {
         size += com.google.protobuf.CodedOutputStream
           .computeEnumSize(5, moveSource_);
       }
@@ -4882,6 +5087,13 @@ public final class GameGrammar {
       for (int i = 0; i < gameOver_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(7, gameOver_.get(i));
+      }
+      if (augmentation_ != maximum.industries.GameGrammar.Augmentation.AUGMENTATION_NONE.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(8, augmentation_);
+      }
+      if (!getImplementingClassBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(9, implementingClass_);
       }
       memoizedSize = size;
       return size;
@@ -4910,6 +5122,9 @@ public final class GameGrammar {
           .equals(other.getPieceList());
       result = result && getGameOverList()
           .equals(other.getGameOverList());
+      result = result && augmentation_ == other.augmentation_;
+      result = result && getImplementingClass()
+          .equals(other.getImplementingClass());
       return result;
     }
 
@@ -4938,6 +5153,10 @@ public final class GameGrammar {
         hash = (37 * hash) + GAME_OVER_FIELD_NUMBER;
         hash = (53 * hash) + getGameOverList().hashCode();
       }
+      hash = (37 * hash) + AUGMENTATION_FIELD_NUMBER;
+      hash = (53 * hash) + augmentation_;
+      hash = (37 * hash) + IMPLEMENTING_CLASS_FIELD_NUMBER;
+      hash = (53 * hash) + getImplementingClass().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -5091,6 +5310,10 @@ public final class GameGrammar {
         } else {
           gameOverBuilder_.clear();
         }
+        augmentation_ = 0;
+
+        implementingClass_ = "";
+
         return this;
       }
 
@@ -5138,6 +5361,8 @@ public final class GameGrammar {
         } else {
           result.gameOver_ = gameOverBuilder_.build();
         }
+        result.augmentation_ = augmentation_;
+        result.implementingClass_ = implementingClass_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -5247,6 +5472,13 @@ public final class GameGrammar {
               gameOverBuilder_.addAllMessages(other.gameOver_);
             }
           }
+        }
+        if (other.augmentation_ != 0) {
+          setAugmentationValue(other.getAugmentationValue());
+        }
+        if (!other.getImplementingClass().isEmpty()) {
+          implementingClass_ = other.implementingClass_;
+          onChanged();
         }
         onChanged();
         return this;
@@ -5981,6 +6213,119 @@ public final class GameGrammar {
         }
         return gameOverBuilder_;
       }
+
+      private int augmentation_ = 0;
+      /**
+       * <code>.maximum.industries.Augmentation augmentation = 8;</code>
+       */
+      public int getAugmentationValue() {
+        return augmentation_;
+      }
+      /**
+       * <code>.maximum.industries.Augmentation augmentation = 8;</code>
+       */
+      public Builder setAugmentationValue(int value) {
+        augmentation_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.maximum.industries.Augmentation augmentation = 8;</code>
+       */
+      public maximum.industries.GameGrammar.Augmentation getAugmentation() {
+        maximum.industries.GameGrammar.Augmentation result = maximum.industries.GameGrammar.Augmentation.valueOf(augmentation_);
+        return result == null ? maximum.industries.GameGrammar.Augmentation.UNRECOGNIZED : result;
+      }
+      /**
+       * <code>.maximum.industries.Augmentation augmentation = 8;</code>
+       */
+      public Builder setAugmentation(maximum.industries.GameGrammar.Augmentation value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        
+        augmentation_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.maximum.industries.Augmentation augmentation = 8;</code>
+       */
+      public Builder clearAugmentation() {
+        
+        augmentation_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object implementingClass_ = "";
+      /**
+       * <code>string implementing_class = 9;</code>
+       */
+      public java.lang.String getImplementingClass() {
+        java.lang.Object ref = implementingClass_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          implementingClass_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string implementing_class = 9;</code>
+       */
+      public com.google.protobuf.ByteString
+          getImplementingClassBytes() {
+        java.lang.Object ref = implementingClass_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          implementingClass_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string implementing_class = 9;</code>
+       */
+      public Builder setImplementingClass(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        implementingClass_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string implementing_class = 9;</code>
+       */
+      public Builder clearImplementingClass() {
+        
+        implementingClass_ = getDefaultInstance().getImplementingClass();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string implementing_class = 9;</code>
+       */
+      public Builder setImplementingClassBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        implementingClass_ = value;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return this;
@@ -6079,7 +6424,7 @@ public final class GameGrammar {
       "\0132\030.maximum.industries.Move\"\177\n\010GameOver\022" +
       "0\n\tcondition\030\001 \001(\0162\035.maximum.industries." +
       "Condition\022\r\n\005param\030\002 \001(\r\0222\n\010decision\030\003 \001" +
-      "(\0162 .maximum.industries.GameDecision\"\250\002\n" +
+      "(\0162 .maximum.industries.GameDecision\"\374\002\n" +
       "\010GameSpec\022\014\n\004name\030\001 \001(\t\022\022\n\nboard_size\030\002 " +
       "\001(\r\0224\n\016board_topology\030\003 \001(\0162\034.maximum.in" +
       "dustries.Topology\0224\n\016board_symmetry\030\004 \001(" +
@@ -6087,16 +6432,23 @@ public final class GameGrammar {
       "source\030\005 \001(\0162\036.maximum.industries.MoveSo" +
       "urce\022(\n\005piece\030\006 \003(\0132\031.maximum.industries" +
       ".Piece\022/\n\tgame_over\030\007 \003(\0132\034.maximum.indu" +
-      "stries.GameOver*/\n\010Topology\022\n\n\006SQUARE\020\000\022" +
-      "\014\n\010CYLINDER\020\001\022\t\n\005TORUS\020\002*-\n\010Symmetry\022\n\n\006" +
-      "ROTATE\020\000\022\013\n\007REFLECT\020\001\022\010\n\004NONE\020\002*+\n\nMoveS" +
-      "ource\022\023\n\017PIECES_ON_BOARD\020\000\022\010\n\004ENDS\020\001*`\n\007" +
+      "stries.GameOver\0226\n\014augmentation\030\010 \001(\0162 ." +
+      "maximum.industries.Augmentation\022\032\n\022imple" +
+      "menting_class\030\t \001(\t*J\n\010Topology\022\023\n\017TOPOL" +
+      "OGY_SQUARE\020\000\022\025\n\021TOPOLOGY_CYLINDER\020\001\022\022\n\016T" +
+      "OPOLOGY_TORUS\020\002*H\n\010Symmetry\022\023\n\017SYMMETRY_" +
+      "ROTATE\020\000\022\024\n\020SYMMETRY_REFLECT\020\001\022\021\n\rSYMMET" +
+      "RY_NONE\020\002*v\n\014Augmentation\022\025\n\021AUGMENTATIO",
+      "N_NONE\020\000\022\033\n\027AUGMENTATION_LEFT_RIGHT\020\001\022\033\n" +
+      "\027AUGMENTATION_FRONT_BACK\020\002\022\025\n\021AUGMENTATI" +
+      "ON_BOTH\020\003*A\n\nMoveSource\022\036\n\032MOVESOURCE_PI" +
+      "ECES_ON_BOARD\020\000\022\023\n\017MOVESOURCE_ENDS\020\001*`\n\007" +
       "Outcome\022\016\n\nDISALLOWED\020\000\022\013\n\007ALLOWED\020\001\022\013\n\007" +
       "CAPTURE\020\002\022\010\n\004SWAP\020\003\022\010\n\004STAY\020\004\022\n\n\006DEPLOY\020" +
-      "\005\022\013\n\007IMPRESS\020\006*\226\001\n\tCondition\022\021\n\rNO_LEGAL",
+      "\005\022\013\n\007IMPRESS\020\006*\226\001\n\tCondition\022\021\n\rNO_LEGAL" +
       "_MOVE\020\000\022\026\n\022NO_PIECES_ON_BOARD\020\001\022\027\n\023KEY_P" +
       "IECES_CAPTURED\020\002\022\016\n\nBOARD_FULL\020\003\022\016\n\nN_IN" +
-      "_A_ROW\020\004\022\016\n\nMOVE_LIMIT\020\005\022\025\n\021REPEATED_POS" +
+      "_A_ROW\020\004\022\016\n\nMOVE_LIMIT\020\005\022\025\n\021REPEATED_POS",
       "ITION\020\006*]\n\014GameDecision\022\007\n\003WIN\020\000\022\010\n\004LOSS" +
       "\020\001\022\010\n\004DRAW\020\003\022\025\n\021COUNT_LIVE_PIECES\020\004\022\031\n\025C" +
       "OUNT_CAPTURED_PIECES\020\005b\006proto3"
@@ -6142,7 +6494,7 @@ public final class GameGrammar {
     internal_static_maximum_industries_GameSpec_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_maximum_industries_GameSpec_descriptor,
-        new java.lang.String[] { "Name", "BoardSize", "BoardTopology", "BoardSymmetry", "MoveSource", "Piece", "GameOver", });
+        new java.lang.String[] { "Name", "BoardSize", "BoardTopology", "BoardSymmetry", "MoveSource", "Piece", "GameOver", "Augmentation", "ImplementingClass", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
