@@ -158,6 +158,7 @@ open class VanillaMctsStrategy(val params: SearchParameters) : MctsStrategy {
     }
 
     override fun expand(state: GameState) {
+        state.protectNextMoves()
         val sInfo = info(state)
         if (state.outcome == Outcome.UNDETERMINED) {
             for (next in state.nextMoves) {

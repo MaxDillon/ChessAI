@@ -93,15 +93,21 @@ open class GameState {
         }
     val moveDepth: Short
     val history: IntArray
-    private var _nextMoves: SoftReference<ArrayList<GameState>>? = null
+    private var _nextMovesHard: ArrayList<GameState>? = null
+    private var _nextMovesSoft: SoftReference<ArrayList<GameState>>? = null
     val nextMoves: ArrayList<GameState>
         get() {
-            return _nextMoves?.get() ?: {
-                val moves = initNextMoves()
-                _nextMoves = SoftReference(moves)
-                moves
-            }()
+            var moves = _nextMovesHard ?: _nextMovesSoft?.get()
+            if (moves == null) {
+                moves = initNextMoves()
+                _nextMovesSoft = SoftReference(moves)
+            }
+            return moves
         }
+    fun protectNextMoves() {
+        _nextMovesHard = nextMoves
+        _nextMovesSoft = null
+    }
     private var _outcome: Outcome = Outcome.UNINITIALIZED
     val outcome: Outcome
         get() {
