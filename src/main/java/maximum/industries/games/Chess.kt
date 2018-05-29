@@ -3,8 +3,10 @@ package maximum.industries.games
 import maximum.industries.*
 import java.util.*
 import kotlin.math.abs
-import kotlin.math.min
 import kotlin.math.sign
+
+const val BOARD_SIZE = 8
+const val BOARD_SQUARES = 64
 
 const val PAWN = 1
 const val KNIGHT = 2
@@ -29,9 +31,11 @@ class ChessState : GameState {
             super(gameSpec, gameBoard, player, p1, x1, y1, x2, y2, moveDepth, history) {
     }
 
+    // this is called *alot* needs to be efficient.
     fun attacked(board: ByteArray, king: Int, offset: Int, maxMove: Int): Boolean {
         val otp = if (board[king] > 0) -1 else 1 // "opponent to positive"
-        val diagonal = (abs(offset) and (abs(offset) - 1)) > 0 // diag if 2+ bits set
+        //val diagonal = (abs(offset) and (abs(offset) - 1)) > 0 // diag if 2+ bits set
+        val diagonal = (offset == -9 || offset == -7 || offset == 7 || offset == 9) // faster
         for (i in 1..maxMove) {
             val piece = board[king + i * offset] * otp
             if (piece != 0) {
@@ -57,24 +61,26 @@ class ChessState : GameState {
         if (kx < 0 && ky < 0) return false // should happen in tests only
 
         val kpos = ky * 8 + kx
+        val smkx = 7 - kx // we'll use these in inlining min() calls to avoid null checks
+        val smky = 7 - ky
         if (attacked(board, kpos, -8, ky)) return true
-        if (attacked(board, kpos, -7, min(ky, 7 - kx))) return true
-        if (attacked(board, kpos, +1, 7 - kx)) return true
-        if (attacked(board, kpos, +9, min(7 - ky, 7 - kx))) return true
-        if (attacked(board, kpos, +8, 7 - ky)) return true
-        if (attacked(board, kpos, +7, min(7 - ky, kx))) return true
+        if (attacked(board, kpos, -7, if (ky < smkx) ky else smkx)) return true
+        if (attacked(board, kpos, +1, smkx)) return true
+        if (attacked(board, kpos, +9, if(smky < smkx) smky else smkx)) return true
+        if (attacked(board, kpos, +8, smky)) return true
+        if (attacked(board, kpos, +7, if (smky < kx) smky else kx)) return true
         if (attacked(board, kpos, -1, kx)) return true
-        if (attacked(board, kpos, -9, min(kx, ky))) return true
+        if (attacked(board, kpos, -9, if (kx < ky) kx else ky)) return true
 
         val otp = if (board[kpos] > 0) -1 else 1 // "opponent to positive"
         if (kx > 0 && ky > 1 && board[kpos - 17] * otp == KNIGHT) return true
         if (kx < 7 && ky > 1 && board[kpos - 15] * otp == KNIGHT) return true
-        if (kx < 6 && ky > 0 && board[kpos - 6] * otp == KNIGHT) return true
-        if (kx < 6 && ky < 7 && board[kpos + 10] * otp == KNIGHT) return true
-        if (kx < 7 && ky < 6 && board[kpos + 17] * otp == KNIGHT) return true
-        if (kx > 0 && ky < 6 && board[kpos + 15] * otp == KNIGHT) return true
-        if (kx > 1 && ky < 7 && board[kpos + 6] * otp == KNIGHT) return true
         if (kx > 1 && ky > 0 && board[kpos - 10] * otp == KNIGHT) return true
+        if (kx < 6 && ky > 0 && board[kpos - 6] * otp == KNIGHT) return true
+        if (kx > 1 && ky < 7 && board[kpos + 6] * otp == KNIGHT) return true
+        if (kx < 6 && ky < 7 && board[kpos + 10] * otp == KNIGHT) return true
+        if (kx > 0 && ky < 6 && board[kpos + 15] * otp == KNIGHT) return true
+        if (kx < 7 && ky < 6 && board[kpos + 17] * otp == KNIGHT) return true
 
         return false
     }
@@ -85,7 +91,7 @@ class ChessState : GameState {
     }
 
     fun set(board: ByteArray, x: Int, y: Int, p: Int) {
-        board[y * gameSpec.boardSize + x] = p.toByte()
+        board[y * BOARD_SIZE + x] = p.toByte()
     }
 
     // adds a move if the move is legal
@@ -185,10 +191,12 @@ class ChessState : GameState {
     }
 
     fun kingPos(): Pair<Int, Int> {
-        for (i in 0 until gameBoard.size) {
-            val type = gameBoard[i].toInt() * if (player.eq(Player.WHITE)) 1 else -1
+        val sign = if (player.eq(Player.WHITE)) 1 else -1
+        val board = gameBoard
+        for (i in 0 until BOARD_SQUARES) {
+            val type = board[i].toInt() * sign
             if (type == KING || type == UKING) {
-                return Pair(i % gameSpec.boardSize, i / gameSpec.boardSize)
+                return Pair(i % BOARD_SIZE, i / BOARD_SIZE)
             }
         }
         return Pair(-2, -2)
@@ -203,75 +211,62 @@ class ChessState : GameState {
         val playerSign = if (player.eq(Player.WHITE)) 1 else -1
         val (kx, ky) = kingPos()
 
-        for (i in 0 until gameBoard.size) {
-            val x = i % gameSpec.boardSize
-            val y = i / gameSpec.boardSize
-            val p = gameBoard[i].toInt()
-
-            fun addPawnMoves() {
-                val p1 = if (y + playerSign == 0 || y + playerSign == 7) {
-                    QUEEN * playerSign
-                } else {
-                    PAWN * playerSign
-                }
-                if (at(x, y + playerSign) == 0) {
-                    if ((y - playerSign) % 7 == 0 && at(x, y + 2 * playerSign) == 0) {
-                        maybeMove(states, x, y, x, y + 2 * playerSign, kx, ky)
-                    }
-                    maybeMove(states, x, y, x, y + playerSign, kx, ky, p1)
-                }
-                if (x > 0 && at(x - 1, y + playerSign) != 0) {
-                    maybeMove(states, x, y, x - 1, y + playerSign, kx, ky, p1)
-                }
-                if (x < 7 && at(x + 1, y + playerSign) != 0) {
-                    maybeMove(states, x, y, x + 1, y + playerSign, kx, ky, p1)
-                }
-            }
-
-            fun addKnightMoves() {
-                maybeMove(states, x, y, x - 1, y - 2, kx, ky)
-                maybeMove(states, x, y, x + 1, y - 2, kx, ky)
-                maybeMove(states, x, y, x - 1, y + 2, kx, ky)
-                maybeMove(states, x, y, x + 1, y + 2, kx, ky)
-                maybeMove(states, x, y, x - 2, y - 1, kx, ky)
-                maybeMove(states, x, y, x + 2, y - 1, kx, ky)
-                maybeMove(states, x, y, x - 2, y + 1, kx, ky)
-                maybeMove(states, x, y, x + 2, y + 1, kx, ky)
-            }
-
-            fun addBishopMoves() {
-                addLinear(states, x, y, kx, ky, false, true, 7, p, stopAtOne)
-            }
-
-            fun addRookMoves() {
-                addLinear(states, x, y, kx, ky, true, false, 7, ROOK * p.sign, stopAtOne)
-            }
-
-            fun addQueenMoves() {
-                addLinear(states, x, y, kx, ky, true, true, 7, p, stopAtOne)
-            }
-
-            fun addKingMoves() {
-                addLinear(states, x, y, -1, -1, true, true, 1, KING * p.sign, stopAtOne)
-                if (abs(at(x, y)) == UKING) {
-                    maybeCastle(states, x, y)
-                }
-            }
+        val board = gameBoard
+        for (i in 0 until BOARD_SQUARES) {
+            val x = i % BOARD_SIZE
+            val y = i / BOARD_SIZE
+            val p = board[i].toInt()
 
             when (p * playerSign) {
-                PAWN -> addPawnMoves()
-                KNIGHT -> addKnightMoves()
-                BISHOP -> addBishopMoves()
-                ROOK -> addRookMoves()
-                QUEEN -> addQueenMoves()
-                KING -> addKingMoves()
-                UROOK -> addRookMoves()
-                UKING -> addKingMoves()
+                PAWN -> {
+                    val p1 = if (y + playerSign == 0 || y + playerSign == 7) {
+                        QUEEN * playerSign
+                    } else {
+                        PAWN * playerSign
+                    }
+                    if (at(x, y + playerSign) == 0) {
+                        if ((y - playerSign) % 7 == 0 && at(x, y + 2 * playerSign) == 0) {
+                            maybeMove(states, x, y, x, y + 2 * playerSign, kx, ky)
+                        }
+                        maybeMove(states, x, y, x, y + playerSign, kx, ky, p1)
+                    }
+                    if (x > 0 && at(x - 1, y + playerSign) != 0) {
+                        maybeMove(states, x, y, x - 1, y + playerSign, kx, ky, p1)
+                    }
+                    if (x < 7 && at(x + 1, y + playerSign) != 0) {
+                        maybeMove(states, x, y, x + 1, y + playerSign, kx, ky, p1)
+                    }
+                }
+                KNIGHT -> {
+                    maybeMove(states, x, y, x - 1, y - 2, kx, ky)
+                    maybeMove(states, x, y, x + 1, y - 2, kx, ky)
+                    maybeMove(states, x, y, x - 1, y + 2, kx, ky)
+                    maybeMove(states, x, y, x + 1, y + 2, kx, ky)
+                    maybeMove(states, x, y, x - 2, y - 1, kx, ky)
+                    maybeMove(states, x, y, x + 2, y - 1, kx, ky)
+                    maybeMove(states, x, y, x - 2, y + 1, kx, ky)
+                    maybeMove(states, x, y, x + 2, y + 1, kx, ky)
+                }
+                BISHOP -> {
+                    addLinear(states, x, y, kx, ky, false, true, 7, p, stopAtOne)
+                }
+                ROOK, UROOK -> {
+                    addLinear(states, x, y, kx, ky, true, false, 7, ROOK * p.sign, stopAtOne)
+                }
+                QUEEN -> {
+                    addLinear(states, x, y, kx, ky, true, true, 7, p, stopAtOne)
+                }
+                KING, UKING -> {
+                    addLinear(states, x, y, -1, -1, true, true, 1, KING * p.sign, stopAtOne)
+                    if (abs(at(x, y)) == UKING) {
+                        maybeCastle(states, x, y)
+                    }
+                }
                 else -> {
                     // empty square or opponent piece
                 }
             }
-            if (states.size > 0 && stopAtOne) break
+            if (stopAtOne && states.size > 0) break
         }
         return states
     }

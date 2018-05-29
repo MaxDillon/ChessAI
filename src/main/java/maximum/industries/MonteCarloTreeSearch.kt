@@ -100,7 +100,8 @@ open class VanillaMctsStrategy(val params: SearchParameters) : MctsStrategy {
     }
 
     fun sign(s1: GameState, s2: GameState): Int {
-        return if (s1.player.eq(s2.player)) 1 else -1
+        // for performance not using .eq since clearly no type confusion here
+        return if (s1.player == s2.player) 1 else -1
     }
 
     fun GameState.initialSelfValue(): Float {
