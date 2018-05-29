@@ -130,6 +130,7 @@ fun getAlgo(algo: String, params: SearchParameters): GameSearchAlgo {
         }
         "model" -> {
             val modelName = if (toks[1].endsWith(".*")) getLatest(toks[1]) else toks[1]
+            println(modelName)
 //            NeuralNetConfiguration.reinitMapperWithSubtypes(
 //                    Collections.singletonList(NamedType(PseudoSpherical::class.java)))
             val model = ModelSerializer.restoreComputationGraph(modelName)
@@ -173,7 +174,7 @@ fun getLatest(modelFile: String): String {
     }
     val paths = java.util.ArrayList<Path>()
     for (path in Files.find(Paths.get("."), 1, matcher).iterator()) paths.add(path)
-    return paths.sortedBy { it.fileName }.last().toString()
+    return paths.sortedBy { Files.getLastModifiedTime(it) }.last().toString()
 }
 
 fun appUsage() {
@@ -188,6 +189,7 @@ fun appUsage() {
         |        [-bexpl <e>         Governs exploration in tree search for black. Default=0.5
         |        [-wtemp <t>         Governs move selection exponent for white. Default=0.1
         |        [-btemp <t>         Governs move selection exponent for black. Default=0.1
+        |        [-ramp <n>]         The number of turns to ramp down to the given temperature.
         |        [-saveas <name>]    A name pattern for saved games. Default is <game>
         |<model> may be 'mcts' to run with Monte Carlo tree search only,
         |            or 'dmcts' to run with Dirichlet Monte Carlo tree search,

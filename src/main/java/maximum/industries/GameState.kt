@@ -1,6 +1,7 @@
 package maximum.industries
 
 import maximum.industries.GameGrammar.*
+import java.lang.ref.SoftReference
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.max
@@ -92,11 +93,14 @@ open class GameState {
         }
     val moveDepth: Short
     val history: IntArray
-    private var _nextMoves: ArrayList<GameState>? = null
+    private var _nextMoves: SoftReference<ArrayList<GameState>>? = null
     val nextMoves: ArrayList<GameState>
         get() {
-            if (_nextMoves == null) _nextMoves = initNextMoves()
-            return _nextMoves!!
+            return _nextMoves?.get() ?: {
+                val moves = initNextMoves()
+                _nextMoves = SoftReference(moves)
+                moves
+            }()
         }
     private var _outcome: Outcome = Outcome.UNINITIALIZED
     val outcome: Outcome
