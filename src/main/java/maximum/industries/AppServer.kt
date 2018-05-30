@@ -1,18 +1,19 @@
 package maximum.industries
 
-import io.ktor.application.*
+import io.ktor.application.call
+import io.ktor.application.install
 import io.ktor.content.default
 import io.ktor.content.files
 import io.ktor.content.static
 import io.ktor.features.ContentNegotiation
+import io.ktor.gson.gson
 import io.ktor.request.receive
-import io.ktor.response.*
-import io.ktor.routing.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import io.ktor.gson.*
-import org.amshove.kluent.shouldBeInstanceOf
-
+import io.ktor.response.respond
+import io.ktor.routing.get
+import io.ktor.routing.post
+import io.ktor.routing.routing
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
 
 /*
 Example:
@@ -22,12 +23,12 @@ curl --header "Content-Type: application/json" \
      http://localhost:8080/
 */
 fun main(args: Array<String>) {
-    val gameSpec = loadSpec("chess")
-    var state = GameState(gameSpec)
+    val gameSpec = loadSpec("chess2")
+    var state = newGame(gameSpec)
 
     val server = embeddedServer(Netty, port = 8080) {
-        var white = getAlgo("mcts",SearchParameters(1,1.0,1.0,1))
-        var black = getAlgo("mcts",SearchParameters(1,1.0,1.0,1))
+        var white = getAlgo("mcts", SearchParameters(1, 1.0, 1.0, 1))
+        var black = getAlgo("mcts", SearchParameters(1, 1.0, 1.0, 1))
         var playerWhite = true
 
         install(ContentNegotiation) {
@@ -37,23 +38,21 @@ fun main(args: Array<String>) {
         }
         routing {
 
-
             post("/start") {
                 playerWhite = call.receive<Boolean>()
-                state = GameState(gameSpec)
-                val whiteAlgo = if (playerWhite) "gui" else "model:model.chess.Model010.41800"
-                white = getAlgo(whiteAlgo, SearchParameters(500))
+                state = newGame(gameSpec)
+                val whiteAlgo = if (playerWhite) "gui" else "model:prod_model.chess2"
+                white = getAlgo(whiteAlgo, SearchParameters(iterations = 750, temperature = 0.05))
 
-                val blackAlgo = if (playerWhite) "model:model.chess.Model010.41800" else "gui"
-                black = getAlgo(blackAlgo,SearchParameters(500))
-                call.respond(Pair(state.toWireState(),gameSpec))
+                val blackAlgo = if (playerWhite) "model:prod_model.chess2" else "gui"
+                black = getAlgo(blackAlgo, SearchParameters(iterations = 750, temperature = 0.05))
+                call.respond(Pair(state.toWireState(), gameSpec))
             }
 
             get("/opponentMove") {
                 state = if (playerWhite) black.next(state).first else white.next(state).first
                 call.respond(state.toWireState())
             }
-
 
             post("/move") {
                 val received = call.receive<WireState>()
@@ -63,7 +62,6 @@ fun main(args: Array<String>) {
                     state = color.next(received.toGameState(gameSpec)).first
 
                     call.respond(state.toWireState())
-
                 } else {
                     call.respond(received)
                 }
@@ -80,10 +78,10 @@ fun main(args: Array<String>) {
     server.start(wait = true)
 }
 
-data class ObjectState (val board: ByteArray,
-                  val moves: IntArray,
-                  val whiteMove: Boolean,
-                  val moveDepth: Int)
+data class ObjectState(val board: ByteArray,
+                       val moves: IntArray,
+                       val whiteMove: Boolean,
+                       val moveDepth: Int)
 
 data class WireState(val state: ObjectState,
                      val moveIndex: Int,
@@ -91,9 +89,12 @@ data class WireState(val state: ObjectState,
 
 class GuiInput : GameSearchAlgo {
     var moveIndex = 0
-    override fun index(num:Int) {moveIndex=num}
+    override fun index(num: Int) {
+        moveIndex = num
+    }
+
     override fun next(state: GameState): Pair<GameState, SlimState?> {
-        return Pair(state.nextMoves[moveIndex],null)
+        return Pair(state.nextMoves[moveIndex], null)
     }
 
     override fun gameOver() {}

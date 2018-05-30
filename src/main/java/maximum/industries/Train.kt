@@ -249,7 +249,7 @@ fun main(args: Array<String>) {
     val usePolicy = modelHas(model, "policy")
     val useLegal = modelHas(model, "legal")
 
-    val dataPattern = getArg(args, "data") ?: gameName
+    val dataPattern = getArg(args, "data") ?: "data.$gameName"
     val lastN = getArg(args, "lastn")?.toInt() ?: 200
     val saveAs = getArg(args, "saveas") ?: defaultSaveAs
     val drawWeight = getArg(args, "drawweight")?.toDouble() ?: 1.0
@@ -257,12 +257,17 @@ fun main(args: Array<String>) {
     val logFile = getArg(args, "logfile") ?: "log.$saveAs"
     var saveevery = getArg(args, "saveevery")?.toInt() ?: 1000
     var updates = getArg(args, "updates")?.toInt() ?: 100
+    var valuemult = getArg(args, "valuemult")?.toFloat() ?: 1f
+    var maxentropytopfrac = getArg(args, "metf")?.toDouble() ?: 0.0
+    var doui = getArg(args, "doui")?.toBoolean() ?: true
     var batchCount = startingBatch
 
-    val uiServer = UIServer.getInstance()
-    val statsStorage = InMemoryStatsStorage()
-    uiServer.attach(statsStorage)
-    model.setListeners(StatsListener(statsStorage))
+    if (doui) {
+        val uiServer = UIServer.getInstance()
+        val statsStorage = InMemoryStatsStorage()
+        uiServer.attach(statsStorage)
+        model.setListeners(StatsListener(statsStorage))
+    }
 
     val trainReader = FileInstanceReader(0.2, drawWeight, lastN, dataPattern, "done")
     val testReader = FileInstanceReader(0.2, drawWeight, lastN, dataPattern, "test")
@@ -273,9 +278,11 @@ fun main(args: Array<String>) {
             if (ema == 0.0) next else w * ema + (1 - w) * next
 
     while (true) {
-        val train_batch = getBatch(gameSpec, trainReader, batchSize, useValue, usePolicy, useLegal)
+        val train_batch = getBatch(gameSpec, trainReader, batchSize, useValue, usePolicy, useLegal,
+                                   valuemult, maxentropytopfrac)
         if (batchCount % 5 == 1) {
-            val test_batch = getBatch(gameSpec, testReader, batchSize, useValue, usePolicy, useLegal)
+            val test_batch = getBatch(gameSpec, testReader, batchSize, useValue, usePolicy, useLegal,
+                                      valuemult, maxentropytopfrac)
 
             val train_score = model.score(train_batch)
             val test_score = model.score(test_batch)
@@ -320,7 +327,7 @@ class FileInstanceReader(val prob: Double, val drawWeight: Double,
     fun nextStream(): FileInputStream {
         val matcher = BiPredicate<Path, BasicFileAttributes> { file, _ ->
             val fileName = file.fileName.toString()
-            fileName.matches(Regex(".*data.$filePattern.[0-9]+.$extension")) ||
+            fileName.matches(Regex(".*$filePattern.[0-9]+.$extension")) ||
             fileName == filePattern
         }
         val paths = ArrayList<Path>()
@@ -379,12 +386,14 @@ fun initTrainingData(gameSpec: GameSpec, batchSize: Int): TrainingData {
 }
 
 fun parseBatch(gameSpec: GameSpec, instances: Array<Instance.TrainingInstance>,
-               useValue: Boolean, usePolicy: Boolean, useLegal: Boolean): MultiDataSet {
+               useValue: Boolean, usePolicy: Boolean, useLegal: Boolean,
+               valueMult: Float = 1.0f, maxEntropyTopFrac: Double = 0.0): MultiDataSet {
     val batchSize = instances.size
     val (input, value, policy, legal) = initTrainingData(gameSpec, batchSize)
     for (i in 0 until batchSize) {
         val reflection = rand.nextInt(4)
-        instances[i].toBatchTrainingInput(gameSpec, i, reflection, input, value, policy, legal)
+        instances[i].toBatchTrainingInput(gameSpec, i, reflection, input, value, policy, legal,
+                                          valueMult, maxEntropyTopFrac)
     }
     val outputs = ArrayList<INDArray>()
     if (useValue) outputs.add(value)
@@ -394,8 +403,9 @@ fun parseBatch(gameSpec: GameSpec, instances: Array<Instance.TrainingInstance>,
 }
 
 fun getBatch(gameSpec: GameSpec, reader: InstanceReader, batchSize: Int,
-             useValue: Boolean, usePolicy: Boolean, useLegal: Boolean): MultiDataSet {
+             useValue: Boolean, usePolicy: Boolean, useLegal: Boolean,
+             valueMult: Float = 1.0f, maxEntropyTopFrac: Double = 0.0): MultiDataSet {
     val instances = Array(batchSize) { reader.next() }
-    return parseBatch(gameSpec, instances, useValue, usePolicy, useLegal)
+    return parseBatch(gameSpec, instances, useValue, usePolicy, useLegal, valueMult, maxEntropyTopFrac)
 }
 

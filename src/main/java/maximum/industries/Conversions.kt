@@ -6,8 +6,10 @@ import maximum.industries.GameGrammar.MoveSource
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.indexing.NDArrayIndex
-import play.Play
+import java.lang.Math.pow
+import kotlin.math.E
 import kotlin.math.abs
+import kotlin.math.log
 
 fun GameSpec.numRealPieces() = pieceCount - 1
 
@@ -102,7 +104,8 @@ fun GameSpec.fromModelInput(input: INDArray, batchIndex: Int): GameState {
         }
     }
     val player = if (input.getFloat(intArrayOf(batchIndex, 0, 0, 0)) > 0) Player.WHITE else Player.BLACK
-    return GameState(this, newBoard, player, 0, 0, 0, 0, 0, 0)
+    return StateFactory.newState(this, newBoard, player,
+                                 0, 0, 0, 0, 0, 0)
 }
 
 fun GameState.toSlimState(initTsr: (i: Int, builder: Instance.TreeSearchResult.Builder) -> Unit): SlimState {
@@ -151,8 +154,8 @@ fun SlimState.toTrainingInstance(finalState: GameState): Instance.TrainingInstan
 fun GameState.legalMovesToList(): IntArray {
     val moves = arrayListOf<Int>()
     for (move in nextMoves) {
-        moves.add(gameSpec.xyToIndex(Pair(move.x1,move.y1)))
-        moves.add(gameSpec.xyToIndex(Pair(move.x2,move.y2)))
+        moves.add(gameSpec.xyToIndex(Pair(move.x1, move.y1)))
+        moves.add(gameSpec.xyToIndex(Pair(move.x2, move.y2)))
     }
 
     return moves.toIntArray()
@@ -160,17 +163,52 @@ fun GameState.legalMovesToList(): IntArray {
 
 fun WireState.toGameState(spec: GameSpec): GameState {
     val player = if (state.whiteMove) Player.WHITE else Player.BLACK
-    return GameState(spec,state.board,player,0,-1,-1,-1,-1,state.moveDepth.toShort())
+    return StateFactory.newState(spec, state.board, player,
+                                 0, -1, -1, -1, -1,
+                                 state.moveDepth.toShort())
 }
 
 fun GameState.toWireState(): WireState {
-    val obj = ObjectState(gameBoard, legalMovesToList(),player.eq(Player.WHITE),moveDepth.toInt())
-    return WireState( obj ,-1, obj.hashCode() )
+    val obj = ObjectState(gameBoard, legalMovesToList(), player.eq(Player.WHITE), moveDepth.toInt())
+    return WireState(obj, -1, obj.hashCode())
+}
+
+fun normalize(probs: FloatArray) {
+    var sum = probs.sum()
+    for (i in 0 until probs.size) probs[i] /= sum
+}
+
+fun entropy(probs: FloatArray): Float {
+    var ent = 0f
+    for (p in probs) ent -= p * log(p, E.toFloat())
+    return ent
+}
+
+fun raise(probs: FloatArray) {
+    for (i in 0 until probs.size) probs[i] = pow(probs[i].toDouble(), 1.5).toFloat()
+}
+
+fun addeps(probs: FloatArray) {
+    for (i in 0 until probs.size) probs[i] += 0.001f
+}
+
+fun adjustEntropy(probs: FloatArray, metf: Double) {
+    if (metf <= 0) return
+    val maxEntropy = -((1 - metf) * log((1 - metf) / probs.size, E) - metf * log(metf, E))
+    addeps(probs)
+    normalize(probs)
+    var maxIter = 15;
+    while (entropy(probs) > maxEntropy && maxIter-- > 0) {
+        raise(probs)
+        addeps(probs)
+        normalize(probs)
+    }
 }
 
 fun Instance.TrainingInstance.toBatchTrainingInput(
         gameSpec: GameSpec, batchIndex: Int, reflection: Int,
-        input: INDArray, value: INDArray, policy: INDArray, legal: INDArray) {
+        input: INDArray, value: INDArray, policy: INDArray, legal: INDArray,
+        valueMult: Float = 1.0f, maxEntropyTopFrac: Double = 0.0) {
     val flipLeftRight = reflection % 2 > 0
     val reverseSides = reflection / 2 > 0
 
@@ -190,11 +228,50 @@ fun Instance.TrainingInstance.toBatchTrainingInput(
     val turn = if (reverseSides) -turn_raw else turn_raw
     input.put(arrayOf(NDArrayIndex.point(batchIndex), NDArrayIndex.point(0)), turn)
 
-    for (tsr in treeSearchResultList) {
-        val policyIndex = gameSpec.flipPolicyIndex(tsr.index, flipLeftRight, reverseSides)
-        policy.putScalar(intArrayOf(batchIndex, policyIndex), tsr.prob)
+    val probs = FloatArray(treeSearchResultCount) { treeSearchResultList[it].prob }
+    adjustEntropy(probs, maxEntropyTopFrac)
+
+    for (i in 0 until treeSearchResultCount) {
+        val policyIndex = gameSpec.flipPolicyIndex(
+                treeSearchResultList[i].index, flipLeftRight, reverseSides)
+        policy.putScalar(intArrayOf(batchIndex, policyIndex), probs[i])
         legal.putScalar(intArrayOf(batchIndex, policyIndex), 1f)
     }
-    value.putScalar(batchIndex, outcome)
+    value.putScalar(batchIndex, outcome * valueMult)
 }
 
+class StateFactory {
+    companion object {
+        fun newGame(gameSpec: GameGrammar.GameSpec): GameState {
+            return if (gameSpec.implementingClass == "") {
+                GameState(gameSpec)
+            } else {
+                Class.forName(gameSpec.implementingClass)
+                        .getConstructor(gameSpec.javaClass)
+                        .newInstance(gameSpec) as GameState
+            }
+        }
+
+        fun newState(gameSpec: GameSpec, gameBoard: ByteArray, player: Player,
+                    p1: Int, x1: Int, y1: Int, x2: Int, y2: Int, moveDepth: Short,
+                    history: IntArray = IntArray(16) { 0 }): GameState {
+            return if (gameSpec.implementingClass == "") {
+                GameState(gameSpec, gameBoard, player, p1, x1, y1, x2, y2, moveDepth, history)
+            } else {
+                Class.forName(gameSpec.implementingClass)
+                        .getConstructor(gameSpec.javaClass,
+                                        gameBoard.javaClass,
+                                        player.javaClass,
+                                        p1.javaClass,
+                                        x1.javaClass,
+                                        y1.javaClass,
+                                        x2.javaClass,
+                                        y2.javaClass,
+                                        moveDepth.javaClass,
+                                        history.javaClass)
+                        .newInstance(gameSpec, gameBoard, player, p1, x1, y1, x2, y2,
+                                     moveDepth, history) as GameState
+            }
+        }
+    }
+}
