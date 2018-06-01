@@ -34,7 +34,8 @@ fun main(args: Array<String>) {
     val matcher = BiPredicate<Path, BasicFileAttributes> { file, _ ->
         file.toString().matches(Regex(".*" + inpattern))
     }
-    for (file in Files.find(Paths.get("."), 1, matcher).iterator()) {
+    for (file in Files.find(Paths.get("."), 1, matcher).sorted().iterator()) {
+        println("Processing ${file}")
         val instream = FileInputStream(file.toString())
 
         while (true) {

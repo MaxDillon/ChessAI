@@ -14,7 +14,7 @@ for f in $*; do
                        else if ($2 == "WHITE") {
                            print "7. WHITE"
                        }
-                       else if (n < 201) {
+                       else if (n < 200) {
                            if (n % 2 == 0) {
                                print "6.   ADVANTAGE_WHITE"
                            } else {
@@ -23,9 +23,9 @@ for f in $*; do
                        }
                        else {
                            if (v[n-11] > 0.1) {
-                               print "5.     DRAW_LEAN_WHITE"
-                           } else if (v[n-11] < -0.1) {
                                print "3.     DRAW_LEAN_BLACK"
+                           } else if (v[n-11] < -0.1) {
+                               print "5.     DRAW_LEAN_WHITE"
                            } else {
                                print "5.     DRAW_EVEN"
                            }

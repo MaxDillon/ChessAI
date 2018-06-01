@@ -243,6 +243,7 @@ open class AlphaZeroMctsNoModelStrategy0(params: SearchParameters) : VanillaMcts
 open class AlphaZeroMctsStrategy0(val model: ComputationGraph, params: SearchParameters) :
         AlphaZeroMctsNoModelStrategy0(params) {
     override fun expand(state: GameState) {
+        state.protectNextMoves()
         val sInfo = info(state)
         if (state.outcome == Outcome.UNDETERMINED) {
             val outputs = model.output(state.toModelInput())
@@ -281,6 +282,7 @@ open class AlphaZeroMctsNoModelStrategy(params: SearchParameters) : VanillaMctsS
 open class AlphaZeroMctsStrategy(val model: ComputationGraph, params: SearchParameters) :
         AlphaZeroMctsNoModelStrategy(params) {
     override fun expand(state: GameState) {
+        state.protectNextMoves()
         val sInfo = info(state)
         if (state.outcome == Outcome.UNDETERMINED) {
             val outputs = model.output(state.toModelInput())
@@ -301,12 +303,36 @@ open class AlphaZeroMctsStrategy(val model: ComputationGraph, params: SearchPara
 
 open class AlphaZeroMctsStrategy1(model: ComputationGraph, params: SearchParameters) :
         AlphaZeroMctsStrategy(model, params) {
+    override fun expand(state: GameState) {
+        state.protectNextMoves()
+        val sInfo = info(state)
+        if (state.outcome == Outcome.UNDETERMINED) {
+            val outputs = model.output(state.toModelInput())
+            val output_value = outputs[0]
+            val output_policy = outputs[1]
+            sInfo.Q = output_value.getFloat(0 /* batch index */)
+            for (next in state.nextMoves) {
+                val nInfo = info(next)
+                nInfo.Q = next.initialSelfValue()
+                // initialize Q's based on parent estimate
+                if (next.outcome == Outcome.UNDETERMINED){
+                    nInfo.Q += sign(state, next) * sInfo.Q * 0.9f
+                }
+                nInfo.P = output_policy.getFloat(intArrayOf(0 /* batch index */,
+                                                            next.toPolicyIndex()))
+            }
+        }
+        sInfo.N += 1
+        sInfo.expanded = true
+    }
+
     override fun backprop(stack: List<GameState>, expanded: GameState) {
         val eInfo = info(expanded)
         for (ancestor in stack) {
-            val diff = expanded.moveDepth - ancestor.moveDepth
-            val discount = Math.pow(0.9, diff.toDouble()).toFloat()
             val aInfo = info(ancestor)
+            // discount distant payoffs to count as closer to mean of 0.0
+            val diff = expanded.moveDepth - ancestor.moveDepth
+            val discount = Math.pow(0.95, diff.toDouble()).toFloat()
             aInfo.Q = (aInfo.Q * aInfo.N + discount * eInfo.Q * sign(ancestor, expanded)) / (aInfo.N + 1)
             aInfo.N += 1
         }
@@ -320,9 +346,10 @@ open class AlphaZeroMctsStrategy1(model: ComputationGraph, params: SearchParamet
         }
         val sz = state.nextMoves.size
         val policy = DoubleArray(sz) {
+            // break ties in counts using estimated Q
             max(0.0,
                 info(state.nextMoves[it]).N.toDouble() +
-                info(state.nextMoves[it]).Q.toDouble() * 0.75)
+                sign(state, state.nextMoves[it]) * info(state.nextMoves[it]).Q.toDouble() * 0.75)
         }
         val policySum = policy.sum()
         for (i in 0 until sz) policy[i] /= policySum
@@ -382,6 +409,7 @@ class DirichletMctsStrategy(params: SearchParameters, val values: FloatArray) :
     }
 
     override fun expand(state: GameState) {
+        state.protectNextMoves()
         val sInfo = info(state)
         if (state.outcome == Outcome.UNDETERMINED) {
             for (next in state.nextMoves) {
