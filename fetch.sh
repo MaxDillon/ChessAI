@@ -10,3 +10,12 @@ cd IdeaProjects/quest
 -put $(ls -t model.chess2.* | head -n 1)
 EOF
 
+paperip=74.82.25.180
+
+sftp -b - paperspace@$paperip <<EOF
+cd quest
+-get data.chess2.*.done
+-rm data.chess2.*.done
+-put $(ls -t model.chess2.* | head -n 1)
+EOF
+
