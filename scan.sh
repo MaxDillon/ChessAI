@@ -3,7 +3,7 @@
 for f in $*; do
     echo "############ $f"
     cat $f | strings | egrep "(Value|Outcome)" \
-	| awk '/Value/ {
+    | awk '/Value/ {
                    v[n] = $2; n = n + 1
                }
                /Outcome/ {
@@ -35,6 +35,6 @@ for f in $*; do
                    }
                    n=0
                }' \
-	      | sort | uniq -c | cut -b 1-8,11-
+          | sort | uniq -c | cut -b 1-8,11-
     
 done
