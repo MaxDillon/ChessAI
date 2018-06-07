@@ -3,6 +3,7 @@ package maximum.industries
 import maximum.industries.games.ChessState
 import org.amshove.kluent.shouldBeGreaterThan
 import org.amshove.kluent.shouldEqual
+import org.deeplearning4j.util.ModelSerializer
 import org.junit.Test
 
 class TestChess2() {
@@ -37,6 +38,27 @@ class TestChess2() {
 
     @Test
     fun modelEval() {
+        // for recent self-play models:
+        //   for black values whack
+        //   for white values tight
+        // but for old mcts models black values make sense.
+        // wtf.
+        val state_b0 = initBoard(white = Placement(k = "a2", p = "c4,b2,d3", n = "h1", b = "f3"),
+                                 black = Placement(k = "b7", b = "c6,h4", p = "c5,h2,f7", r = "f8"), whiteMove = false)
+        val state_w0 = initBoard(black = Placement(k = "a7", p = "c5,b7,d6", n = "h8", b = "f6"),
+                                 white = Placement(k = "b2", b = "c3,h5", p = "c4,h7,f2", r = "f1"), whiteMove = true)
+
+        val model = ModelSerializer.restoreComputationGraph("model.chess2.Model010.168000")
+        val params = SearchParameters(exploration = 1.0, temperature = 0.1, iterations = 2500)
+        val search = MonteCarloTreeSearch(AlphaZeroMctsStrategy1(model, params), params)
+
+        val (state_b1, _) = search.next(state_b0)
+        state_b0.printBoard()
+        state_b1.printBoard()
+
+        val (state_w1, _) = search.next(state_w0)
+        state_w0.printBoard()
+        state_w1.printBoard()
     }
 
     @Test
@@ -119,24 +141,24 @@ class TestChess2() {
     @Test
     fun testCheck() {
         initBoard(white = Placement(k = "d3"), black = Placement(p = "e4"), whiteMove = true)
-            .inCheck().shouldEqual(true)
-
-        initBoard(white = Placement(k = "d3"), black = Placement(p = "d4"), whiteMove = true)
-            .inCheck().shouldEqual(false)
-
-        initBoard(white = Placement(k = "d3"), black = Placement(p = "f5"), whiteMove = true)
-            .inCheck().shouldEqual(false)
-
-        initBoard(white = Placement(k = "d3"), black = Placement(r = "d8"), whiteMove = true)
-            .inCheck().shouldEqual(true)
-
-        initBoard(white = Placement(k = "d3"), black = Placement(r = "d8", p="d6"), whiteMove = true)
-                .inCheck().shouldEqual(false)
-
-        initBoard(white = Placement(k = "d3"), black = Placement(n="b2"), whiteMove = true)
                 .inCheck().shouldEqual(true)
 
-        initBoard(white = Placement(k = "d3"), black = Placement(n="c5"), whiteMove = true)
+        initBoard(white = Placement(k = "d3"), black = Placement(p = "d4"), whiteMove = true)
+                .inCheck().shouldEqual(false)
+
+        initBoard(white = Placement(k = "d3"), black = Placement(p = "f5"), whiteMove = true)
+                .inCheck().shouldEqual(false)
+
+        initBoard(white = Placement(k = "d3"), black = Placement(r = "d8"), whiteMove = true)
+                .inCheck().shouldEqual(true)
+
+        initBoard(white = Placement(k = "d3"), black = Placement(r = "d8", p = "d6"), whiteMove = true)
+                .inCheck().shouldEqual(false)
+
+        initBoard(white = Placement(k = "d3"), black = Placement(n = "b2"), whiteMove = true)
+                .inCheck().shouldEqual(true)
+
+        initBoard(white = Placement(k = "d3"), black = Placement(n = "c5"), whiteMove = true)
                 .inCheck().shouldEqual(true)
 
         initBoard(white = Placement(k = "d3"), black = Placement(b = "h7"), whiteMove = true)
