@@ -185,11 +185,15 @@ fun appUsage() {
         |        [-n <n>]            The number of games to play. Default=100.
         |        [-witer <iter>]     The number of rollouts/evals to perform for white.
         |        [-biter <iter>]     The number of rollouts/evals to perform for black.
-        |        [-wexpl <e>         Governs exploration in tree search for white. Default=0.5
-        |        [-bexpl <e>         Governs exploration in tree search for black. Default=0.5
+        |        [-wexpl <e>         Governs exploration in tree search for white. Default=0.1
+        |        [-bexpl <e>         Governs exploration in tree search for black. Default=0.1
         |        [-wtemp <t>         Governs move selection exponent for white. Default=0.1
         |        [-btemp <t>         Governs move selection exponent for black. Default=0.1
-        |        [-ramp <n>]         The number of turns to ramp down to the given temperature.
+        |        [-wpexp <e>         White priority exponent. Default = 2.0.
+        |        [-bpexp <e>         Black priority exponent. Default = 2.0.
+        |        [-wunif <u>         White priority uniform mixture weight. Default = 1.0.
+        |        [-bunif <u>         Black priority uniform mixture weight. Default = 1.0.
+        |        [-ramp <n>]         The number of turns to ramp down to the given temperature. Default=10
         |        [-saveas <name>]    A name pattern for saved games. Default is <game>
         |<model> may be 'mcts' to run with Monte Carlo tree search only,
         |            or 'dmcts' to run with Dirichlet Monte Carlo tree search,
@@ -212,7 +216,9 @@ fun getArg(args: Array<String>, arg: String): String? {
 data class SearchParameters(val iterations: Int = 100,
                             val exploration: Double = 1.0,
                             val temperature: Double = 0.3,
-                            val rampBy: Int = 10)
+                            val rampBy: Int = 10,
+                            val priority_uniform: Double = 1.0,
+                            val priority_exponent: Double = 2.0)
 
 fun main(args: Array<String>) {
     if (args.contains("-h")) {
@@ -228,6 +234,10 @@ fun main(args: Array<String>) {
     val btemp = getArg(args, "btemp")?.toDouble() ?: 0.1
     val wexpl = getArg(args, "wexpl")?.toDouble() ?: 0.1
     val bexpl = getArg(args, "bexpl")?.toDouble() ?: 0.1
+    val wpexp = getArg(args, "wpexp")?.toDouble() ?: 2.0
+    val bpexp = getArg(args, "bpexp")?.toDouble() ?: 2.0
+    val wunif = getArg(args, "wunif")?.toDouble() ?: 1.0
+    val bunif = getArg(args, "bunif")?.toDouble() ?: 1.0
     val ramp = getArg(args, "ramp")?.toInt() ?: 10
     val saveas = getArg(args, "saveas") ?: game
     val baseName = "data.$saveas.${System.currentTimeMillis()}"
@@ -238,8 +248,8 @@ fun main(args: Array<String>) {
     val outputStream = FileOutputStream(workFile)
 
     val gameSpec = loadSpec(game)
-    val wParams = SearchParameters(witer, wexpl, wtemp, ramp)
-    val bParams = SearchParameters(biter, bexpl, btemp, ramp)
+    val wParams = SearchParameters(witer, wexpl, wtemp, ramp, wpexp, wunif)
+    val bParams = SearchParameters(biter, bexpl, btemp, ramp, bpexp, bunif)
 
     val whiteAlgo = getAlgo(white, wParams)
     val blackAlgo = if (white == black) whiteAlgo else getAlgo(black, bParams)

@@ -273,8 +273,9 @@ open class AlphaZeroMctsNoModelStrategy(params: SearchParameters) : VanillaMctsS
                 else if (s2.lossFor(s1)) -100.0 else 0.0 // and avoid immediate losses
         val infoValue =
                 if (s2.outcome != Outcome.UNDETERMINED) 0.0 // no info value for terminals
-                else params.exploration * s1Info.N * (1.0 + s2Info.P * s1.nextMoves.size) / 2.0 /
-                     s1.nextMoves.size / (1 + s2Info.N) / (1 + s2Info.N)
+                else params.exploration / 2 *
+                     pow(sqrt(s1Info.N.toDouble()) / (1.0 + s2Info.N), params.priority_exponent) *
+                     (params.priority_uniform / s1.nextMoves.size + s2Info.P)
         return nodeValue + termValue + infoValue
     }
 }
@@ -315,7 +316,7 @@ open class AlphaZeroMctsStrategy1(model: ComputationGraph, params: SearchParamet
                 val nInfo = info(next)
                 nInfo.Q = next.initialSelfValue()
                 // initialize Q's based on parent estimate
-                if (next.outcome == Outcome.UNDETERMINED){
+                if (next.outcome == Outcome.UNDETERMINED) {
                     nInfo.Q += sign(state, next) * sInfo.Q * 0.9f
                 }
                 nInfo.P = output_policy.getFloat(intArrayOf(0 /* batch index */,

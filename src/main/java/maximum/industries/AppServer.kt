@@ -27,8 +27,8 @@ fun main(args: Array<String>) {
     var state = newGame(gameSpec)
 
     val server = embeddedServer(Netty, port = 8080) {
-        var white = getAlgo("mcts", SearchParameters(1, 1.0, 1.0, 1))
-        var black = getAlgo("mcts", SearchParameters(1, 1.0, 1.0, 1))
+        var white = getAlgo("mcts", SearchParameters(iterations=1, exploration=1.0, temperature=0.3, rampBy = 1))
+        var black = getAlgo("mcts", SearchParameters(iterations=1, exploration=1.0, temperature=0.3, rampBy = 1))
         var playerWhite = true
 
         install(ContentNegotiation) {
@@ -37,15 +37,14 @@ fun main(args: Array<String>) {
             }
         }
         routing {
-
             post("/start") {
                 playerWhite = call.receive<Boolean>()
                 state = newGame(gameSpec)
                 val whiteAlgo = if (playerWhite) "gui" else "model1:prod_model.chess2"
-                white = getAlgo(whiteAlgo, SearchParameters(iterations = 750, temperature = 0.05))
+                white = getAlgo(whiteAlgo, SearchParameters(iterations = 1500, temperature = 0.01))
 
                 val blackAlgo = if (playerWhite) "model1:prod_model.chess2" else "gui"
-                black = getAlgo(blackAlgo, SearchParameters(iterations = 750, temperature = 0.05))
+                black = getAlgo(blackAlgo, SearchParameters(iterations = 1500, temperature = 0.01))
                 call.respond(Pair(state.toWireState(), gameSpec))
             }
 

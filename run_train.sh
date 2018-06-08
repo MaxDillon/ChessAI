@@ -30,9 +30,10 @@ while true; do
             -valuemult 0.95 \
             -metf 0.7 \
             -lastn 30 \
-            -batch 1200 \
+            -batch 1000 \
             -drawweight 0.2 \
             -saveevery 1000 \
             -updates 1
+        ./fetch.sh
     fi
 done
