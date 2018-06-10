@@ -200,19 +200,21 @@ open class VanillaMctsStrategy(val params: SearchParameters) : MctsStrategy {
     // entropy?
     override fun pickMove(state: GameState): Pair<GameState, SlimState> {
         println("Value: ${info(state).Q}")
-        for (next in state.nextMoves) {
-            val nInfo = info(next)
-            println("$next:\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
-        }
         val sz = state.nextMoves.size
         val policy = DoubleArray(sz) { info(state.nextMoves[it]).N.toDouble() }
-        val policySum = policy.sum()
+        var policySum = policy.sum()
         for (i in 0 until sz) policy[i] /= policySum
         // record non-exponentiated normalized policy in slim state. we don't want
         // model inputs to depend on temperature, or have most values driven to zero.
         val slim = state.toSlimState { i, tsr -> tsr.prob = policy[i].toFloat() }
         // now exponentiate to get weights for picking actual move
         for (i in 0 until sz) policy[i] = pow(policy[i], 1 / temperature(state.moveDepth))
+        policySum = policy.sum()
+        for (i in state.nextMoves.indices) {
+            val next = state.nextMoves[i]
+            val nInfo = info(next)
+            println("$next:\t${(policy[i]/policySum).toFloat().f3()}\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
+        }
         val next = pickChildByProbs(state, policy)
         allInfo.remove(state.moveDepth) // won't be needing these anymore
         allInfo.remove((state.moveDepth - 1).toShort()) // or these, which might exist if there are two algos
@@ -341,10 +343,6 @@ open class AlphaZeroMctsStrategy1(model: ComputationGraph, params: SearchParamet
 
     override fun pickMove(state: GameState): Pair<GameState, SlimState> {
         println("Value: ${info(state).Q}")
-        for (next in state.nextMoves) {
-            val nInfo = info(next)
-            println("$next:\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
-        }
         val sz = state.nextMoves.size
         val policy = DoubleArray(sz) {
             // break ties in counts using estimated Q
@@ -352,13 +350,19 @@ open class AlphaZeroMctsStrategy1(model: ComputationGraph, params: SearchParamet
                 info(state.nextMoves[it]).N.toDouble() +
                 sign(state, state.nextMoves[it]) * info(state.nextMoves[it]).Q.toDouble() * 0.75)
         }
-        val policySum = policy.sum()
+        var policySum = policy.sum()
         for (i in 0 until sz) policy[i] /= policySum
         // record non-exponentiated normalized policy in slim state. we don't want
         // model inputs to depend on temperature, or have most values driven to zero.
         val slim = state.toSlimState { i, tsr -> tsr.prob = policy[i].toFloat() }
         // now exponentiate to get weights for picking actual move
         for (i in 0 until sz) policy[i] = pow(policy[i], 1 / temperature(state.moveDepth))
+        policySum = policy.sum()
+        for (i in state.nextMoves.indices) {
+            val next = state.nextMoves[i]
+            val nInfo = info(next)
+            println("$next:\t${(policy[i]/policySum).toFloat().f3()}\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
+        }
         val next = pickChildByProbs(state, policy)
         allInfo.remove(state.moveDepth) // won't be needing these anymore
         allInfo.remove((state.moveDepth - 1).toShort()) // or these, which might exist if there are two algos
