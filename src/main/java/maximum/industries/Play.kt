@@ -248,8 +248,8 @@ fun main(args: Array<String>) {
     val outputStream = FileOutputStream(workFile)
 
     val gameSpec = loadSpec(game)
-    val wParams = SearchParameters(witer, wexpl, wtemp, ramp, wpexp, wunif)
-    val bParams = SearchParameters(biter, bexpl, btemp, ramp, bpexp, bunif)
+    val wParams = SearchParameters(witer, wexpl, wtemp, ramp, wunif, wpexp)
+    val bParams = SearchParameters(biter, bexpl, btemp, ramp, bunif, bpexp)
 
     val whiteAlgo = getAlgo(white, wParams)
     val blackAlgo = if (white == black) whiteAlgo else getAlgo(black, bParams)
