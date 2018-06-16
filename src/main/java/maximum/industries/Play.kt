@@ -185,8 +185,8 @@ fun appUsage() {
         |        [-n <n>]            The number of games to play. Default=100.
         |        [-witer <iter>]     The number of rollouts/evals to perform for white.
         |        [-biter <iter>]     The number of rollouts/evals to perform for black.
-        |        [-wexpl <e>         Governs exploration in tree search for white. Default=0.1
-        |        [-bexpl <e>         Governs exploration in tree search for black. Default=0.1
+        |        [-wexpl <e>         Governs exploration in tree search for white. Default=0.3
+        |        [-bexpl <e>         Governs exploration in tree search for black. Default=0.3
         |        [-wtemp <t>         Governs move selection exponent for white. Default=0.1
         |        [-btemp <t>         Governs move selection exponent for black. Default=0.1
         |        [-wpexp <e>         White priority exponent. Default = 2.0.
@@ -230,15 +230,15 @@ fun main(args: Array<String>) {
     val black = getArg(args, "black") ?: "mcts"
     val witer = getArg(args, "witer")?.toInt() ?: 200
     val biter = getArg(args, "biter")?.toInt() ?: 200
+    val wexpl = getArg(args, "wexpl")?.toDouble() ?: 0.3
+    val bexpl = getArg(args, "bexpl")?.toDouble() ?: 0.3
     val wtemp = getArg(args, "wtemp")?.toDouble() ?: 0.1
     val btemp = getArg(args, "btemp")?.toDouble() ?: 0.1
-    val wexpl = getArg(args, "wexpl")?.toDouble() ?: 0.1
-    val bexpl = getArg(args, "bexpl")?.toDouble() ?: 0.1
-    val wpexp = getArg(args, "wpexp")?.toDouble() ?: 2.0
-    val bpexp = getArg(args, "bpexp")?.toDouble() ?: 2.0
+    val ramp = getArg(args, "ramp")?.toInt() ?: 10
     val wunif = getArg(args, "wunif")?.toDouble() ?: 1.0
     val bunif = getArg(args, "bunif")?.toDouble() ?: 1.0
-    val ramp = getArg(args, "ramp")?.toInt() ?: 10
+    val wpexp = getArg(args, "wpexp")?.toDouble() ?: 2.0
+    val bpexp = getArg(args, "bpexp")?.toDouble() ?: 2.0
     val saveas = getArg(args, "saveas") ?: game
     val baseName = "data.$saveas.${System.currentTimeMillis()}"
     val workFile = "$baseName.work"
