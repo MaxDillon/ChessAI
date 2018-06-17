@@ -387,7 +387,7 @@ open class AlphaZeroMctsStrategy2(model: ComputationGraph, params: SearchParamet
                 nInfo.Q = next.initialSelfValue()
                 // initialize Q's based on parent estimate
                 if (next.outcome == Outcome.UNDETERMINED) {
-                    nInfo.Q += sign(state, next) * sInfo.Q * 0.9f
+                    nInfo.Q += sign(state, next) * sInfo.Q
                 }
                 var PSum = 0f
                 for (i in 0 until reflections.size) {
