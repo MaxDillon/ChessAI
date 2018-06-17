@@ -370,6 +370,41 @@ open class AlphaZeroMctsStrategy1(model: ComputationGraph, params: SearchParamet
     }
 }
 
+open class AlphaZeroMctsStrategy2(model: ComputationGraph, params: SearchParameters):
+    AlphaZeroMctsStrategy1(model, params) {
+    val reflections = intArrayOf(0,1,2,3)
+
+    override fun expand(state: GameState) {
+        state.protectNextMoves()
+        val sInfo = info(state)
+        if (state.outcome == Outcome.UNDETERMINED) {
+            val outputs = model.output(state.toModelInput(reflections))
+            val output_values = outputs[0]
+            val output_policies = outputs[1]
+            sInfo.Q = output_values.meanNumber().toFloat()
+            for (next in state.nextMoves) {
+                val nInfo = info(next)
+                nInfo.Q = next.initialSelfValue()
+                // initialize Q's based on parent estimate
+                if (next.outcome == Outcome.UNDETERMINED) {
+                    nInfo.Q += sign(state, next) * sInfo.Q * 0.9f
+                }
+                var PSum = 0f
+                for (i in 0 until reflections.size) {
+                    val flipLeftRight = reflections[i] % 2 > 0
+                    val reverseSides = reflections[i] / 2 > 0
+                    PSum += output_policies.getFloat(
+                            intArrayOf(i, state.gameSpec.flipPolicyIndex(
+                                    next.toPolicyIndex(), flipLeftRight, reverseSides)))
+                }
+                nInfo.P = PSum / reflections.size
+            }
+        }
+        sInfo.N += 1
+        sInfo.expanded = true
+    }
+}
+
 class DirichletMctsStrategy(params: SearchParameters, val values: FloatArray) :
         VanillaMctsStrategy(params) {
     open class DirichletInfo : Info() {

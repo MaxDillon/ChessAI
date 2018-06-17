@@ -74,24 +74,35 @@ fun GameState.toPolicyIndex(): Int {
     return gameSpec.toPolicyIndex(MoveInfo(x1, y1, x2, y2, p1))
 }
 
-fun GameState.toModelInput(): INDArray {
+fun GameState.toModelInput(reflections: IntArray = intArrayOf(0)): INDArray {
     val size = gameSpec.boardSize
-    val input = Nd4j.zeros(1, 2 * gameSpec.numRealPieces() + 1, size, size)
-    for (x in 0 until size) {
-        for (y in 0 until size) {
-            val p = at(x, y)
-            if (p != 0) {
-                input.putScalar(intArrayOf(0, gameSpec.pieceToChannel(p), y, x), 1f)
-            }
-        }
+    val input = Nd4j.zeros(reflections.size, 2 * gameSpec.numRealPieces() + 1, size, size)
+    for (i in 0 until reflections.size) {
+        toModelInput(input, i, reflections[i])
     }
-    val turn = Nd4j.ones(size, size)
-    if (player.eq(Player.BLACK)) turn.muli(-1)
-    input.put(arrayOf(NDArrayIndex.point(0), NDArrayIndex.point(0)), turn)
     return input
 }
 
-fun GameSpec.fromModelInput(input: INDArray, batchIndex: Int): GameState {
+fun GameState.toModelInput(input: INDArray, batchIndex: Int = 0, reflection: Int = 0) {
+    val flipLeftRight = reflection % 2 > 0
+    val reverseSides = reflection / 2 > 0
+    val size = gameSpec.boardSize
+    for (x in 0 until size) {
+        for (y in 0 until size) {
+            val p_raw = at(x, y)
+            if (p_raw != 0) {
+                val (fx, fy) = gameSpec.flip(Pair(x,y), flipLeftRight, reverseSides)
+                val p = if (reverseSides) -p_raw else p_raw
+                input.putScalar(intArrayOf(batchIndex, gameSpec.pieceToChannel(p), fy, fx), 1f)
+            }
+        }
+    }
+    val turn_raw = if (player.eq(Player.WHITE)) 1 else -1
+    val turn = if (reverseSides) -turn_raw else turn_raw
+    input.put(arrayOf(NDArrayIndex.point(batchIndex), NDArrayIndex.point(0)), turn)
+}
+
+fun GameSpec.fromModelInput(input: INDArray, batchIndex: Int = 0): GameState {
     val size = boardSize
     val newBoard = ByteArray(size * size) { 0 }
     for (channel in 1..(2 * numRealPieces())) {
@@ -209,21 +220,18 @@ fun Instance.TrainingInstance.toBatchTrainingInput(
         gameSpec: GameSpec, batchIndex: Int, reflection: Int,
         input: INDArray, value: INDArray, policy: INDArray, legal: INDArray,
         valueMult: Float = 1.0f, maxEntropyTopFrac: Double = 0.0) {
+
     val flipLeftRight = reflection % 2 > 0
     val reverseSides = reflection / 2 > 0
-
     for (i in 0 until boardState.size()) {
-        val xy = gameSpec.indexToXy(i)
-        val (x, y) = gameSpec.flip(xy, flipLeftRight, reverseSides)
-
         val p_raw = boardState.byteAt(i).toInt()
-        val p = if (reverseSides) -p_raw else p_raw
-
-        if (p != 0) {
+        if (p_raw != 0) {
+            val xy = gameSpec.indexToXy(i)
+            val (x, y) = gameSpec.flip(xy, flipLeftRight, reverseSides)
+            val p = if (reverseSides) -p_raw else p_raw
             input.putScalar(intArrayOf(batchIndex, gameSpec.pieceToChannel(p), y, x), 1)
         }
     }
-
     val turn_raw = if (player.eq(Instance.Player.WHITE)) 1 else -1
     val turn = if (reverseSides) -turn_raw else turn_raw
     input.put(arrayOf(NDArrayIndex.point(batchIndex), NDArrayIndex.point(0)), turn)

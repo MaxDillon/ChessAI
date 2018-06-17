@@ -48,7 +48,7 @@ class TestChess2() {
         val state_w0 = initBoard(black = Placement(k = "a7", p = "c5,b7,d6", n = "h8", b = "f6"),
                                  white = Placement(k = "b2", b = "c3,h5", p = "c4,h7,f2", r = "f1"), whiteMove = true)
 
-        val model = ModelSerializer.restoreComputationGraph("model.chess2.Model010.168000")
+        val model = ModelSerializer.restoreComputationGraph("prod_model.chess2")
         val params = SearchParameters(exploration = 1.0, temperature = 0.1, iterations = 2500)
         val search = MonteCarloTreeSearch(AlphaZeroMctsStrategy1(model, params), params)
 
@@ -59,6 +59,29 @@ class TestChess2() {
         val (state_w1, _) = search.next(state_w0)
         state_w0.printBoard()
         state_w1.printBoard()
+    }
+
+    @Test
+    fun ensembleEval() {
+        val state = initBoard(white = Placement(k = "a2", p = "c4,b2,d3", n = "h1", b = "f3"),
+                              black = Placement(k = "b7", b = "c6,h4", p = "c5,h2,f7", r = "f8"),
+                              whiteMove = false)
+        val state_0 = state.gameSpec.fromModelInput(state.toModelInput(intArrayOf(0)))
+        val state_1 = state.gameSpec.fromModelInput(state.toModelInput(intArrayOf(1)))
+        val state_2 = state.gameSpec.fromModelInput(state.toModelInput(intArrayOf(2)))
+        val state_3 = state.gameSpec.fromModelInput(state.toModelInput(intArrayOf(3)))
+
+        val model = ModelSerializer.restoreComputationGraph("prod_model.chess2")
+        val params = SearchParameters(exploration = 1.0, temperature = 0.1, iterations = 1)
+
+        val search1 = MonteCarloTreeSearch(AlphaZeroMctsStrategy1(model, params), params)
+        val search2 = MonteCarloTreeSearch(AlphaZeroMctsStrategy2(model, params), params)
+
+        search1.next(state_0)
+        search1.next(state_1)
+        search1.next(state_2)
+        search1.next(state_3)
+        search2.next(state)
     }
 
     @Test

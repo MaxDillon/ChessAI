@@ -143,6 +143,13 @@ fun getAlgo(algo: String, params: SearchParameters): GameSearchAlgo {
             val model = ModelSerializer.restoreComputationGraph(modelName)
             MonteCarloTreeSearch(AlphaZeroMctsStrategy1(model, params), params)
         }
+        "model2" -> {
+            val modelName = if (toks[1].endsWith(".*")) getLatest(toks[1]) else toks[1]
+//            NeuralNetConfiguration.reinitMapperWithSubtypes(
+//                    Collections.singletonList(NamedType(PseudoSpherical::class.java)))
+            val model = ModelSerializer.restoreComputationGraph(modelName)
+            MonteCarloTreeSearch(AlphaZeroMctsStrategy2(model, params), params)
+        }
         "human" -> HumanInput()
         "gui" -> GuiInput()
         else -> throw RuntimeException("no algo specified")
