@@ -26,7 +26,7 @@ while true; do
                 > $dest
         else
             ./mi_play.sh chess2 \
-                -n 10 \
+                -n 25 \
                 -white "model2:model.chess2.Model012.*" \
                 -witer 1 -wtemp 1.0 \
                 -black "model2:model.chess2.Model012.*" \
