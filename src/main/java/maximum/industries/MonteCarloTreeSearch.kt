@@ -345,10 +345,9 @@ open class AlphaZeroMctsStrategy1(model: ComputationGraph, params: SearchParamet
         println("Value: ${info(state).Q}")
         val sz = state.nextMoves.size
         val policy = DoubleArray(sz) {
-            // break ties in counts using estimated Q
+            // break ties in counts using P
             max(0.0,
-                info(state.nextMoves[it]).N.toDouble() +
-                sign(state, state.nextMoves[it]) * info(state.nextMoves[it]).Q.toDouble() * 0.75)
+                info(state.nextMoves[it]).N.toDouble() + info(state.nextMoves[it]).P)
         }
         var policySum = policy.sum()
         for (i in 0 until sz) policy[i] /= policySum

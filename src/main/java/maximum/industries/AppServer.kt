@@ -37,14 +37,25 @@ fun main(args: Array<String>) {
             }
         }
         routing {
+
             post("/start") {
                 playerWhite = call.receive<Boolean>()
                 state = newGame(gameSpec)
-                val whiteAlgo = if (playerWhite) "gui" else "model1:prod_model.chess2"
-                white = getAlgo(whiteAlgo, SearchParameters(iterations = 1500, temperature = 0.01, rampBy = 0))
+                val whiteAlgo = if (playerWhite) "gui" else "model2:prod_model.chess2"
+                white = getAlgo(whiteAlgo, SearchParameters(iterations = 2000,
+                                                            exploration = 0.3,
+                                                            temperature = 0.1,
+                                                            rampBy = 0,
+                                                            priority_exponent = 2.0,
+                                                            priority_uniform = 1.0))
 
-                val blackAlgo = if (playerWhite) "model1:prod_model.chess2" else "gui"
-                black = getAlgo(blackAlgo, SearchParameters(iterations = 1500, temperature = 0.01, rampBy = 0))
+                val blackAlgo = if (playerWhite) "model2:prod_model.chess2" else "gui"
+                black = getAlgo(blackAlgo, SearchParameters(iterations = 2000,
+                                                            exploration = 0.3,
+                                                            temperature = 0.1,
+                                                            rampBy = 0,
+                                                            priority_exponent = 2.0,
+                                                            priority_uniform = 1.0))
                 call.respond(Pair(state.toWireState(), gameSpec))
             }
 

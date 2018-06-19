@@ -69,6 +69,42 @@ fun play(gameSpec: GameGrammar.GameSpec,
     return out
 }
 
+fun fastPlay(gameSpec: GameGrammar.GameSpec,
+             fast: GameSearchAlgo,
+             slow: GameSearchAlgo,
+             minDepth: Int,
+             rollback: Int,
+             stream: OutputStream?) {
+
+    println("############ Fast Play #############")
+
+    var state = newGame(gameSpec)
+    val stateHistory = ArrayList<GameState>()
+    while (state.outcome == Outcome.UNDETERMINED) {
+        println("$state")
+        state.printBoard()
+        val (next, _) = fast.next(state)
+        state = next
+        stateHistory.add(state)
+    }
+
+    if (state.outcome != Outcome.DRAW && stateHistory.size > minDepth) {
+        state = stateHistory[stateHistory.size - rollback]
+        val slimHistory = ArrayList<SlimState>()
+        while (state.outcome == Outcome.UNDETERMINED) {
+            println("$state")
+            state.printBoard()
+            val (next, slim) = slow.next(state)
+            state = next
+            if (slim != null) slimHistory.add(slim)
+        }
+        if (stream != null) recordGame(state, slimHistory, stream)
+        state.printBoard()
+    }
+    fast.gameOver()
+    slow.gameOver()
+}
+
 fun recordGame(finalState: GameState, slimStates: ArrayList<SlimState>, outputStream: OutputStream) {
     slimStates.forEach { slim ->
         val slimWhite = slim.player.eq(Instance.Player.WHITE)
@@ -247,6 +283,10 @@ fun main(args: Array<String>) {
     val wpexp = getArg(args, "wpexp")?.toDouble() ?: 2.0
     val bpexp = getArg(args, "bpexp")?.toDouble() ?: 2.0
     val saveas = getArg(args, "saveas") ?: game
+    val one = getArg(args, "one")?.toBoolean() ?: true
+    val fast = getArg(args, "fast")?.toBoolean() ?: false
+    val mindepth = getArg(args, "mindepth")?.toInt() ?: 30
+    val rollback = getArg(args, "rollback")?.toInt() ?: 6
     val baseName = "data.$saveas.${System.currentTimeMillis()}"
     val workFile = "$baseName.work"
     val doneFile = "$baseName.done"
@@ -259,8 +299,15 @@ fun main(args: Array<String>) {
     val bParams = SearchParameters(biter, bexpl, btemp, ramp, bunif, bpexp)
 
     val whiteAlgo = getAlgo(white, wParams)
-    val blackAlgo = if (white == black) whiteAlgo else getAlgo(black, bParams)
+    val blackAlgo = if (one && white.equals(black)) whiteAlgo else getAlgo(black, bParams)
 
-    for (i in 1..n) play(gameSpec, whiteAlgo, blackAlgo, outputStream)
+    for (i in 1..n) {
+        if (!fast) {
+            play(gameSpec, whiteAlgo, blackAlgo, outputStream)
+        } else {
+            fastPlay(gameSpec, fast = whiteAlgo, slow = blackAlgo,
+                     minDepth = mindepth, rollback = rollback, stream = outputStream)
+        }
+    }
     Files.move(Paths.get(workFile), Paths.get(doneFile))
 }
