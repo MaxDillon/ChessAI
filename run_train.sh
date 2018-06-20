@@ -20,9 +20,9 @@ while true; do
             ./mi_play.sh chess2 \
                 -n 10 \
                 -white "model2:model.chess2.Model012.*" \
-                -witer 400 -wexpl 0.3 -wtemp 0.3 -wpexp 2.0 -wunif 1.0 \
+                -witer 400 -wexpl 0.15 -wtemp 0.3 -wpexp 2.0 -wunif 1.0 \
                 -black "model2:model.chess2.Model012.*" \
-                -biter 400 -bexpl 0.3 -btemp 0.3 -bpexp 2.0 -bunif 1.0 \
+                -biter 400 -bexpl 0.15 -btemp 0.3 -bpexp 2.0 -bunif 1.0 \
                 > $dest
         else
             ./mi_play.sh chess2 \
@@ -30,7 +30,7 @@ while true; do
                 -white "model2:model.chess2.Model012.*" \
                 -witer 1 -wtemp 1.0 \
                 -black "model2:model.chess2.Model012.*" \
-                -biter 800 -bexpl 0.3 -btemp 0.3 \
+                -biter 800 -bexpl 0.15 -btemp 0.3 \
                 -one false \
                 -fast true \
                 -mindepth 30 \
@@ -48,9 +48,10 @@ while true; do
             -valuemult 0.95 \
             -metf 0.7 \
             -lastn 50 \
-            -batch 500 \
+            -batch 300 \
             -drawweight 0.2 \
             -saveevery 1000 \
-            -updates 1
+            -updates 1 \
+            -rate 1e-3
     fi
 done
