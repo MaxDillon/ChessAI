@@ -187,8 +187,15 @@ open class VanillaMctsStrategy(val params: SearchParameters) : MctsStrategy {
     }
 
     fun temperature(moveDepth: Short): Double {
-        val rampMix = min(1.0, (moveDepth / 2.0) / (params.rampBy + 1))
-        return rampMix * params.temperature + (1.0 - rampMix) * 1.0
+        if (params.rampBy <= 1) {
+            return params.temperature
+        } else {
+            val initial = 1.0
+            val final = params.temperature
+            val move = moveDepth / 2 + 1
+            val mix = min(1.0, move.toDouble() / params.rampBy)
+            return (1.0 - mix) * initial + mix * final
+        }
     }
 
     // maybe some auto-pruning of caches at level N+4 or so?

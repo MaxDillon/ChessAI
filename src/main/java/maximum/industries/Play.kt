@@ -263,6 +263,16 @@ data class SearchParameters(val iterations: Int = 100,
                             val priority_uniform: Double = 1.0,
                             val priority_exponent: Double = 2.0)
 
+fun getSearchParameters(args: Array<String>, color: String): SearchParameters {
+    val iter = getArg(args, "${color}iter")?.toInt() ?: 200
+    val expl = getArg(args, "${color}expl")?.toDouble() ?: 0.3
+    val temp = getArg(args, "${color}temp")?.toDouble() ?: 0.1
+    val ramp = getArg(args, "ramp")?.toInt() ?: 10
+    val unif = getArg(args, "${color}unif")?.toDouble() ?: 1.0
+    val pexp = getArg(args, "${color}pexp")?.toDouble() ?: 2.0
+    return SearchParameters(iter, expl, temp, ramp, unif, pexp)
+}
+
 fun main(args: Array<String>) {
     if (args.contains("-h")) {
         return appUsage()
@@ -271,17 +281,6 @@ fun main(args: Array<String>) {
     val n = getArg(args, "n")?.toInt() ?: 100
     val white = getArg(args, "white") ?: "mcts"
     val black = getArg(args, "black") ?: "mcts"
-    val witer = getArg(args, "witer")?.toInt() ?: 200
-    val biter = getArg(args, "biter")?.toInt() ?: 200
-    val wexpl = getArg(args, "wexpl")?.toDouble() ?: 0.3
-    val bexpl = getArg(args, "bexpl")?.toDouble() ?: 0.3
-    val wtemp = getArg(args, "wtemp")?.toDouble() ?: 0.1
-    val btemp = getArg(args, "btemp")?.toDouble() ?: 0.1
-    val ramp = getArg(args, "ramp")?.toInt() ?: 10
-    val wunif = getArg(args, "wunif")?.toDouble() ?: 1.0
-    val bunif = getArg(args, "bunif")?.toDouble() ?: 1.0
-    val wpexp = getArg(args, "wpexp")?.toDouble() ?: 2.0
-    val bpexp = getArg(args, "bpexp")?.toDouble() ?: 2.0
     val saveas = getArg(args, "saveas") ?: game
     val one = getArg(args, "one")?.toBoolean() ?: true
     val fast = getArg(args, "fast")?.toBoolean() ?: false
@@ -295,8 +294,8 @@ fun main(args: Array<String>) {
     val outputStream = FileOutputStream(workFile)
 
     val gameSpec = loadSpec(game)
-    val wParams = SearchParameters(witer, wexpl, wtemp, ramp, wunif, wpexp)
-    val bParams = SearchParameters(biter, bexpl, btemp, ramp, bunif, bpexp)
+    val wParams = getSearchParameters(args, "w")
+    val bParams = getSearchParameters(args, "b")
 
     val whiteAlgo = getAlgo(white, wParams)
     val blackAlgo = if (one && white.equals(black)) whiteAlgo else getAlgo(black, bParams)

@@ -43,7 +43,7 @@ fun main(args: Array<String>) {
                 state = newGame(gameSpec)
                 val whiteAlgo = if (playerWhite) "gui" else "model2:prod_model.chess2"
                 white = getAlgo(whiteAlgo, SearchParameters(iterations = 2000,
-                                                            exploration = 0.3,
+                                                            exploration = 0.1,
                                                             temperature = 0.1,
                                                             rampBy = 0,
                                                             priority_exponent = 2.0,
@@ -51,7 +51,7 @@ fun main(args: Array<String>) {
 
                 val blackAlgo = if (playerWhite) "model2:prod_model.chess2" else "gui"
                 black = getAlgo(blackAlgo, SearchParameters(iterations = 2000,
-                                                            exploration = 0.3,
+                                                            exploration = 0.1,
                                                             temperature = 0.1,
                                                             rampBy = 0,
                                                             priority_exponent = 2.0,
