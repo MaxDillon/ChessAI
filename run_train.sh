@@ -47,7 +47,7 @@ while true; do
             -from $(ls -t model.chess2.Model013.* | head -n 1) \
             -valuemult 0.95 \
             -metf 0.7 \
-            -lastn 50 \
+            -lastn 150 \
             -batch 350 \
             -drawweight 0.2 \
             -saveevery 1000 \
