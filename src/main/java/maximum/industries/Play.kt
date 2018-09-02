@@ -3,6 +3,7 @@ package maximum.industries
 import com.google.protobuf.ByteString
 import com.google.protobuf.TextFormat
 import org.deeplearning4j.util.ModelSerializer
+import org.nd4j.linalg.factory.Nd4j
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.nio.file.Files
@@ -289,6 +290,8 @@ fun main(args: Array<String>) {
     val baseName = "data.$saveas.${System.currentTimeMillis()}"
     val workFile = "$baseName.work"
     val doneFile = "$baseName.done"
+    val device = getArg(args, "device")?.toInt() ?: 0
+    Nd4j.getAffinityManager().attachThreadToDevice(Thread.currentThread(), device);
 
     println("Log file: $workFile")
     val outputStream = FileOutputStream(workFile)
