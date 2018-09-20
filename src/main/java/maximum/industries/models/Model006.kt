@@ -75,7 +75,7 @@ class Model006 : IModel {
 //                                 .epsilon(8e-8).build())
                 .graphBuilder()
                 .addInputs("input")
-                .setInputTypes(InputType.convolutional(sz, sz, inChannels))
+                .setInputTypes(InputType.convolutional(sz.toLong(), sz.toLong(), inChannels.toLong()))
 
                 // ######## First convolution #############################
                 .F("conv1", "input") {

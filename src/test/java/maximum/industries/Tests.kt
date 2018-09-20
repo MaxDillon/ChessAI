@@ -73,7 +73,7 @@ class TestChess() {
         state.printBoard()
         val (_, slim) = search.next(state)
         for (tsr in slim!!.treeSearchResults) {
-            println("${gameSpec.expandPolicyIndex(tsr.index)} ${tsr.prob} ${output1[1].getFloat(0, tsr.index)}")
+            println("${gameSpec.expandPolicyIndex(tsr.index)} ${tsr.prob} ${output1[1].getFloat(0L, tsr.index.toLong())}")
         }
     }
 
@@ -405,7 +405,7 @@ class TestTicTacToe() : TwoColorSetup("tictactoe") {
         assert(dataset.labels[0].getInt(0) == if (final.winFor(initial)) 1 else -1)
         for (i in slim.treeSearchResults.indices) {
             val tsr = slim.treeSearchResults[i]
-            assert(tsr.prob == dataset.labels[1].getFloat(0, tsr.index))
+            assert(tsr.prob == dataset.labels[1].getFloat(0L, tsr.index.toLong()))
         }
     }
 
@@ -429,11 +429,11 @@ class TestTicTacToe() : TwoColorSetup("tictactoe") {
 //                                 black = "c1,c2",
 //                                 whiteMove = false)
 //
-//        val (_, slimWhite) = search.next(whiteMove)
+//        val (_, slimWhite) = search.nextMoves(whiteMove)
 //        check(whiteMove, slimWhite, winWhite)
 //        check(whiteMove, slimWhite, winBlack)
 //
-//        val (_, slimBlack) = search.next(blackMove)
+//        val (_, slimBlack) = search.nextMoves(blackMove)
 //        check(blackMove, slimBlack, winWhite)
 //        check(blackMove, slimBlack, winBlack)
 //    }

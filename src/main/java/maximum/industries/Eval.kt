@@ -24,14 +24,14 @@ fun checkModelConsistency(gameSpec: GameSpec, model: ComputationGraph,
 // provide the model with a full batch. This is both faster and maybe necessary to prevent
 // GPU memory growth/exhaustion as the Dl4j will cache tensors of each shape on the GPU.
 // although ... this doesn't seem to fix the GPU memory problem
-fun emBatchen(inputs: Array<INDArray>, batchSize: Int): INDArray {
+fun emBatchen(inputs: Array<INDArray>, batchSize: Long): INDArray {
     var shape = inputs[0].shape()
     shape[0] = batchSize
     val input = Nd4j.zeros(*shape)
     val indices = Array(shape.size) { NDArrayIndex.all() }
     for (i in inputs.indices) {
         if (i < batchSize) {
-            indices[0] = NDArrayIndex.point(i)
+            indices[0] = NDArrayIndex.point(i.toLong())
             input.put(indices, inputs[i])
         }
     }
@@ -65,11 +65,11 @@ fun checkModelConsistency(gameSpec: GameSpec, model: ComputationGraph,
                     if (it == 0) state.toModelInput()
                     else state.nextMoves[it - 1].toModelInput()
                 }
-                val outputs = model.output(emBatchen(inputs, maxBatch))
+                val outputs = model.output(emBatchen(inputs, maxBatch.toLong()))
 
                 val policy = outputs[if (doValue) 1 else 0].getRow(0)
                 val isLegal = Nd4j.zeros(policySize(gameSpec))
-                for (next in state.nextMoves) isLegal.putScalar(next.toPolicyIndex(), 1f)
+                for (next in state.nextMoves) isLegal.putScalar(next.toPolicyIndex().toLong(), 1f)
                 val notLegal = isLegal.sub(1f).muli(-1)
                 numNextLegal += numNext
                 numNextIllegal += notLegal.sumNumber().toInt()
@@ -79,7 +79,7 @@ fun checkModelConsistency(gameSpec: GameSpec, model: ComputationGraph,
                 val nextVal = Nd4j.zeros(policySize(gameSpec))
                 if (doValue) {
                     for (i in state.nextMoves.indices) {
-                        nextVal.putScalar(state.nextMoves[i].toPolicyIndex(), outputs[0].getFloat(i + 1, 0))
+                        nextVal.putScalar(state.nextMoves[i].toPolicyIndex().toLong(), outputs[0].getFloat(i + 1L, 0))
                     }
                 }
                 val legalNextVal = nextVal.mul(isLegal)

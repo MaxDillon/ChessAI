@@ -6,21 +6,31 @@ import java.io.FileInputStream
 
 fun main(args: Array<String>) {
     val gameSpec = loadSpec(args[0])
+    val sz = gameSpec.boardSize
     var states = 0
     var error = 0
     val instream = FileInputStream(args[1])
+    val compare =  getArg(args, "compare")?.toBoolean() ?: false
 
     var model: ComputationGraph? = null
     if (args.size > 2) {
         model = ModelSerializer.restoreComputationGraph(args[2])
     }
 
+    var prevDepth = 0
+    var prevValue = 0f
     while (true) {
         try {
             val inst = Instance.TrainingInstance.parseDelimitedFrom(instream) ?: break
             states += 1
 
-            val sz = gameSpec.boardSize
+            val (input, out_value, out_policy, out_legal) = initTrainingData(gameSpec, 4)
+            for (i in 0..3) {
+                inst.toBatchTrainingInput(gameSpec, i.toLong(), i,
+                                          input, out_value, out_policy, out_legal)
+            }
+            val tmpout = model?.output(input)
+
             val player = if (inst.player.eq(Instance.Player.WHITE)) Player.WHITE else Player.BLACK
             val gameBoard = ByteArray(sz * sz) { 0 }
             for (i in 0 until inst.boardState.size()) {
@@ -34,9 +44,17 @@ fun main(args: Array<String>) {
             val value = if (outputs != null) outputs[0].getFloat(0) else 0f
             val policy = if (outputs != null) outputs[1] else null
 
+            if (prevDepth == inst.gameLength && Math.abs(prevValue + value) > 0.8) {
+                println("WTF")
+            }
+            
+            prevDepth = inst.gameLength
+            prevValue = value
+            
             state.printBoard()
             println("Player: ${inst.player}")
             println("Outcome: ${inst.outcome} ${value.f3()}")
+            if (tmpout != null) println(tmpout[0].toString())
             println("Length: ${inst.gameLength}")
             var probSum = 0f
             for (tsr in inst.treeSearchResultList) {

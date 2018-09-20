@@ -1,8 +1,5 @@
 package org.nd4j.linalg.lossfunctions.impl;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
 import org.nd4j.linalg.activations.IActivation;
 import org.nd4j.linalg.activations.impl.ActivationSoftmax;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -19,10 +16,7 @@ import org.nd4j.shade.jackson.annotation.JsonProperty;
 import org.nd4j.shade.jackson.databind.annotation.JsonDeserialize;
 import org.nd4j.shade.jackson.databind.annotation.JsonSerialize;
 
-@EqualsAndHashCode
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Getter
-@Setter
 public class PseudoSpherical implements ILossFunction {
     private static final double DEFAULT_SOFTMAX_CLIPPING_EPSILON = 1e-8;
 
@@ -108,9 +102,9 @@ public class PseudoSpherical implements ILossFunction {
                     + ") ");
 
         }
-        int[] shape = preOutput.shape();
-        int batchSize = shape[0];
-        int nOut = shape[1];
+        long[] shape = preOutput.shape();
+        long batchSize = shape[0];
+        long nOut = shape[1];
 
         INDArray sj = preOutput
                 .reshape(batchSize * nOut, 1)

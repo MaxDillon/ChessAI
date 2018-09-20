@@ -38,18 +38,18 @@ fun main(args: Array<String>) {
         println("Processing ${file}")
         val instream = FileInputStream(file.toString())
 
-        while (true) {
-            try {
+        try {
+            while (true) {
                 val newInstance = Instance.TrainingInstance.parseDelimitedFrom(instream) ?: break
                 instances.add(newInstance)
                 if (instances.size == 10000) {
                     SaveInstances()
                 }
                 states += 1
-            } catch (e: Exception) {
-                e.printStackTrace()
-                error += 1
             }
+        } catch (e: Exception) {
+            println("Delete: $file")
+            error += 1
         }
     }
     SaveInstances()

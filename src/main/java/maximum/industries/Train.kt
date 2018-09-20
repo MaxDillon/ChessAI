@@ -80,7 +80,7 @@ fun GBuilder.R(fn: String, vararg of: String,
 
 fun GBuilder.CNN2FF(fn: String, of: String, sz: Int, channels: Int): GBuilder {
     println("Adding $fn = f($of)")
-    addVertex(fn, PreprocessorVertex(CnnToFeedForwardPreProcessor(sz, sz, channels)), of)
+    addVertex(fn, PreprocessorVertex(CnnToFeedForwardPreProcessor(sz.toLong(), sz.toLong(), channels.toLong())), of)
     return this
 }
 
@@ -193,7 +193,7 @@ fun trainUsage() {
 
 fun main(args: Array<String>) {
     // use half precision floats for all tensors
-    Nd4j.setDataType(DataBuffer.Type.HALF);
+    //Nd4j.setDataType(DataBuffer.Type.HALF);
     DataTypeUtil.setDTypeForContext(DataBuffer.Type.FLOAT);
 
 //    NeuralNetConfiguration.reinitMapperWithSubtypes(
@@ -392,7 +392,7 @@ fun parseBatch(gameSpec: GameSpec, instances: Array<Instance.TrainingInstance>,
     val (input, value, policy, legal) = initTrainingData(gameSpec, batchSize)
     for (i in 0 until batchSize) {
         val reflection = rand.nextInt(4)
-        instances[i].toBatchTrainingInput(gameSpec, i, reflection, input, value, policy, legal,
+        instances[i].toBatchTrainingInput(gameSpec, i.toLong(), reflection, input, value, policy, legal,
                                           valueMult, maxEntropyTopFrac)
     }
     val outputs = ArrayList<INDArray>()

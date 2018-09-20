@@ -78,12 +78,12 @@ fun GameState.toModelInput(reflections: IntArray = intArrayOf(0)): INDArray {
     val size = gameSpec.boardSize
     val input = Nd4j.zeros(reflections.size, 2 * gameSpec.numRealPieces() + 1, size, size)
     for (i in 0 until reflections.size) {
-        toModelInput(input, i, reflections[i])
+        toModelInput(input, i.toLong(), reflections[i])
     }
     return input
 }
 
-fun GameState.toModelInput(input: INDArray, batchIndex: Int = 0, reflection: Int = 0) {
+fun GameState.toModelInput(input: INDArray, batchIndex: Long = 0, reflection: Int = 0) {
     val flipLeftRight = reflection % 2 > 0
     val reverseSides = reflection / 2 > 0
     val size = gameSpec.boardSize
@@ -93,7 +93,7 @@ fun GameState.toModelInput(input: INDArray, batchIndex: Int = 0, reflection: Int
             if (p_raw != 0) {
                 val (fx, fy) = gameSpec.flip(Pair(x,y), flipLeftRight, reverseSides)
                 val p = if (reverseSides) -p_raw else p_raw
-                input.putScalar(intArrayOf(batchIndex, gameSpec.pieceToChannel(p), fy, fx), 1f)
+                input.putScalar(longArrayOf(batchIndex, gameSpec.pieceToChannel(p).toLong(), fy.toLong(), fx.toLong()), 1f)
             }
         }
     }
@@ -217,7 +217,7 @@ fun adjustEntropy(probs: FloatArray, metf: Double) {
 }
 
 fun Instance.TrainingInstance.toBatchTrainingInput(
-        gameSpec: GameSpec, batchIndex: Int, reflection: Int,
+        gameSpec: GameSpec, batchIndex: Long, reflection: Int,
         input: INDArray, value: INDArray, policy: INDArray, legal: INDArray,
         valueMult: Float = 1.0f, maxEntropyTopFrac: Double = 0.0) {
 
@@ -229,7 +229,7 @@ fun Instance.TrainingInstance.toBatchTrainingInput(
             val xy = gameSpec.indexToXy(i)
             val (x, y) = gameSpec.flip(xy, flipLeftRight, reverseSides)
             val p = if (reverseSides) -p_raw else p_raw
-            input.putScalar(intArrayOf(batchIndex, gameSpec.pieceToChannel(p), y, x), 1)
+            input.putScalar(longArrayOf(batchIndex, gameSpec.pieceToChannel(p).toLong(), y.toLong(), x.toLong()), 1)
         }
     }
     val turn_raw = if (player.eq(Instance.Player.WHITE)) 1 else -1
@@ -241,9 +241,9 @@ fun Instance.TrainingInstance.toBatchTrainingInput(
 
     for (i in 0 until treeSearchResultCount) {
         val policyIndex = gameSpec.flipPolicyIndex(
-                treeSearchResultList[i].index, flipLeftRight, reverseSides)
-        policy.putScalar(intArrayOf(batchIndex, policyIndex), probs[i])
-        legal.putScalar(intArrayOf(batchIndex, policyIndex), 1f)
+                treeSearchResultList[i].index, flipLeftRight, reverseSides).toLong()
+        policy.putScalar(longArrayOf(batchIndex, policyIndex), probs[i])
+        legal.putScalar(longArrayOf(batchIndex, policyIndex), 1f)
     }
     value.putScalar(batchIndex, outcome * valueMult)
 }

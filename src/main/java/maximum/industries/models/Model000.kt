@@ -46,7 +46,7 @@ class Model000 : IModel {
                 .updater(Nesterovs(learningRate))
                 .graphBuilder()
                 .addInputs("input")
-                .setInputTypes(InputType.convolutional(sz, sz, inChannels))
+                .setInputTypes(InputType.convolutional(sz.toLong(), sz.toLong(), inChannels.toLong()))
 
                 // ######## First convolution #############################
                 .F("conv1", "input") {
