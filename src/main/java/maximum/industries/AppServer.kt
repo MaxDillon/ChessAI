@@ -45,7 +45,7 @@ fun main(args: Array<String>) {
                 white = getAlgo(whiteAlgo, SearchParameters(iterations = 2000,
                                                             exploration = 0.1,
                                                             temperature = 0.1,
-                                                            rampBy = 0,
+                                                            rampBy = 3,
                                                             priority_exponent = 2.0,
                                                             priority_uniform = 1.0))
 
@@ -53,7 +53,7 @@ fun main(args: Array<String>) {
                 black = getAlgo(blackAlgo, SearchParameters(iterations = 2000,
                                                             exploration = 0.1,
                                                             temperature = 0.1,
-                                                            rampBy = 0,
+                                                            rampBy = 3,
                                                             priority_exponent = 2.0,
                                                             priority_uniform = 1.0))
                 call.respond(Pair(state.toWireState(), gameSpec))
