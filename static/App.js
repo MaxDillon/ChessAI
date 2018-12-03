@@ -24,9 +24,17 @@ var reloadBoard = function(board) {
 
 var app = angular.module('boardApp', []);
 app.controller('myCtrl', function($scope, $http) {
-    $scope.whiteSide = false;
+
+    $scope.resetBoard = function() {
+        $scope.whiteSide = !$scope.whiteSide
+        $scope.sign = Math.sign(($scope.whiteSide?1:0)*2-1)
+        $scope.startGame()
+        
+    }
+
+    $scope.whiteSide = true;
     $scope.sign = Math.sign(($scope.whiteSide?1:0)*2-1)
-    $scope.boardPixels = 480;
+    $scope.boardPixels = 640;
     $scope.selected = null;
 
     $scope.getColor = function(num) { return (Math.sign(-num.value)+1)/2 };
@@ -59,17 +67,22 @@ app.controller('myCtrl', function($scope, $http) {
         }
     }
 
-    $http.post(
+    $scope.startGame = function() {
+        $http.post(
             "http://localhost:8080/start",
             $scope.whiteSide,
             { headers: {"Content-Type" : "application/json"}})
     .then(function(data) {
-        $scope.updateBoard(data.data.first)
-        $scope.gameSpec = data.data.second
-        $scope.gameName = $scope.gameSpec.name_
-        $scope.size = $scope.gameSpec.boardSize_
-        if (!$scope.whiteSide) { $scope.makeOpponentMove() }
-    });
+            $scope.updateBoard(data.data.first)
+            $scope.gameSpec = data.data.second
+            $scope.gameName = $scope.gameSpec.name_
+            $scope.size = $scope.gameSpec.boardSize_
+            console.log($scope.whiteSide)
+            if (!$scope.whiteSide) { $scope.makeOpponentMove() }
+        });
+    }
+
+    $scope.startGame()
 
     $scope.backgroundColor = function(piece,index) {
         if (piece.hilight) {

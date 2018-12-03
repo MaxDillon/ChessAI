@@ -27,8 +27,8 @@ fun main(args: Array<String>) {
     var state = newGame(gameSpec)
 
     val server = embeddedServer(Netty, port = 8080) {
-        var white = getAlgo("mcts", SearchParameters(iterations=1, exploration=1.0, temperature=0.3, rampBy = 1))
-        var black = getAlgo("mcts", SearchParameters(iterations=1, exploration=1.0, temperature=0.3, rampBy = 1))
+        var white = getAlgo("mcts", SearchParameters(iterations = 1, exploration = 1.0, temperature = 0.3, rampBy = 1))
+        var black = getAlgo("mcts", SearchParameters(iterations = 1, exploration = 1.0, temperature = 0.3, rampBy = 1))
         var playerWhite = true
 
         install(ContentNegotiation) {
@@ -40,22 +40,28 @@ fun main(args: Array<String>) {
 
             post("/start") {
                 playerWhite = call.receive<Boolean>()
-                state = newGame(gameSpec)
-                val whiteAlgo = if (playerWhite) "gui" else "model2:prod_model.chess2"
-                white = getAlgo(whiteAlgo, SearchParameters(iterations = 2000,
-                                                            exploration = 0.1,
-                                                            temperature = 0.1,
-                                                            rampBy = 0,
-                                                            priority_exponent = 2.0,
-                                                            priority_uniform = 1.0))
 
-                val blackAlgo = if (playerWhite) "model2:prod_model.chess2" else "gui"
+
+                state = newGame(gameSpec)
+                println("-----------------------------------------------------------------------------")
+                val whiteAlgo = if (playerWhite) "gui" else "mcts"
+                white = getAlgo(whiteAlgo, SearchParameters(iterations = 2000,
+                        exploration = 0.1,
+                        temperature = 0.1,
+                        rampBy = 3,
+                        priority_exponent = 2.0,
+                        priority_uniform = 1.0))
+
+
+                val blackAlgo = if (playerWhite) "mcts" else "gui"
                 black = getAlgo(blackAlgo, SearchParameters(iterations = 2000,
-                                                            exploration = 0.1,
-                                                            temperature = 0.1,
-                                                            rampBy = 0,
-                                                            priority_exponent = 2.0,
-                                                            priority_uniform = 1.0))
+                        exploration = 0.1,
+                        temperature = 0.1,
+                        rampBy = 3,
+                        priority_exponent = 2.0,
+                        priority_uniform = 1.0))
+
+
                 call.respond(Pair(state.toWireState(), gameSpec))
             }
 
