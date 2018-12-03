@@ -326,7 +326,7 @@ class StreamInstanceReader(val stream: InputStream) : InstanceReader {
     }
 }
 
-class FileInstanceReader(val prob: Double, val drawWeight: Double,
+open class FileInstanceReader(val prob: Double, val drawWeight: Double,
                          val lastN: Int, val filePattern: String,
                          val extension: String) : InstanceReader {
     private val rand = Random()
@@ -337,7 +337,7 @@ class FileInstanceReader(val prob: Double, val drawWeight: Double,
     // return a recent file of training data matching 'data.{filepattern}.nnnnnnn.done'
     // or else return just the one file if a full name was given instead of a pattern.
     // we'll be constantly creating new files, and this will pick from the last N
-    fun nextStream(): FileInputStream {
+    open fun nextStream(): FileInputStream {
         val matcher = BiPredicate<Path, BasicFileAttributes> { file, _ ->
             val fileName = file.fileName.toString()
             fileName.matches(Regex(".*$filePattern.[0-9]+.$extension")) ||
