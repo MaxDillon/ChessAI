@@ -8,6 +8,7 @@ import kotlin.math.sign
 const val BOARD_SIZE = 8
 const val BOARD_SQUARES = 64
 
+const val NONE = 0
 const val PAWN = 1
 const val KNIGHT = 2
 const val BISHOP = 3
@@ -45,7 +46,8 @@ class ChessState : GameState {
                     if (piece == QUEEN || piece == BISHOP) return true
                     else if (i == 1) {
                         if (piece == KING || piece == UKING) return true
-                        if (offset.sign != otp.sign && piece == PAWN) return true
+                        else if (offset.sign != otp.sign && piece == PAWN) return true
+                        else return false
                     } else return false
                 } else {
                     if (piece == QUEEN || piece == ROOK || piece == UROOK) return true
@@ -268,6 +270,8 @@ class ChessState : GameState {
             }
             if (stopAtOne && states.size > 0) break
         }
+        // uncomment for determinism across game impls
+        //states.sortBy { "${'a' + it.x1}${it.y1 + 1}${'a' + it.x2}${it.y2 + 1}" }
         return states
     }
 

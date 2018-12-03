@@ -5,20 +5,7 @@ import java.util.*
 import kotlin.math.abs
 import kotlin.math.sign
 
-const val BOARD_SIZE = 8
-const val BOARD_SQUARES = 64
-
-const val NONE = 0
-const val PAWN = 1
-const val KNIGHT = 2
-const val BISHOP = 3
-const val ROOK = 4
-const val QUEEN = 5
-const val KING = 6
-const val UROOK = 7
-const val UKING = 8
-
-class ChessState : GameState {
+class ChessState3 : GameState {
 
     constructor(gameSpec: GameGrammar.GameSpec) : super(gameSpec) {}
 
@@ -85,7 +72,7 @@ class ChessState : GameState {
         if (attacked(board, kpos, -1, kx, otp)) return true
         if (attacked(board, kpos, -9, if (kx < ky) kx else ky, otp)) return true
 
-        val oppKnight = (otp * KNIGHT) as Byte
+        val oppKnight = (otp * KNIGHT).toByte()
         if (kx > 0) {
             if (ky > 1 && board[kpos - 17] == oppKnight) return true
             if (ky < 6 && board[kpos + 15] == oppKnight) return true
@@ -289,6 +276,8 @@ class ChessState : GameState {
             }
             if (stopAtOne && states.size > 0) break
         }
+        // uncomment for determinism across game impls
+        //states.sortBy { "${'a' + it.x1}${it.y1 + 1}${'a' + it.x2}${it.y2 + 1}" }
         return states
     }
 

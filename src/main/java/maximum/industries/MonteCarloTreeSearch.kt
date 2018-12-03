@@ -1,6 +1,7 @@
 package maximum.industries
 
 import org.deeplearning4j.nn.graph.ComputationGraph
+import org.nd4j.linalg.api.ndarray.INDArray
 import java.lang.Math.pow
 import java.security.SecureRandom
 import java.util.*
@@ -8,7 +9,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
 
-val rand = Random(SecureRandom().nextLong())
+var rand = Random(SecureRandom().nextLong())
 
 // Extension methods for type-safe equality checking for similar enums, so compiler
 // will prevent mistakes like (inst.player == state.player)
@@ -151,9 +152,9 @@ open class VanillaMctsStrategy(val params: SearchParameters) : MctsStrategy {
                 return state.nextMoves[rand.nextInt(sz)]
             }
             val point = rand.nextFloat() * nonLossCumls.last()
-            var count = 0;
-            for (i in 0 until sz) if (nonLossCumls[i] < point) count++
-            return state.nextMoves[count]
+            for (i in 0 until sz) if (nonLossCumls[i] >= point) return state.nextMoves[i]
+            // in principle the next line will never be reached
+            return state.nextMoves.last()
         }
     }
 
@@ -215,7 +216,8 @@ open class VanillaMctsStrategy(val params: SearchParameters) : MctsStrategy {
         // model inputs to depend on temperature, or have most values driven to zero.
         val slim = state.toSlimState { i, tsr -> tsr.prob = policy[i].toFloat() }
         // now exponentiate to get weights for picking actual move
-        for (i in 0 until sz) policy[i] = pow(policy[i], 1 / temperature(state.moveDepth))
+        val inverseTemp = 1 / temperature(state.moveDepth)
+        for (i in 0 until sz) policy[i] = pow(policy[i], inverseTemp)
         policySum = policy.sum()
         for (i in state.nextMoves.indices) {
             val next = state.nextMoves[i]
@@ -362,7 +364,8 @@ open class AlphaZeroMctsStrategy1(model: ComputationGraph, params: SearchParamet
         // model inputs to depend on temperature, or have most values driven to zero.
         val slim = state.toSlimState { i, tsr -> tsr.prob = policy[i].toFloat() }
         // now exponentiate to get weights for picking actual move
-        for (i in 0 until sz) policy[i] = pow(policy[i], 1 / temperature(state.moveDepth))
+        val inverseTemp = 1 / temperature(state.moveDepth)
+        for (i in 0 until sz) policy[i] = pow(policy[i], inverseTemp)
         policySum = policy.sum()
         for (i in state.nextMoves.indices) {
             val next = state.nextMoves[i]
@@ -392,6 +395,7 @@ open class AlphaZeroMctsStrategy2(model: ComputationGraph, params: SearchParamet
                 val nInfo = info(next)
                 nInfo.Q = next.initialSelfValue()
                 // initialize Q's based on parent estimate
+                // TODO: should this decay like we have above?
                 if (next.outcome == Outcome.UNDETERMINED) {
                     nInfo.Q += sign(state, next) * sInfo.Q
                 }
@@ -408,6 +412,42 @@ open class AlphaZeroMctsStrategy2(model: ComputationGraph, params: SearchParamet
         }
         sInfo.N += 1
         sInfo.expanded = true
+    }
+}
+
+open class AlphaZeroMctsStrategy3(model: ComputationGraph, params: SearchParameters):
+    AlphaZeroMctsStrategy2(model, params) {
+    override fun pickMove(state: GameState): Pair<GameState, SlimState> {
+        println("Value: ${info(state).Q}")
+        val sz = state.nextMoves.size
+        val policy = DoubleArray(sz) {
+            // break ties in counts using P
+            max(0.0,
+                info(state.nextMoves[it]).N.toDouble() + info(state.nextMoves[it]).P)
+        }
+        var policySum = policy.sum()
+        for (i in 0 until sz) policy[i] /= policySum
+        // record non-exponentiated normalized policy in slim state. we don't want
+        // model inputs to depend on temperature, or have most values driven to zero.
+        val slim = state.toSlimState { i, tsr -> tsr.prob = policy[i].toFloat() }
+        val temp = temperature(state.moveDepth)
+
+        for (i in 0 until sz) {
+            policy[i] = (policy[i] * 0.1
+                         - info(state.nextMoves[i]).Q * 5 * (0.2 + Math.abs(info(state).Q))
+                         + rand.nextFloat() * 0.1 * temp * temp)
+        }
+        var maxi = 0
+        for (i in state.nextMoves.indices) {
+            if (policy[i] > policy[maxi]) maxi = i
+            val next = state.nextMoves[i]
+            val nInfo = info(next)
+            println("$next:\t${(policy[i]).toFloat().f3()}\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
+        }
+        val next = state.nextMoves[maxi]
+        allInfo.remove(state.moveDepth) // won't be needing these anymore
+        allInfo.remove((state.moveDepth - 1).toShort()) // or these, which might exist if there are two algos
+        return Pair(next, slim)
     }
 }
 
@@ -467,6 +507,7 @@ class DirichletMctsStrategy(params: SearchParameters, val values: FloatArray) :
                 rollout = pickChildByProbs(rollout, DoubleArray(rollout.nextMoves.size) { 1.0 })
             }
             val result = rollout.initialSelfDirichlet()
+            // TODO: UMMM .... this seems wrong:
             for (i in 0 until 3) sInfo.wld[i] += sign(state, rollout) * result[i]
         }
         sInfo.N += 1

@@ -7,3 +7,5 @@ shuffled.*
 java.hprof.*
 nohup.*
 *~
+old
+target

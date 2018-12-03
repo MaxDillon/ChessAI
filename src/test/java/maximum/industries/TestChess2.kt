@@ -63,10 +63,10 @@ class TestChess2() {
 
     @Test
     fun wtfEval() {
-        val state = initBoard(white = Placement(k = "e2", p = "b4"),
-                              black = Placement(k = "c4", r = "a3"), whiteMove = false)
+        val state = initBoard(white = Placement(k = "a2", p = "a3,b2,c2,d3", r="b7,h7", q="e4"),
+                              black = Placement(k = "b8", r = "g8,h6", n="g4", p="a6,e5", q="b6"), whiteMove = false)
 
-        val model = ModelSerializer.restoreComputationGraph("model.chess2.Model012.120000")
+        val model = ModelSerializer.restoreComputationGraph("prod_model.chess2")
         val params = SearchParameters(exploration = 0.1, temperature = 0.3, iterations = 200)
         val search = MonteCarloTreeSearch(AlphaZeroMctsStrategy2(model, params), params)
 

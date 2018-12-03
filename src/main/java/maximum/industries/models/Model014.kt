@@ -4,6 +4,7 @@ import maximum.industries.*
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.Updater
+import org.deeplearning4j.nn.conf.WorkspaceMode
 import org.deeplearning4j.nn.conf.inputs.InputType
 import org.deeplearning4j.nn.graph.ComputationGraph
 import org.deeplearning4j.nn.weights.WeightInit
@@ -16,17 +17,17 @@ import org.nd4j.linalg.lossfunctions.LossFunctions
  * Same as Model011 but with an extra dense layer in the value head, and one more residual block,
  * and more convolutional filters, and a higher learning rate.
  */
-class Model013 : IModel {
+class Model014 : IModel {
     override fun newModel(gameSpec: GameGrammar.GameSpec,
                           learningRateOverride: Double?,
                           regularizationOverride: Double?): ComputationGraph {
         val learningRate = learningRateOverride ?: 5e-2
-        val regularization = regularizationOverride ?: 1e-3
+        val regularization = regularizationOverride ?: 2e-4
 
         val sz = gameSpec.boardSize
         val inChannels = inputChannels(gameSpec)
         val policyChannels = policyChannels(gameSpec)
-        val convFilters = 160
+        val convFilters = 128
 
         val activation = Activation.RELU
         val weightInit = WeightInit.RELU
@@ -81,8 +82,8 @@ class Model013 : IModel {
 
                 // ######## Value head        #############################
                 .F("valuetower", "res8") {
-                    dense(30, init = weightInit, activation = activation)
-                    dense(10, init = weightInit, activation = activation)
+                    dense(30, init = weightInit, activation = activation, dropoutRetain = 0.5)
+                    dense(15, init = weightInit, activation = activation, dropoutRetain = 0.5)
                 }
                 .F("value", "valuetower") {
                     output(nOut = 1,
@@ -92,7 +93,7 @@ class Model013 : IModel {
                 }
                 // ######## Policy head      #############################
                 .F("policy1", "res8") {
-                    convolution(filters = policyChannels(gameSpec), init = weightInit, activation = activation)
+                    convolution(filters = policyChannels(gameSpec), init = weightInit, activation = activation, dropoutRetain = 0.5)
                 }
                 .CNN2FF("policyff", "policy1", sz, policyChannels)
                 .F("policy", "policyff") {

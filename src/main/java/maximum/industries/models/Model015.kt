@@ -17,12 +17,12 @@ import org.nd4j.linalg.lossfunctions.LossFunctions
  * Same as Model011 but with an extra dense layer in the value head, and one more residual block,
  * and more convolutional filters, and a higher learning rate.
  */
-class Model014 : IModel {
+class Model015 : IModel {
     override fun newModel(gameSpec: GameGrammar.GameSpec,
                           learningRateOverride: Double?,
                           regularizationOverride: Double?): ComputationGraph {
         val learningRate = learningRateOverride ?: 5e-2
-        val regularization = regularizationOverride ?: 2e-4
+        val regularization = regularizationOverride ?: 1e-3
 
         val sz = gameSpec.boardSize
         val inChannels = inputChannels(gameSpec)
@@ -48,42 +48,42 @@ class Model014 : IModel {
 
                 // ######## Residual block    #############################
                 .R("res1", "conv1") {
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
                 }
                 .R("res2", "res1") {
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
                 }
                 .R("res3", "res2") {
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
                 }
                 .R("res4", "res3") {
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
                 }
                 .R("res5", "res4") {
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
                 }
                 .R("res6", "res5") {
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
                 }
                 .R("res7", "res6") {
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
                 }
                 .R("res8", "res7") {
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
-                    convolution(filters = convFilters, init = weightInit, activation = activation, dropoutRetain = 0.5)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
+                    convolution(filters = convFilters, init = weightInit, activation = activation)
                 }
 
                 // ######## Value head        #############################
                 .F("valuetower", "res8") {
-                    dense(30, init = weightInit, activation = activation, dropoutRetain = 0.5)
-                    dense(15, init = weightInit, activation = activation, dropoutRetain = 0.5)
+                    dense(40, init = weightInit, activation = activation, dropoutRetain = 0.5)
+                    dense(20, init = weightInit, activation = activation, dropoutRetain = 0.5)
                 }
                 .F("value", "valuetower") {
                     output(nOut = 1,
@@ -93,7 +93,7 @@ class Model014 : IModel {
                 }
                 // ######## Policy head      #############################
                 .F("policy1", "res8") {
-                    convolution(filters = policyChannels(gameSpec), init = weightInit, activation = activation, dropoutRetain = 0.5)
+                    convolution(filters = policyChannels(gameSpec), init = weightInit, activation = activation)
                 }
                 .CNN2FF("policyff", "policy1", sz, policyChannels)
                 .F("policy", "policyff") {

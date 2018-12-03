@@ -83,6 +83,7 @@ fun GameState.toModelInput(reflections: IntArray = intArrayOf(0)): INDArray {
     return input
 }
 
+// NOTE: the input INDArray is assumed to be zero-initialized.
 fun GameState.toModelInput(input: INDArray, batchIndex: Long = 0, reflection: Int = 0) {
     val flipLeftRight = reflection % 2 > 0
     val reverseSides = reflection / 2 > 0

@@ -90,13 +90,24 @@ class LayerQueue {
         layers.add(layer)
     }
 
+    fun batchNorm(activation: Activation): BatchNormalization {
+        return if (activation == Activation.RELU) {
+            BatchNormalization()
+        } else {
+            BatchNormalization.Builder()
+                    .lockGammaBeta(true)
+                    .gamma(1.0)
+                    .beta(0.0).build()
+        }
+    }
+
     fun convolution(inChannels: Int = 0, filters: Int,
                     kernel: Int = 3, pad: Int = 1, stride: Int = 1,
                     activation: Activation = Activation.RELU,
                     init: WeightInit = WeightInit.RELU,
                     dropoutRetain: Double = 1.0,
                     norm: Boolean = true) {
-        if (norm) queueLayer(BatchNormalization())
+        if (norm) queueLayer(batchNorm(activation))
         queueLayer(ConvolutionLayer.Builder(kernel, kernel)
                            .nIn(inChannels).nOut(filters)
                            .padding(pad, pad).stride(stride, stride)
@@ -109,9 +120,11 @@ class LayerQueue {
     fun dense(units: Int,
               activation: Activation = Activation.RELU,
               init: WeightInit = WeightInit.RELU,
+              dropoutRetain: Double = 1.0,
               norm: Boolean = true) {
-        if (norm) queueLayer(BatchNormalization())
+        if (norm) queueLayer(batchNorm(activation))
         queueLayer(DenseLayer.Builder().nOut(units).activation(activation)
+                           .dropOut(dropoutRetain)
                            .weightInit(init).build())
     }
 
@@ -126,7 +139,7 @@ class LayerQueue {
                loss: LossFunction = LossFunction.L2,
                init: WeightInit = WeightInit.RELU,
                norm: Boolean = true) {
-        if (norm) queueLayer(BatchNormalization())
+        if (norm) queueLayer(batchNorm(activation))
         queueLayer(OutputLayer.Builder().nOut(nOut).activation(activation)
                            .lossFunction(loss.iLossFunction).weightInit(init).build())
     }

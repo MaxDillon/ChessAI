@@ -2,7 +2,7 @@ name: "Chess"
 board_size: 8
 board_symmetry: SYMMETRY_REFLECT
 augmentation: AUGMENTATION_BOTH
-implementing_class: "maximum.industries.games.ChessState"
+implementing_class: "maximum.industries.games.ChessState3"
 
 piece {
     name: "p"

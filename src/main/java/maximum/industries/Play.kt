@@ -185,7 +185,18 @@ fun getAlgo(algo: String, params: SearchParameters): GameSearchAlgo {
 //            NeuralNetConfiguration.reinitMapperWithSubtypes(
 //                    Collections.singletonList(NamedType(PseudoSpherical::class.java)))
             val model = ModelSerializer.restoreComputationGraph(modelName)
+            println("trainingWorkspaceMode: ${model.configuration.trainingWorkspaceMode}")
+            println("inferenceWorkspaceMode: ${model.configuration.inferenceWorkspaceMode}")
             MonteCarloTreeSearch(AlphaZeroMctsStrategy2(model, params), params)
+        }
+        "model3" -> {
+            val modelName = if (toks[1].endsWith(".*")) getLatest(toks[1]) else toks[1]
+//            NeuralNetConfiguration.reinitMapperWithSubtypes(
+//                    Collections.singletonList(NamedType(PseudoSpherical::class.java)))
+            val model = ModelSerializer.restoreComputationGraph(modelName)
+            println("trainingWorkspaceMode: ${model.configuration.trainingWorkspaceMode}")
+            println("inferenceWorkspaceMode: ${model.configuration.inferenceWorkspaceMode}")
+            MonteCarloTreeSearch(AlphaZeroMctsStrategy3(model, params), params)
         }
         "human" -> HumanInput()
         "gui" -> GuiInput()
@@ -291,6 +302,8 @@ fun main(args: Array<String>) {
     val workFile = "$baseName.work"
     val doneFile = "$baseName.done"
     val device = getArg(args, "device")?.toInt() ?: 0
+    val seed = getArg(args, "seed")?.toLong() ?: 0L
+    if (seed != 0L) rand = Random(seed)
     Nd4j.getAffinityManager().attachThreadToDevice(Thread.currentThread(), device);
 
     println("Log file: $workFile")
