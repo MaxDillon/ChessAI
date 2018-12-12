@@ -70,7 +70,7 @@ fun GBuilder.F(fn: String, vararg of: String,
 
 fun GBuilder.R(fn: String, vararg of: String,
                makeLayers: LayerQueue.() -> Unit): GBuilder {
-    F("res_$fn", *of, makeLayers = makeLayers)
+    F("res_$fn", of[0], makeLayers = makeLayers)
     val mergeInputs = of.toMutableList()
     mergeInputs.add("res_$fn")
     println("Adding $fn = f(${mergeInputs})")
