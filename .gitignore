@@ -1,4 +1,5 @@
 .idea
+.classpath
 log.*
 tmp.*
 data.*
@@ -9,3 +10,4 @@ nohup.*
 *~
 old
 target
+appserver.log

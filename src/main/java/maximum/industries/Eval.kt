@@ -25,14 +25,13 @@ fun checkModelConsistency(gameSpec: GameSpec, model: ComputationGraph,
 // GPU memory growth/exhaustion as the Dl4j will cache tensors of each shape on the GPU.
 // although ... this doesn't seem to fix the GPU memory problem
 fun emBatchen(inputs: Array<INDArray>, batchSize: Long): INDArray {
-    var shape = inputs[0].shape()
-    shape[0] = batchSize
+    var shape = IntArray(4) { if (it == 0) batchSize.toInt() else inputs[0].shape()[it].toInt() }
     val input = Nd4j.zeros(*shape)
     val indices = Array(shape.size) { NDArrayIndex.all() }
     for (i in inputs.indices) {
         if (i < batchSize) {
             indices[0] = NDArrayIndex.point(i.toLong())
-            input.put(indices, inputs[i])
+	    input.put(indices, inputs[i])
         }
     }
     return input

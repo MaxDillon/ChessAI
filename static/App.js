@@ -69,7 +69,7 @@ app.controller('myCtrl', function($scope, $http) {
 
     $scope.startGame = function() {
         $http.post(
-            "http://localhost:8080/start",
+            "/start",
             $scope.whiteSide,
             { headers: {"Content-Type" : "application/json"}})
     .then(function(data) {
@@ -111,7 +111,7 @@ app.controller('myCtrl', function($scope, $http) {
     }
 
     $scope.makeOpponentMove = function() {
-        $http.get("http://localhost:8080/opponentMove")
+        $http.get("/opponentMove")
         .then(function(data){
             $scope.updateBoard(data.data)
             if ($scope.selected!=null) {$scope.selected.hilight = false}
@@ -127,7 +127,7 @@ app.controller('myCtrl', function($scope, $http) {
             return $scope.fail()
         }
         $http.post(
-            "http://localhost:8080/move",
+            "/move",
             $scope.currentObject,
             {headers: {"Content-Type" : "application/json"} })
         .then(function(data,status,header,config ) {

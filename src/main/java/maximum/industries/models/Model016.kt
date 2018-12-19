@@ -14,10 +14,9 @@ import org.nd4j.linalg.learning.config.Nesterovs
 import org.nd4j.linalg.lossfunctions.LossFunctions
 
 /**
- * Same as Model011 but with an extra dense layer in the value head, and one more residual block,
- * and more convolutional filters, and a higher learning rate.
+ * Same as Model015 but with multi level residual shortcuts
  */
-class Model015 : IModel {
+class Model016 : IModel {
     override fun newModel(gameSpec: GameGrammar.GameSpec,
                           learningRateOverride: Double?,
                           regularizationOverride: Double?): ComputationGraph {
@@ -51,7 +50,7 @@ class Model015 : IModel {
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                 }
-                .R("res2", "res1") {
+                .R("res2", "res1", "conv1") {
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                 }
@@ -59,7 +58,7 @@ class Model015 : IModel {
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                 }
-                .R("res4", "res3") {
+                .R("res4", "res3", "res2", "conv1") {
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                 }
@@ -67,7 +66,7 @@ class Model015 : IModel {
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                 }
-                .R("res6", "res5") {
+                .R("res6", "res5", "res4") {
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                 }
@@ -75,7 +74,7 @@ class Model015 : IModel {
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                 }
-                .R("res8", "res7") {
+                .R("res8", "res7", "res6", "res4") {
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                     convolution(filters = convFilters, init = weightInit, activation = activation)
                 }

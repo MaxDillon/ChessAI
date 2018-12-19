@@ -21,18 +21,18 @@ while true; do
         if [[ $fast == 0 ]]; then
             ./mi_play.sh chess2 \
                 -n 10 \
-                -white "model2:model.chess2.Model013.*" \
+                -white "model2:model.chess2.Model015c.*" \
                 -witer 400 -wexpl 0.15 -wtemp 0.3 -wpexp 2.0 -wunif 1.0 \
-                -black "model2:model.chess2.Model013.*" \
+                -black "model2:model.chess2.Model015c.*" \
                 -biter 400 -bexpl 0.15 -btemp 0.3 -bpexp 2.0 -bunif 1.0 \
 		-device $device \
                 > $dest
         else
             ./mi_play.sh chess2 \
                 -n 25 \
-                -white "model2:model.chess2.Model013.*" \
+                -white "model2:model.chess2.Model015c.*" \
                 -witer 1 -wtemp 1.0 \
-                -black "model2:model.chess2.Model013.*" \
+                -black "model2:model.chess2.Model015c.*" \
                 -biter 800 -bexpl 0.15 -btemp 0.3 \
                 -one false \
                 -fast true \
@@ -48,7 +48,7 @@ while true; do
         ./reshuffle.sh
         ./mi_train.sh chess2 \
             -data shuffled.chess2 \
-            -from $(ls -t model.chess2.Model013.* | head -n 1) \
+            -from $(ls -t model.chess2.Model015c.* | head -n 1) \
             -valuemult 0.95 \
             -metf 0.7 \
             -lastn 150 \
