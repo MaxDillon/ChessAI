@@ -28,13 +28,14 @@ def unpack(data):
 # while training occurs in the main process. Each subprocess is forked and initially
 # shares memory including random number generator state. We first reinitialize RNG state
 # for each process (by default from /dev/urandom).
-def worker_load_data(choose_n, from_last_n):
+def worker_load_data(data_pattern, choose_n, from_last_n):
     np.random.set_state(np.random.RandomState().get_state())
-    return pack(loader.load_balance_transform('shuffled*done', choose_n, from_last_n))
+    return pack(loader.load_balance_transform('%s.*.done' % data_pattern, choose_n, from_last_n))
 
 def main(argv):
     batch = 1000
     config = [160, 8]
+    data_pattern = 'shuffled'
     device = '0'
     from_model = None
     from_last_n = 600
@@ -46,7 +47,7 @@ def main(argv):
     rate_decay = 1.0
     last_decay = 1.0
 
-    opts, args = getopt.getopt(argv, 'hb:c:d:f:l:o:r:s:tv:', ['ldecay=', 'rdecay='])
+    opts, args = getopt.getopt(argv, 'hb:c:d:f:l:o:r:s:tv:', ['ldecay=', 'rdecay=', 'data='])
     print(opts)
     for opt, val in opts:
         if opt == '-h':
@@ -61,6 +62,7 @@ def main(argv):
             print('         [-s <saveevery>]')
             print('         [-t] // use tensorboard')
             print('         [-v <num_validation_files>]')
+            print('         [--data <data>] // e.g., data/shuffled')
             print('         [--ldecay <lastn_decay>]')
             print('         [--rdecay <rate_decay>]')
             exit()
@@ -74,6 +76,7 @@ def main(argv):
         if opt == '-s': save_every = int(val)
         if opt == '-t': use_tensorboard = True
         if opt == '-v': num_validation = int(val)
+        if opt == '--data': data_pattern = val
         if opt == '--ldecay': last_decay = float(val)
         if opt == '--rdecay': rate_decay = float(val)
 
@@ -84,7 +87,7 @@ def main(argv):
     num_workers = 2 # two seem to be enough
     with concurrent.futures.ProcessPoolExecutor(max_workers=num_workers) as executor:
         # pre-load the first batch of training data. 
-        nextdata = [executor.submit(worker_load_data, 10, from_last_n)
+        nextdata = [executor.submit(worker_load_data, data_pattern, 10, from_last_n)
                     for _ in range(num_workers)]
         
         # construct model after workers are forked to keep forked processes small
@@ -100,7 +103,7 @@ def main(argv):
         # load validation data if requested
         validation_data = None
         if num_validation > 0:
-            xt_input, yt_value, yt_policy = loader.load_balance_transform('shuffled*test', num_validation)
+            xt_input, yt_value, yt_policy = loader.load_balance_transform('%s.*.test' % data_pattern, num_validation)
             validation_data = (xt_input, { 'value': yt_value, 'policy': yt_policy })
 
         # create tensorboard callback if requested
@@ -121,7 +124,7 @@ def main(argv):
             # let 'loaded' be a list of futures with pre-loaded data
             loaded = nextdata
             # submit another round of pre-load requests
-            nextdata = [executor.submit(worker_load_data, 10, from_last_n)
+            nextdata = [executor.submit(worker_load_data, data_pattern, 10, from_last_n)
                         for _ in range(num_workers)]
             if epoch % 20 == 0:
                 from_last_n = int(from_last_n * last_decay)
