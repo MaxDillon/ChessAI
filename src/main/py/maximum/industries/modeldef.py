@@ -55,11 +55,11 @@ def get_residual_block(x1, freeze_batch_norm, i):
     x2 = Add()([x1, x2])
     return Activation(tf.nn.relu)(x2)
 
-def make_model(filters=160, blocks=8, rate=0.001, freeze_batch_norm=False):
+def make_model(filters=160, blocks=8, kernels=(5,1), rate=0.001, freeze_batch_norm=False):
     input = Input(shape=(NUM_INPUT_CHANNELS, 8, 8), name='input')
 
     # initial convolution
-    x = get_conv(filters=filters, kernel_size=5)(input)
+    x = get_conv(filters=filters, kernel_size=kernels[0])(input)
     
     # residual blocks
     for i in range(blocks): x = get_residual_block(x, freeze_batch_norm, i)
@@ -77,7 +77,7 @@ def make_model(filters=160, blocks=8, rate=0.001, freeze_batch_norm=False):
                   bias_regularizer=l2(1.0),
                   activity_regularizer=l2(0.01))(vt)
 
-    px = get_conv(filters=8*8, activation=None, kernel_size=1)(x)
+    px = get_conv(filters=8*8, activation=None, kernel_size=kernels[1])(x)
     pf = Flatten()(px)
     policy = Softmax(name='policy')(pf)
 
@@ -102,12 +102,14 @@ def save_model(model, output_dir):
     last_add = [l for l in model.layers if 'add' in l.name][-1]
     blocks = int(last_add.name.split('_')[-1]) + 1
     filters = int(last_add.input[0].shape[1])
+    kernels = [int([l for l in model.layers if 'conv2d' in l.name][i].weights[0].shape[0])
+               for i in [0,-1]]
     
     with tf.Graph().as_default():
         with tf.Session().as_default() as freeze_sess:
             # in new graph and session create an identical model, except with custom batch normalization
             # layers that can be frozen without any training ops.
-            model2 = make_model(filters=filters, blocks=blocks, freeze_batch_norm=True)
+            model2 = make_model(filters=filters, blocks=blocks, kernels=kernels, freeze_batch_norm=True)
             # load weights into the new network and get a frozen graph def.
             model2.load_weights(tmp_name)
             freeze_var_names = [v.name for v in model2.variables]
