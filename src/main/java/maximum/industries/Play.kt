@@ -8,6 +8,8 @@ import org.tensorflow.Graph
 import org.tensorflow.SavedModelBundle
 import org.tensorflow.Session
 import org.tensorflow.framework.ConfigProto
+import org.tensorflow.framework.GPUOptions
+import org.tensorflow.framework.GPUOptionsOrBuilder
 import org.tensorflow.framework.GraphDef
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -207,8 +209,8 @@ fun getAlgo(algo: String, params: SearchParameters): GameSearchAlgo {
             val modelName = if (toks[1].endsWith(".*")) getLatest(toks[1]) else toks[1]
             val config = ConfigProto.newBuilder()
                     .addDeviceFilters("/device:gpu:${params.tf_device}")
+                    .setGpuOptions(GPUOptions.newBuilder().setAllowGrowth(true).build())
                     .setLogDevicePlacement(true).build();
-            println(config.toString())
             SavedModelBundle.loader(modelName)
                     .withTags("serve")
                     .withConfigProto(config.toByteArray()).load()
