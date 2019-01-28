@@ -6,7 +6,9 @@ import maximum.industries.GameGrammar.MoveSource
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.indexing.NDArrayIndex
+import org.tensorflow.Tensor
 import java.lang.Math.pow
+import java.nio.FloatBuffer
 import kotlin.math.E
 import kotlin.math.abs
 import kotlin.math.log
@@ -101,6 +103,44 @@ fun GameState.toModelInput(input: INDArray, batchIndex: Long = 0, reflection: In
     val turn_raw = if (player.eq(Player.WHITE)) 1 else -1
     val turn = if (reverseSides) -turn_raw else turn_raw
     input.put(arrayOf(NDArrayIndex.point(batchIndex), NDArrayIndex.point(0)), turn)
+}
+
+fun GameState.toTensorInput(): Tensor<Float> {
+    val turn = if (player.eq(Player.WHITE)) 1 else -1
+    val size = gameSpec.boardSize
+    val channels = gameSpec.numRealPieces() * 2 + 1
+    val buf = FloatBuffer.allocate(1 * channels * size * size)
+    for (x in 0 until size) {
+        for (y in 0 until size) {
+            val p_raw = at(x, y)
+            if (p_raw != 0) {
+                val p = gameSpec.pieceToChannel(p_raw)
+                buf.put(p * size * size + y * size + x, 1f)
+            }
+            buf.put(y * size + x, turn.toFloat())
+        }
+    }
+    return Tensor.create(longArrayOf(1, channels.toLong(), size.toLong(), size.toLong()), buf)
+}
+
+fun GameSpec.fromTensorInput(tensor: Tensor<Float>): GameState {
+    val size = boardSize
+    val newBoard = ByteArray(size * size) { 0 }
+    val buf = FloatBuffer.allocate((1 + 2 * numRealPieces()) * size * size)
+    tensor.writeTo(buf)
+    for (channel in 1..(2 * numRealPieces())) {
+        for (x in 0 until size) {
+            for (y in 0 until size) {
+                val p = buf.get(channel * size * size + y * size + x)
+                if (p > 0) {
+                    newBoard[y * size + x] = channelToPiece(channel).toByte()
+                }
+            }
+        }
+    }
+    val player = if (buf.get(0) > 0) Player.WHITE else Player.BLACK
+    return StateFactory.newState(this, newBoard, player,
+                                 0, 0, 0, 0, 0, 0)
 }
 
 fun GameSpec.fromModelInput(input: INDArray, batchIndex: Int = 0): GameState {

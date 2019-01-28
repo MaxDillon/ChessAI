@@ -1596,7 +1596,7 @@ public final class Instance {
     maximum.industries.Instance.Player getPlayer();
 
     /**
-     * <code>uint32 outcome = 3;</code>
+     * <code>int32 outcome = 3;</code>
      */
     int getOutcome();
 
@@ -1686,7 +1686,7 @@ public final class Instance {
             }
             case 24: {
 
-              outcome_ = input.readUInt32();
+              outcome_ = input.readInt32();
               break;
             }
             case 32: {
@@ -1758,7 +1758,7 @@ public final class Instance {
     public static final int OUTCOME_FIELD_NUMBER = 3;
     private int outcome_;
     /**
-     * <code>uint32 outcome = 3;</code>
+     * <code>int32 outcome = 3;</code>
      */
     public int getOutcome() {
       return outcome_;
@@ -1827,7 +1827,7 @@ public final class Instance {
         output.writeEnum(2, player_);
       }
       if (outcome_ != 0) {
-        output.writeUInt32(3, outcome_);
+        output.writeInt32(3, outcome_);
       }
       if (gameLength_ != 0) {
         output.writeUInt32(4, gameLength_);
@@ -1852,7 +1852,7 @@ public final class Instance {
       }
       if (outcome_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(3, outcome_);
+          .computeInt32Size(3, outcome_);
       }
       if (gameLength_ != 0) {
         size += com.google.protobuf.CodedOutputStream
@@ -2272,13 +2272,13 @@ public final class Instance {
 
       private int outcome_ ;
       /**
-       * <code>uint32 outcome = 3;</code>
+       * <code>int32 outcome = 3;</code>
        */
       public int getOutcome() {
         return outcome_;
       }
       /**
-       * <code>uint32 outcome = 3;</code>
+       * <code>int32 outcome = 3;</code>
        */
       public Builder setOutcome(int value) {
         
@@ -2287,7 +2287,7 @@ public final class Instance {
         return this;
       }
       /**
-       * <code>uint32 outcome = 3;</code>
+       * <code>int32 outcome = 3;</code>
        */
       public Builder clearOutcome() {
         
@@ -2643,7 +2643,7 @@ public final class Instance {
       "um.industries.WinLoseDraw\"\273\001\n\020TrainingIn" +
       "stance\022\023\n\013board_state\030\001 \001(\014\022*\n\006player\030\002 " +
       "\001(\0162\032.maximum.industries.Player\022\017\n\007outco" +
-      "me\030\003 \001(\r\022\023\n\013game_length\030\004 \001(\r\022@\n\022tree_se",
+      "me\030\003 \001(\005\022\023\n\013game_length\030\004 \001(\r\022@\n\022tree_se",
       "arch_result\030\005 \003(\0132$.maximum.industries.T" +
       "reeSearchResult*\036\n\006Player\022\t\n\005WHITE\020\000\022\t\n\005" +
       "BLACK\020\001**\n\007TsrType\022\r\n\tMOVE_PROB\020\000\022\020\n\014OUT" +

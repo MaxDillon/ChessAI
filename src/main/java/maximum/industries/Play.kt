@@ -4,6 +4,11 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.TextFormat
 import org.deeplearning4j.util.ModelSerializer
 import org.nd4j.linalg.factory.Nd4j
+import org.tensorflow.Graph
+import org.tensorflow.SavedModelBundle
+import org.tensorflow.Session
+import org.tensorflow.framework.ConfigProto
+import org.tensorflow.framework.GraphDef
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.nio.file.Files
@@ -198,6 +203,18 @@ fun getAlgo(algo: String, params: SearchParameters): GameSearchAlgo {
             println("inferenceWorkspaceMode: ${model.configuration.inferenceWorkspaceMode}")
             MonteCarloTreeSearch(AlphaZeroMctsStrategy3(model, params), params)
         }
+        "tf" -> {
+            val modelName = if (toks[1].endsWith(".*")) getLatest(toks[1]) else toks[1]
+            val config = ConfigProto.newBuilder()
+                    .addDeviceFilters("/device:gpu:${params.tf_device}")
+                    .setLogDevicePlacement(true).build();
+            println(config.toString())
+            SavedModelBundle.loader(modelName)
+                    .withTags("serve")
+                    .withConfigProto(config.toByteArray()).load()
+            val bundle = SavedModelBundle.load(modelName, "serve")
+            MonteCarloTreeSearch(AlphaZeroTensorFlowMctsStrategy(bundle.graph(), params), params)
+        }
         "human" -> HumanInput()
         "gui" -> GuiInput()
         else -> throw RuntimeException("no algo specified")
@@ -273,7 +290,8 @@ data class SearchParameters(val iterations: Int = 100,
                             val temperature: Double = 0.3,
                             val rampBy: Int = 10,
                             val priority_uniform: Double = 1.0,
-                            val priority_exponent: Double = 2.0)
+                            val priority_exponent: Double = 2.0,
+                            val tf_device: Int = 0)
 
 fun getSearchParameters(args: Array<String>, color: String): SearchParameters {
     val iter = getArg(args, "${color}iter")?.toInt() ?: 200
@@ -282,7 +300,8 @@ fun getSearchParameters(args: Array<String>, color: String): SearchParameters {
     val ramp = getArg(args, "ramp")?.toInt() ?: 10
     val unif = getArg(args, "${color}unif")?.toDouble() ?: 1.0
     val pexp = getArg(args, "${color}pexp")?.toDouble() ?: 2.0
-    return SearchParameters(iter, expl, temp, ramp, unif, pexp)
+    val device = getArg(args, "device")?.toInt() ?: 0
+    return SearchParameters(iter, expl, temp, ramp, unif, pexp, device)
 }
 
 fun main(args: Array<String>) {
@@ -294,7 +313,7 @@ fun main(args: Array<String>) {
     val white = getArg(args, "white") ?: "mcts"
     val black = getArg(args, "black") ?: "mcts"
     val saveas = getArg(args, "saveas") ?: game
-    val one = getArg(args, "one")?.toBoolean() ?: true
+    val one = getArg(args, "one")?.toBoolean() ?: false
     val fast = getArg(args, "fast")?.toBoolean() ?: false
     val mindepth = getArg(args, "mindepth")?.toInt() ?: 30
     val rollback = getArg(args, "rollback")?.toInt() ?: 6
@@ -305,6 +324,7 @@ fun main(args: Array<String>) {
     val seed = getArg(args, "seed")?.toLong() ?: 0L
     if (seed != 0L) rand = Random(seed)
     Nd4j.getAffinityManager().attachThreadToDevice(Thread.currentThread(), device);
+    Nd4j.getMemoryManager().setAutoGcWindow(10000);
 
     println("Log file: $workFile")
     val outputStream = FileOutputStream(workFile)

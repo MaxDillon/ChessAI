@@ -2,7 +2,12 @@ package maximum.industries
 
 import org.deeplearning4j.nn.graph.ComputationGraph
 import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.factory.Nd4j
+import org.tensorflow.Graph
+import org.tensorflow.Session
+import org.tensorflow.Tensor
 import java.lang.Math.pow
+import java.nio.FloatBuffer
 import java.security.SecureRandom
 import java.util.*
 import kotlin.math.max
@@ -293,19 +298,66 @@ open class AlphaZeroMctsNoModelStrategy(params: SearchParameters) : VanillaMctsS
 
 open class AlphaZeroMctsStrategy(val model: ComputationGraph, params: SearchParameters) :
         AlphaZeroMctsNoModelStrategy(params) {
+
+    fun evalState(state: GameState): Pair<INDArray, INDArray> {
+        val outputs = model.output(state.toModelInput())
+        val output_value = outputs[0]
+        val output_policy = outputs[1]
+        return Pair(output_value, output_policy)
+    }
+
     override fun expand(state: GameState) {
         state.protectNextMoves()
         val sInfo = info(state)
         if (state.outcome == Outcome.UNDETERMINED) {
-            val outputs = model.output(state.toModelInput())
-            val output_value = outputs[0]
-            val output_policy = outputs[1]
+            val (output_value, output_policy) = evalState(state)
             sInfo.Q = output_value.getFloat(0 /* batch index */)
             for (next in state.nextMoves) {
                 val nInfo = info(next)
                 nInfo.Q = next.initialSelfValue()
                 nInfo.P = output_policy.getFloat(intArrayOf(0 /* batch index */,
                                                             next.toPolicyIndex()))
+            }
+        }
+        sInfo.N += 1
+        sInfo.expanded = true
+    }
+}
+
+open class AlphaZeroTensorFlowMctsStrategy(val model: Graph, params: SearchParameters) :
+        AlphaZeroMctsNoModelStrategy(params) {
+    val session = Session(model)
+
+    public fun evalState(state: GameState): Pair<FloatBuffer, FloatBuffer> {
+        val input = state.toTensorInput()
+        val results =
+                session.runner()
+                        .feed("input", input)
+                        .fetch("value/Tanh")
+                        .fetch("policy/Softmax").run()
+        val output_value = results.get(0)
+        val output_policy = results.get(1)
+        val value_buf = FloatBuffer.allocate(1)
+        val policy_buf = FloatBuffer.allocate(output_policy.numElements())
+        output_value.writeTo(value_buf)
+        output_policy.writeTo(policy_buf)
+
+        input.close()
+        output_value.close()
+        output_policy.close()
+        return Pair(value_buf, policy_buf)
+    }
+
+    override fun expand(state: GameState) {
+        state.protectNextMoves()
+        val sInfo = info(state)
+        if (state.outcome == Outcome.UNDETERMINED) {
+            val (value_buf, policy_buf) = evalState(state)
+            sInfo.Q = value_buf.get(0)
+            for (next in state.nextMoves) {
+                val nInfo = info(next)
+                nInfo.Q = next.initialSelfValue()
+                nInfo.P = policy_buf.get(next.toPolicyIndex())
             }
         }
         sInfo.N += 1

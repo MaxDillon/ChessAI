@@ -28,7 +28,7 @@ message TreeSearchResult {
 message TrainingInstance {
     bytes board_state = 1;
     Player player = 2;
-    uint32 outcome = 3;
+    int32 outcome = 3;
     uint32 game_length = 4;
     repeated TreeSearchResult tree_search_result = 5;
 }
