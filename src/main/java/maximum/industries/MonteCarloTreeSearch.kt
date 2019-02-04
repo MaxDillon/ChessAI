@@ -327,9 +327,10 @@ open class AlphaZeroMctsStrategy(val model: ComputationGraph, params: SearchPara
 open class AlphaZeroTensorFlowMctsStrategy(val model: Graph, params: SearchParameters) :
         AlphaZeroMctsNoModelStrategy(params) {
     val session = Session(model)
+    val reflections = intArrayOf(0,1,2,3)
 
     public fun evalState(state: GameState): Pair<FloatBuffer, FloatBuffer> {
-        val input = state.toTensorInput()
+        val input = state.toTensorInput(reflections)
         val results =
                 session.runner()
                         .feed("input", input)
@@ -337,7 +338,7 @@ open class AlphaZeroTensorFlowMctsStrategy(val model: Graph, params: SearchParam
                         .fetch("policy/Softmax").run()
         val output_value = results.get(0)
         val output_policy = results.get(1)
-        val value_buf = FloatBuffer.allocate(1)
+        val value_buf = FloatBuffer.allocate(output_value.numElements())
         val policy_buf = FloatBuffer.allocate(output_policy.numElements())
         output_value.writeTo(value_buf)
         output_policy.writeTo(policy_buf)
@@ -353,11 +354,23 @@ open class AlphaZeroTensorFlowMctsStrategy(val model: Graph, params: SearchParam
         val sInfo = info(state)
         if (state.outcome == Outcome.UNDETERMINED) {
             val (value_buf, policy_buf) = evalState(state)
-            sInfo.Q = value_buf.get(0)
+            var Qsum = 0.0f
+            for (i in 0 until reflections.size) Qsum += value_buf[i]
+            sInfo.Q = Qsum / reflections.size
+            val policySize = state.gameSpec.policySize()
             for (next in state.nextMoves) {
                 val nInfo = info(next)
                 nInfo.Q = next.initialSelfValue()
                 nInfo.P = policy_buf.get(next.toPolicyIndex())
+                var PSum = 0f
+                for (i in 0 until reflections.size) {
+                    val flipLeftRight = reflections[i] % 2 > 0
+                    val reverseSides = reflections[i] / 2 > 0
+                    val policyIndex = state.gameSpec.flipPolicyIndex(
+                            next.toPolicyIndex(), flipLeftRight, reverseSides)
+                    PSum += policy_buf.get(i * policySize + policyIndex)
+                }
+                nInfo.P = PSum / reflections.size
             }
         }
         sInfo.N += 1

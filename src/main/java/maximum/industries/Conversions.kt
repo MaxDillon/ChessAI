@@ -33,6 +33,14 @@ data class MoveInfo(var x1: Int, var y1: Int, var x2: Int, var y2: Int, var p1: 
     override fun toString() = "${'a' + x1}${y1 + 1} -> ${'a' + x2}${y2 + 1}"
 }
 
+fun GameSpec.policySize(): Int {
+    return if (moveSource == MoveSource.MOVESOURCE_ENDS) {
+        boardSize * boardSize * numRealPieces()
+    } else {
+        boardSize * boardSize * boardSize * boardSize
+    }
+}
+
 fun GameSpec.toPolicyIndex(info: MoveInfo): Int {
     val dst = xyToIndex(Pair(info.x2, info.y2))
     val src = if (moveSource == MoveSource.MOVESOURCE_ENDS) {
@@ -105,22 +113,37 @@ fun GameState.toModelInput(input: INDArray, batchIndex: Long = 0, reflection: In
     input.put(arrayOf(NDArrayIndex.point(batchIndex), NDArrayIndex.point(0)), turn)
 }
 
-fun GameState.toTensorInput(): Tensor<Float> {
-    val turn = if (player.eq(Player.WHITE)) 1 else -1
+fun GameState.toTensorInput(reflections: IntArray = intArrayOf(0)): Tensor<Float> {
     val size = gameSpec.boardSize
     val channels = gameSpec.numRealPieces() * 2 + 1
-    val buf = FloatBuffer.allocate(1 * channels * size * size)
+    val buf = FloatBuffer.allocate(reflections.size * channels * size * size)
+    for (i in 0 until reflections.size) {
+        toTensorInput(buf, i, reflections[i])
+    }
+    return Tensor.create(longArrayOf(reflections.size.toLong(), channels.toLong(),
+                                     size.toLong(), size.toLong()), buf)
+}
+
+fun GameState.toTensorInput(buf: FloatBuffer, i: Int, reflection: Int) {
+    val flipLeftRight = reflection % 2 > 0
+    val reverseSides = reflection / 2 > 0
+    val turn_raw = if (player.eq(Player.WHITE)) 1 else -1
+    val turn = if (reverseSides) -turn_raw else turn_raw
+    val size = gameSpec.boardSize
+    val channels = gameSpec.numRealPieces() * 2 + 1
+    val stride = channels * size * size
     for (x in 0 until size) {
         for (y in 0 until size) {
             val p_raw = at(x, y)
             if (p_raw != 0) {
-                val p = gameSpec.pieceToChannel(p_raw)
-                buf.put(p * size * size + y * size + x, 1f)
+                val (fx, fy) = gameSpec.flip(Pair(x,y), flipLeftRight, reverseSides)
+                val fp = if (reverseSides) -p_raw else p_raw
+                val channel = gameSpec.pieceToChannel(fp)
+                buf.put(i * stride + channel * size * size + fy * size + fx, 1f)
             }
-            buf.put(y * size + x, turn.toFloat())
+            buf.put(i * stride + y * size + x, turn.toFloat())
         }
     }
-    return Tensor.create(longArrayOf(1, channels.toLong(), size.toLong(), size.toLong()), buf)
 }
 
 fun GameSpec.fromTensorInput(tensor: Tensor<Float>): GameState {
