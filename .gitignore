@@ -1,4 +1,4 @@
-.idea
+.idea/
 .classpath
 log.*
 tmp.*
@@ -8,6 +8,6 @@ shuffled.*
 java.hprof.*
 nohup.*
 *~
-old
-target
+old/
+target/
 appserver.log
