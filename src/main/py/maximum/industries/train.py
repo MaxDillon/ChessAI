@@ -32,53 +32,48 @@ def worker_load_data(data_pattern, choose_n, from_last_n):
     np.random.set_state(np.random.RandomState().get_state())
     return pack(loader.load_balance_transform('%s.*.done' % data_pattern, choose_n, from_last_n))
 
-def main(argv):
-    batch = 1000
-    config = [160, 8]
-    data_pattern = 'shuffled'
-    device = '0'
-    from_model = None
-    from_last_n = 600
-    outdir = 'tfmodels'
-    rate = 0.001
-    save_every = 20
-    use_tensorboard = False
-    num_validation = 0
-    rate_decay = 1.0
-    last_decay = 1.0
+def get_opt(opts, opt, opttype, default):
+    if opt in opts:
+        if opttype == bool:
+            return True
+        else:
+            return opttype(opts[opt])
+    else:
+        return default
 
+def main(argv):
     opts, args = getopt.getopt(argv, 'hb:c:d:f:l:o:r:s:tv:', ['ldecay=', 'rdecay=', 'data='])
-    print(opts)
-    for opt, val in opts:
-        if opt == '-h':
-            print('train.py [-h] // help')
-            print('         [-b <batchsize>]')
-            print('         [-c <config>] // filters:blocks')
-            print('         [-d <device>]')
-            print('         [-f <from_model>]')
-            print('         [-l <lastn>]')
-            print('         [-o <outdir>]')
-            print('         [-r <rate>]')
-            print('         [-s <saveevery>]')
-            print('         [-t] // use tensorboard')
-            print('         [-v <num_validation_files>]')
-            print('         [--data <data>] // e.g., data/shuffled')
-            print('         [--ldecay <lastn_decay>]')
-            print('         [--rdecay <rate_decay>]')
-            exit()
-        if opt == '-b': batch = int(val)
-        if opt == '-c': config = [int(x) for x in val.split(':')]
-        if opt == '-d': device = val
-        if opt == '-f': from_model = val
-        if opt == '-l': from_last_n = int(val)
-        if opt == '-o': outdir = val
-        if opt == '-r': rate = float(val)
-        if opt == '-s': save_every = int(val)
-        if opt == '-t': use_tensorboard = True
-        if opt == '-v': num_validation = int(val)
-        if opt == '--data': data_pattern = val
-        if opt == '--ldecay': last_decay = float(val)
-        if opt == '--rdecay': rate_decay = float(val)
+    opts = dict(opts)
+    if '-h' in opts:
+        print('train.py [-h] // help')
+        print('         [-b <batchsize>]')
+        print('         [-c <config>] // filters:blocks')
+        print('         [-d <device>]')
+        print('         [-f <from_model>]')
+        print('         [-l <lastn>]')
+        print('         [-o <outdir>]')
+        print('         [-r <rate>]')
+        print('         [-s <saveevery>]')
+        print('         [-t] // use tensorboard')
+        print('         [-v <num_validation_files>]')
+        print('         [--data <data>] // e.g., data/shuffled')
+        print('         [--ldecay <lastn_decay>]')
+        print('         [--rdecay <rate_decay>]')
+        exit()
+        
+    batch = get_opt(opts, '-b', int, 1000)
+    config = [int(x) for x in get_opt(opts, '-c', str, '160:8').split(':')]
+    device = get_opt(opts, '-d', str, '0')
+    from_model = get_opt(opts, '-f', str, None)
+    from_last_n = get_opt(opts, '-l', int, 600)
+    outdir = get_opt(opts, '-o', str, 'tfmodels')
+    rate = get_opt(opts, '-r', float, 0.001)
+    save_every = get_opt(opts, 's', int, 50)
+    use_tensorboard = get_opt(opts, '-t', bool, False)
+    num_validation = get_opt(opts, '-v', int, 0)
+    data_pattern = get_opt(opts, '--data', str, 'shuffled')
+    rate_decay = get_opt(opts, '--rdecay', float, 1.0)
+    last_decay = get_opt(opts, '--ldecay', float, 1.0)
 
     # Set CUDA_DEVICE_ORDER so cuda libs number devices in the same way as nvidia-smi
     os.environ['CUDA_DEVICE_ORDER']='PCI_BUS_ID'
@@ -87,7 +82,7 @@ def main(argv):
     num_workers = 2 # two seem to be enough
     with concurrent.futures.ProcessPoolExecutor(max_workers=num_workers) as executor:
         # pre-load the first batch of training data. 
-        nextdata = [executor.submit(worker_load_data, data_pattern, 10, from_last_n)
+        nextdata = [executor.submit(worker_load_data, data_pattern, 6, from_last_n)
                     for _ in range(num_workers)]
         
         # construct model after workers are forked to keep forked processes small
@@ -110,7 +105,7 @@ def main(argv):
         callbacks=[]
         if use_tensorboard:
             from tensorflow.keras.callbacks import TensorBoard
-            callbacks.append(TensorBoard(log_dir='./logs/%d' % int(time.time()),
+            callbacks.append(TensorBoard(log_dir='%s/logs/%d' % (outdir, int(time.time())),
                                          histogram_freq=1,
                                          batch_size=batch,
                                          write_graph=False))
@@ -124,7 +119,7 @@ def main(argv):
             # let 'loaded' be a list of futures with pre-loaded data
             loaded = nextdata
             # submit another round of pre-load requests
-            nextdata = [executor.submit(worker_load_data, data_pattern, 10, from_last_n)
+            nextdata = [executor.submit(worker_load_data, data_pattern, 6, from_last_n)
                         for _ in range(num_workers)]
             if epoch % 20 == 0:
                 from_last_n = int(from_last_n * last_decay)

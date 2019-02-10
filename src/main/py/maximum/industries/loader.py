@@ -60,15 +60,14 @@ def adjustEntropy(probs):
     return probs
 
 def transform(insts):
-    n = len(insts) * 2  # generate two random reflections for each state
+    n = len(insts) * 4
     x_input = np.zeros((n, NUM_INPUT_CHANNELS, 8, 8), dtype=DTYPE)
     y_value = np.zeros((n, 1), dtype=DTYPE)
     y_policy = np.zeros((n, 8 * 8 * 8 * 8), dtype=DTYPE)
-    reflections = np.random.randint(0,4,n)
     for i in range(n):
-        flipLeftRight = reflections[i] % 2 > 0
-        reverseSides = reflections[i] / 2 > 0
-        inst = insts[int(i/2)]
+        flipLeftRight = (i & 1) > 0
+        reverseSides = (i & 2) > 0
+        inst = insts[int(i/4)]
         board = bytearray(inst.board_state)
         for x in range(8):
             for y in range(8):

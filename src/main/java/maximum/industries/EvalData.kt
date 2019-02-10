@@ -23,8 +23,10 @@ fun main(args: Array<String>) {
     fun ema(ema: Double, next: Double, w: Double) =
             if (ema == 0.0) next else w * ema + (1 - w) * next
 
-    val dataReader = object: FileInstanceReader(1.0, 1.0, 1000,
-                                                dataPattern, "done") {
+    val dataReader = object : FileInstanceReader(
+            1.0, 1.0, 1000,
+            dataPattern, "done",
+            display = true, shuffle = false) {
         override fun nextStream(): FileInputStream {
             if (ema_train > 0) println(ema_train)
             ema_train = 0.0
@@ -37,8 +39,8 @@ fun main(args: Array<String>) {
 
     while (true) {
         val train_batch = getBatch(gameSpec, dataReader, 500,
-                                   true, true, false,
-                                   valuemult, maxentropytopfrac)
+                true, true, false,
+                valuemult, maxentropytopfrac)
 
         val train_score = model.score(train_batch)
         ema_train = ema(ema_train, train_score, 0.9)

@@ -40,7 +40,6 @@ class MonteCarloTreeSearch(val strategy: MctsStrategy,
             strategy.backprop(stack, node)
             stack.clear()
         }
-        println("Cache size: ${strategy.cacheSize()}")
         return strategy.pickMove(state)
     }
 
@@ -212,7 +211,7 @@ open class VanillaMctsStrategy(val params: SearchParameters) : MctsStrategy {
     // Q: should we have a more auto-tuned concept of temperature where we enforce a maximum
     // entropy?
     override fun pickMove(state: GameState): Pair<GameState, SlimState> {
-        println("Value: ${info(state).Q}")
+        if (!params.quiet) println("Value: ${info(state).Q}")
         val sz = state.nextMoves.size
         val policy = DoubleArray(sz) { info(state.nextMoves[it]).N.toDouble() }
         var policySum = policy.sum()
@@ -227,7 +226,7 @@ open class VanillaMctsStrategy(val params: SearchParameters) : MctsStrategy {
         for (i in state.nextMoves.indices) {
             val next = state.nextMoves[i]
             val nInfo = info(next)
-            println("$next:\t${(policy[i]/policySum).toFloat().f3()}\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
+            if (!params.quiet) println("$next:\t${(policy[i]/policySum).toFloat().f3()}\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
         }
         val next = pickChildByProbs(state, policy)
         allInfo.remove(state.moveDepth) // won't be needing these anymore
@@ -416,7 +415,7 @@ open class AlphaZeroMctsStrategy1(model: ComputationGraph, params: SearchParamet
     }
 
     override fun pickMove(state: GameState): Pair<GameState, SlimState> {
-        println("Value: ${info(state).Q}")
+        if (!params.quiet) println("Value: ${info(state).Q}")
         val sz = state.nextMoves.size
         val policy = DoubleArray(sz) {
             // break ties in counts using P
@@ -435,7 +434,7 @@ open class AlphaZeroMctsStrategy1(model: ComputationGraph, params: SearchParamet
         for (i in state.nextMoves.indices) {
             val next = state.nextMoves[i]
             val nInfo = info(next)
-            println("$next:\t${(policy[i]/policySum).toFloat().f3()}\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
+            if (!params.quiet) println("$next:\t${(policy[i]/policySum).toFloat().f3()}\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
         }
         val next = pickChildByProbs(state, policy)
         allInfo.remove(state.moveDepth) // won't be needing these anymore
@@ -483,7 +482,7 @@ open class AlphaZeroMctsStrategy2(model: ComputationGraph, params: SearchParamet
 open class AlphaZeroMctsStrategy3(model: ComputationGraph, params: SearchParameters):
     AlphaZeroMctsStrategy2(model, params) {
     override fun pickMove(state: GameState): Pair<GameState, SlimState> {
-        println("Value: ${info(state).Q}")
+        if (!params.quiet) println("Value: ${info(state).Q}")
         val sz = state.nextMoves.size
         val policy = DoubleArray(sz) {
             // break ties in counts using P
@@ -507,7 +506,7 @@ open class AlphaZeroMctsStrategy3(model: ComputationGraph, params: SearchParamet
             if (policy[i] > policy[maxi]) maxi = i
             val next = state.nextMoves[i]
             val nInfo = info(next)
-            println("$next:\t${(policy[i]).toFloat().f3()}\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
+            if (!params.quiet) println("$next:\t${(policy[i]).toFloat().f3()}\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
         }
         val next = state.nextMoves[maxi]
         allInfo.remove(state.moveDepth) // won't be needing these anymore

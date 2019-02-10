@@ -37,6 +37,33 @@ class TestChess2() {
     }
 
     @Test
+    fun fenChecks() {
+        val state = initBoard(white = Placement(k = "a2", p = "c4,b2,d3", n = "h1", b = "f3"),
+                black = Placement(k = "b7", b = "c6,h4", p = "c5,h2,f7", r = "f8"), whiteMove = false)
+        state.printBoard()
+        println(state.fen())
+
+        val state2 = ChessState.fromFen(gameSpec, state.fen())
+        state2.printBoard()
+        println(state2.fen())
+
+        val state3 = newGame(gameSpec) as ChessState
+        state3.printBoard()
+        println(state3.fen())
+
+        for (next in state3.nextMoves) {
+            println((next as ChessState).fen())
+        }
+
+        val startFen = "b2qk2r/5ppp/3bpn2/1pp2n2/8/2PP1N2/1P2BPPP/1NBQ1RK1 w k - - 15"
+        val startBoard = ChessState.fromFen(gameSpec, startFen)
+        startBoard.printBoard()
+        val nextFen = startBoard.fen()
+        println(nextFen)
+    }
+
+
+    @Test
     fun modelEval() {
         // for recent self-play models:
         //   for black values whack

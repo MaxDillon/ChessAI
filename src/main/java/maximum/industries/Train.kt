@@ -91,13 +91,13 @@ class LayerQueue {
     }
 
     fun batchNorm(activation: Activation): BatchNormalization {
-        return if (activation == Activation.RELU) {
+        return if (activation != Activation.RELU) {
             BatchNormalization()
         } else {
-            BatchNormalization.Builder()
-                    .lockGammaBeta(true)
-                    .gamma(1.0)
-                    .beta(0.0).build()
+            BatchNormalization() //.Builder()
+//                    .lockGammaBeta(true)
+//                    .gamma(1.0)
+//                    .beta(0.0).build()
         }
     }
 
@@ -106,15 +106,20 @@ class LayerQueue {
                     activation: Activation = Activation.RELU,
                     init: WeightInit = WeightInit.RELU,
                     dropoutRetain: Double = 1.0,
-                    norm: Boolean = true) {
-        if (norm) queueLayer(batchNorm(activation))
+                    norm: Boolean = true,
+                    normAfter: Boolean = false) {
+        if (norm && !normAfter) queueLayer(batchNorm(activation))
         queueLayer(ConvolutionLayer.Builder(kernel, kernel)
-                           .nIn(inChannels).nOut(filters)
-                           .padding(pad, pad).stride(stride, stride)
-                           .activation(activation)
-                           .weightInit(init)
-                           .dropOut(dropoutRetain)
-                           .build())
+                .nIn(inChannels).nOut(filters)
+                .padding(pad, pad).stride(stride, stride)
+                .activation(if (norm && normAfter) Activation.IDENTITY else activation)
+                .weightInit(init)
+                .dropOut(dropoutRetain)
+                .build())
+        if (norm && normAfter) {
+            queueLayer(batchNorm(activation))
+            queueLayer(ActivationLayer(activation))
+        }
     }
 
     fun dense(units: Int,
@@ -124,14 +129,14 @@ class LayerQueue {
               norm: Boolean = true) {
         if (norm) queueLayer(batchNorm(activation))
         queueLayer(DenseLayer.Builder().nOut(units).activation(activation)
-                           .dropOut(dropoutRetain)
-                           .weightInit(init).build())
+                .dropOut(dropoutRetain)
+                .weightInit(init).build())
     }
 
     fun loss(activation: Activation = Activation.TANH,
              loss: LossFunction = LossFunction.L2) {
         queueLayer(LossLayer.Builder().activation(activation)
-                           .lossFunction(loss.iLossFunction).build())
+                .lossFunction(loss.iLossFunction).build())
     }
 
     fun output(nOut: Int,
@@ -141,7 +146,7 @@ class LayerQueue {
                norm: Boolean = true) {
         if (norm) queueLayer(batchNorm(activation))
         queueLayer(OutputLayer.Builder().nOut(nOut).activation(activation)
-                           .lossFunction(loss.iLossFunction).weightInit(init).build())
+                .lossFunction(loss.iLossFunction).weightInit(init).build())
     }
 }
 
@@ -205,9 +210,12 @@ fun trainUsage() {
 }
 
 fun main(args: Array<String>) {
-    // use half precision floats for all tensors
-    //Nd4j.setDataType(DataBuffer.Type.HALF);
-    DataTypeUtil.setDTypeForContext(DataBuffer.Type.FLOAT);
+// None of this FP16 stuff seems to work. Gets unexpected data type error.
+//    DataTypeUtil.setDTypeForContext(DataBuffer.Type.HALF)
+//    Nd4j.setDataType(DataBuffer.Type.HALF)
+//    Nd4j.factory().setDType(DataBuffer.Type.HALF)
+
+    Nd4j.getMemoryManager().setAutoGcWindow(5000)
 
 //    NeuralNetConfiguration.reinitMapperWithSubtypes(
 //            Collections.singletonList(NamedType(PseudoSpherical::class.java)))
@@ -226,8 +234,8 @@ fun main(args: Array<String>) {
 
     val new = getArg(args, "new")
     val newModel = if (new != null) newModel(new, gameSpec,
-                                             learningRateOverride,
-                                             regularizationOverride) else null
+            learningRateOverride,
+            regularizationOverride) else null
 
     var defaultSaveAs = ""
     var startingBatch = 0
@@ -244,7 +252,7 @@ fun main(args: Array<String>) {
             } else {
                 if (priorModelInfo != null) {
                     newModel.init(priorModelInfo.first.params(true),
-                                  true)
+                            true)
                     defaultSaveAs = priorModelInfo.second
                     startingBatch = priorModelInfo.third
                 } else {
@@ -263,10 +271,13 @@ fun main(args: Array<String>) {
     val useLegal = modelHas(model, "legal")
 
     val dataPattern = getArg(args, "data") ?: "data.$gameName"
-    val lastN = getArg(args, "lastn")?.toInt() ?: 200
+    var lastN = getArg(args, "lastn")?.toInt() ?: 200
+    val lastNdecay = getArg(args, "lastndecay")?.toDouble() ?: 0.95
     val saveAs = getArg(args, "saveas") ?: defaultSaveAs
     val drawWeight = getArg(args, "drawweight")?.toDouble() ?: 1.0
-    val batchSize = getArg(args, "batch")?.toInt() ?: 200
+    var batchSize = getArg(args, "batch")?.toInt() ?: 200
+    val batchIncr = getArg(args, "batchincr")?.toInt() ?: 0
+    val batchMax = getArg(args, "batchmax")?.toInt() ?: 1200
     val logFile = getArg(args, "logfile") ?: "log.$saveAs"
     var saveevery = getArg(args, "saveevery")?.toInt() ?: 1000
     var updates = getArg(args, "updates")?.toInt() ?: 100
@@ -274,6 +285,9 @@ fun main(args: Array<String>) {
     var maxentropytopfrac = getArg(args, "metf")?.toDouble() ?: 0.0
     var doui = getArg(args, "doui")?.toBoolean() ?: true
     var batchCount = startingBatch
+
+    val device = getArg(args, "device")?.toInt() ?: 0
+    Nd4j.getAffinityManager().attachThreadToDevice(Thread.currentThread(), device);
 
     if (doui) {
         val uiServer = UIServer.getInstance()
@@ -290,12 +304,13 @@ fun main(args: Array<String>) {
     fun ema(ema: Double, next: Double, w: Double) =
             if (ema == 0.0) next else w * ema + (1 - w) * next
 
+
     while (true) {
         val train_batch = getBatch(gameSpec, trainReader, batchSize, useValue, usePolicy, useLegal,
-                                   valuemult, maxentropytopfrac)
-        if (batchCount % 5 == 1) {
+                valuemult, maxentropytopfrac)
+        if (batchCount % 5 == 0) {
             val test_batch = getBatch(gameSpec, testReader, batchSize, useValue, usePolicy, useLegal,
-                                      valuemult, maxentropytopfrac)
+                    valuemult, maxentropytopfrac)
 
             val train_score = model.score(train_batch)
             val test_score = model.score(test_batch)
@@ -313,6 +328,13 @@ fun main(args: Array<String>) {
             ModelSerializer.writeModel(model, "model.$saveAs.$batchCount", true)
             if (--updates == 0) System.exit(0)
         }
+        if (batchCount % 1000 == 0) {
+            lastN = (lastN * lastNdecay + 1).toInt()
+            trainReader.lastN = lastN
+            testReader.lastN = lastN
+            batchSize = min(batchMax, batchSize + batchIncr)
+            println("lastN: ${lastN}  batchSize: ${batchSize}")
+        }
     }
 }
 
@@ -327,9 +349,12 @@ class StreamInstanceReader(val stream: InputStream) : InstanceReader {
 }
 
 open class FileInstanceReader(val prob: Double, val drawWeight: Double,
-                         val lastN: Int, val filePattern: String,
-                         val extension: String) : InstanceReader {
+                              var lastN: Int, val filePattern: String,
+                              val extension: String,
+                              val display: Boolean = false,
+                              val shuffle: Boolean = true) : InstanceReader {
     private val rand = Random()
+    private val paths = ArrayList<Path>()
     var currentStream = nextStream()
     val counts = HashMap<Pair<Instance.Player, Int>, Int>()
     var total = 0
@@ -338,16 +363,25 @@ open class FileInstanceReader(val prob: Double, val drawWeight: Double,
     // or else return just the one file if a full name was given instead of a pattern.
     // we'll be constantly creating new files, and this will pick from the last N
     open fun nextStream(): FileInputStream {
-        val matcher = BiPredicate<Path, BasicFileAttributes> { file, _ ->
-            val fileName = file.fileName.toString()
-            fileName.matches(Regex(".*$filePattern.[0-9]+.$extension")) ||
-            fileName == filePattern
+        if (paths.isEmpty()) {
+            val matcher = BiPredicate<Path, BasicFileAttributes> { file, _ ->
+                val fileName = file.fileName.toString()
+                fileName.matches(Regex(".*$filePattern.[0-9]+.$extension")) ||
+                        fileName == filePattern
+            }
+            val allpaths = ArrayList<Path>()
+            for (path in find(Paths.get("."), 1, matcher).iterator()) allpaths.add(path)
+            val recent = allpaths.sortedByDescending { it.fileName }.subList(0, min(lastN, allpaths.size))
+            if (recent.isEmpty()) throw RuntimeException("No files match")
+            paths.addAll(recent)
+            if (shuffle) paths.shuffle()
         }
-        val paths = ArrayList<Path>()
-        for (path in find(Paths.get("."), 1, matcher).iterator()) paths.add(path)
-        val recent = paths.sortedByDescending { it.fileName }.subList(0, min(lastN, paths.size))
-        if (recent.isEmpty()) throw RuntimeException("No files match")
-        return FileInputStream(recent[rand.nextInt(recent.size)].toString())
+        val path = paths.last()
+        if (display) {
+            println(path)
+        }
+        paths.removeAt(paths.lastIndex)
+        return FileInputStream(path.toString())
     }
 
     override fun next(): Instance.TrainingInstance {
@@ -364,14 +398,16 @@ open class FileInstanceReader(val prob: Double, val drawWeight: Double,
                 } catch (_: Exception) {
                 }
                 continue
+            } else if (instance.boardState.size() != 64) {
+                continue
             } else {
                 // adjust probability of selecting an instance so we come out approximately
                 // balanced between wins and losses for white and black
                 val key = Pair(instance.player, instance.outcome)
                 val count = counts.getOrPut(key, { 0 })
                 val threshold = prob *
-                                if (instance.outcome == 0) drawWeight
-                                else if ((count + 1.0) / (total + 1.0) > 0.25) 0.1 else 1.0
+                        if (instance.outcome == 0) drawWeight
+                        else if ((count + 1.0) / (total + 1.0) > 0.25) 0.1 else 1.0
                 if (rand.nextDouble() < threshold) {
                     counts.put(key, count + 1)
                     if (instance.outcome != 0) total += 1
@@ -406,7 +442,7 @@ fun parseBatch(gameSpec: GameSpec, instances: Array<Instance.TrainingInstance>,
     for (i in 0 until batchSize) {
         val reflection = rand.nextInt(4)
         instances[i].toBatchTrainingInput(gameSpec, i.toLong(), reflection, input, value, policy, legal,
-                                          valueMult, maxEntropyTopFrac)
+                valueMult, maxEntropyTopFrac)
     }
     val outputs = ArrayList<INDArray>()
     if (useValue) outputs.add(value)

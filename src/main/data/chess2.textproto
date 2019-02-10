@@ -30,7 +30,7 @@ piece {
 }
 piece {
     name: "Q"
-    placement: "x5y1"
+    placement: "x4y1"
 }
 piece {
     name: "K"
@@ -42,5 +42,5 @@ piece {
 }
 piece {
     name: "k"
-    placement: "x4y1"
+    placement: "x5y1"
 }

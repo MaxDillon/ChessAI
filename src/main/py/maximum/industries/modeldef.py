@@ -31,9 +31,9 @@ def get_conv(filters, kernel_size=3, activation=tf.nn.relu):
                   kernel_regularizer=l2(0.001),
                   bias_regularizer=l2(0.001))
 
-def get_dense(units, regu=0.001):
+def get_dense(units, regu=0.001, activation=tf.nn.relu):
     return Dense(units,
-                 activation=tf.nn.relu,
+                 activation=activation,
                  kernel_initializer=initializers.glorot_normal(),
                  bias_initializer=initializers.glorot_normal(),
                  kernel_regularizer=l2(regu),
@@ -66,16 +66,18 @@ def make_model(filters=160, blocks=8, kernels=(5,1), rate=0.001, freeze_batch_no
 
     # value tower
     vt = Flatten()(x)
-    vt = get_dense(40, regu=0.01)(vt)
+    vt = get_dense(40, regu=0.02)(vt)
     vt = Dropout(rate=0.5)(vt)
     vt = get_norm(freeze_batch_norm, 'batchnorm-vt')(vt)
-    vt = get_dense(30, regu=0.02)(vt)
+    vt = get_dense(20, regu=0.04)(vt)
     vt = Dropout(rate=0.5)(vt)
     value = Dense(1, activation=tf.nn.tanh, name='value',
                   kernel_initializer=initializers.glorot_normal(),
                   bias_initializer=initializers.zeros(),
-                  bias_regularizer=l2(1.0),
-                  activity_regularizer=l2(0.01))(vt)
+                  bias_regularizer=l2(0.2),
+                  kernel_regularizer=l2(0.4),
+                  activity_regularizer=l2(0.1)
+    )(vt)
 
     px = get_conv(filters=8*8, activation=None, kernel_size=kernels[1])(x)
     pf = Flatten()(px)
@@ -83,7 +85,7 @@ def make_model(filters=160, blocks=8, kernels=(5,1), rate=0.001, freeze_batch_no
 
     model = Model(inputs=input, outputs=[value, policy])
     losses = { 'value': 'mean_squared_error', 'policy': 'categorical_crossentropy' }
-    weights = { 'value': 2.0, 'policy': 1.0 }
+    weights = { 'value': 1.0, 'policy': 1.0 }
     optimizer = Adam(rate)
     model.compile(optimizer=optimizer, loss=losses, loss_weights=weights, metrics=[])
 
@@ -112,6 +114,7 @@ def save_model(model, output_dir):
             model2 = make_model(filters=filters, blocks=blocks, kernels=kernels, freeze_batch_norm=True)
             # load weights into the new network and get a frozen graph def.
             model2.load_weights(tmp_name)
+            os.remove(tmp_name)
             freeze_var_names = [v.name for v in model2.variables]
             output_node_names = ['input', 'value/Tanh', 'policy/Softmax']
             output_node_names += [v.op.name for v in model2.variables]

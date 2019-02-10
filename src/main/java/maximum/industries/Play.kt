@@ -4,13 +4,9 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.TextFormat
 import org.deeplearning4j.util.ModelSerializer
 import org.nd4j.linalg.factory.Nd4j
-import org.tensorflow.Graph
 import org.tensorflow.SavedModelBundle
-import org.tensorflow.Session
 import org.tensorflow.framework.ConfigProto
 import org.tensorflow.framework.GPUOptions
-import org.tensorflow.framework.GPUOptionsOrBuilder
-import org.tensorflow.framework.GraphDef
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.nio.file.Files
@@ -24,8 +20,6 @@ fun Float.f1(): String = String.format("%.1f", this)
 fun Float.f3(): String = String.format("%.3f", this)
 
 interface GameSearchAlgo {
-
-    fun index(num: Int) {}
     fun next(state: GameState): Pair<GameState, SlimState?>
     fun gameOver()
 }
@@ -148,7 +142,7 @@ class HumanInput : GameSearchAlgo {
             val (x2, y2) = parse(tokens[tokens.size - 1])
             for (move in state.nextMoves) {
                 if (move.x2 == x2 && move.y2 == y2 &&
-                    (move.x1 == x1 || x1 < 0) && (move.y1 == y1 || y1 < 0)) {
+                        (move.x1 == x1 || x1 < 0) && (move.y1 == y1 || y1 < 0)) {
                     return Pair(move, null)
                 }
             }
@@ -210,7 +204,7 @@ fun getAlgo(algo: String, params: SearchParameters): GameSearchAlgo {
             val config = ConfigProto.newBuilder()
                     .addDeviceFilters("/device:gpu:${params.tf_device}")
                     .setGpuOptions(GPUOptions.newBuilder().setAllowGrowth(true).build())
-                    .setLogDevicePlacement(true).build();
+                    .build()
             SavedModelBundle.loader(modelName)
                     .withTags("serve")
                     .withConfigProto(config.toByteArray()).load()
@@ -293,7 +287,8 @@ data class SearchParameters(val iterations: Int = 100,
                             val rampBy: Int = 10,
                             val priority_uniform: Double = 1.0,
                             val priority_exponent: Double = 2.0,
-                            val tf_device: Int = 0)
+                            val tf_device: Int = 0,
+                            val quiet: Boolean = false)
 
 fun getSearchParameters(args: Array<String>, color: String): SearchParameters {
     val iter = getArg(args, "${color}iter")?.toInt() ?: 200
@@ -303,7 +298,8 @@ fun getSearchParameters(args: Array<String>, color: String): SearchParameters {
     val unif = getArg(args, "${color}unif")?.toDouble() ?: 1.0
     val pexp = getArg(args, "${color}pexp")?.toDouble() ?: 2.0
     val device = getArg(args, "device")?.toInt() ?: 0
-    return SearchParameters(iter, expl, temp, ramp, unif, pexp, device)
+    val quiet = getArg(args, "quiet")?.toBoolean() ?: false
+    return SearchParameters(iter, expl, temp, ramp, unif, pexp, device, quiet)
 }
 
 fun main(args: Array<String>) {
@@ -325,8 +321,8 @@ fun main(args: Array<String>) {
     val device = getArg(args, "device")?.toInt() ?: 0
     val seed = getArg(args, "seed")?.toLong() ?: 0L
     if (seed != 0L) rand = Random(seed)
-    Nd4j.getAffinityManager().attachThreadToDevice(Thread.currentThread(), device);
-    Nd4j.getMemoryManager().setAutoGcWindow(10000);
+    Nd4j.getAffinityManager().attachThreadToDevice(Thread.currentThread(), device)
+    Nd4j.getMemoryManager().autoGcWindow = 10000
 
     println("Log file: $workFile")
     val outputStream = FileOutputStream(workFile)
@@ -336,14 +332,14 @@ fun main(args: Array<String>) {
     val bParams = getSearchParameters(args, "b")
 
     val whiteAlgo = getAlgo(white, wParams)
-    val blackAlgo = if (one && white.equals(black)) whiteAlgo else getAlgo(black, bParams)
+    val blackAlgo = if (one && white == black) whiteAlgo else getAlgo(black, bParams)
 
     for (i in 1..n) {
         if (!fast) {
             play(gameSpec, whiteAlgo, blackAlgo, outputStream)
         } else {
             fastPlay(gameSpec, fast = whiteAlgo, slow = blackAlgo,
-                     minDepth = mindepth, rollback = rollback, stream = outputStream)
+                    minDepth = mindepth, rollback = rollback, stream = outputStream)
         }
     }
     Files.move(Paths.get(workFile), Paths.get(doneFile))

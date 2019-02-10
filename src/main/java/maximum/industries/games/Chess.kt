@@ -32,6 +32,92 @@ class ChessState : GameState {
             super(gameSpec, gameBoard, player, p1, x1, y1, x2, y2, moveDepth, history) {
     }
 
+    companion object {
+        val charToPiece = mapOf(
+                'P' to 1, 'N' to 2, 'B' to 3, 'R' to 4, 'Q' to 5, 'K' to 6,
+                'p' to -1, 'n' to -2, 'b' to- 3, 'r' to -4, 'q' to -5, 'k' to -6)
+        val pieceToChar = charToPiece.entries.associate { (k, v) -> v to k }
+                .toMutableMap().also {
+                    it.put(-7, 'r')
+                    it.put(-8, 'k')
+                    it.put(7, 'R')
+                    it.put(8, 'K') }
+
+        fun fromFen(gameSpec: GameGrammar.GameSpec, fen: String): ChessState {
+            val fenToks = fen.split(' ')
+            val player =  if (fenToks.contains("w")) Player.WHITE else Player.BLACK
+            val depth = fenToks.last().toInt() * 2 - if (player == Player.WHITE) 2 else 1
+            val gameBoard = ByteArray(64)
+            var row = 0
+            for (rowStr in fenToks[0].split("/").reversed()) {
+                var col = 0
+                for (c in rowStr) {
+                    if (c.isDigit()) {
+                        col += c - '0'
+                    } else {
+                        gameBoard[row * 8 + col] = charToPiece[c]!!.toByte()
+                        col++
+                    }
+                }
+                row++
+            }
+            val castling = fenToks[2]
+            if ('K' in castling) {
+                gameBoard[0 * 8 + 4] = 8
+                gameBoard[0 * 8 + 7] = 7
+            }
+            if ('Q' in castling) {
+                gameBoard[0 * 8 + 4] = 8
+                gameBoard[0 * 8 + 0] = 7
+            }
+            if ('k' in castling) {
+                gameBoard[7 * 8 + 4] = -8
+                gameBoard[7 * 8 + 7] = -7
+            }
+            if ('q' in castling) {
+                gameBoard[7 * 8 + 4] = -8
+                gameBoard[7 * 8 + 0] = -7
+            }
+            return ChessState(gameSpec, gameBoard, player, 0, 0, 0, 0, 0, depth.toShort())
+        }
+    }
+
+    fun fen(): String {
+        val rows = List(8) {
+            var line = ""
+            var skips = 0
+            for (col in 0 until 8) {
+                if (at(col, 7 - it) == 0) {
+                    skips++
+                } else {
+                    if (skips > 0) {
+                        line += skips.toString()
+                    }
+                    line += pieceToChar[at(col, 7 - it)]
+                    skips = 0
+                }
+            }
+            if (skips > 0) {
+                line += skips.toString()
+            }
+            line
+        }
+        val move = if (player == Player.WHITE) "w" else "b"
+        var castling = ""
+        if (at(7,0) == 7 && at(4, 0) == 8) castling += "K"
+        if (at(0,0) == 7 && at(4, 0) == 8) castling += "Q"
+        if (at(7,7) == -7 && at(4, 7) == -8) castling += "k"
+        if (at(0,7) == -7 && at(4, 7) == -8) castling += "q"
+        if (castling == "") castling = "-"
+        val fullMove = Math.max(1, (moveDepth + 1) / 2 + if(player == Player.WHITE) 1 else 0)
+        return "${rows.joinToString("/")} ${move} ${castling} - - ${fullMove}"
+    }
+
+    fun uci(): String {
+        val promoted = Math.abs(p1) == 1 && get(x2, y2) != p1
+        return "${'a' + x1}${y1 + 1}${'a' + x2}${y2 + 1}${if (promoted) "q" else ""}"
+    }
+
     // this is called *alot* needs to be efficient.
     fun attacked(board: ByteArray, king: Int, offset: Int, maxMove: Int): Boolean {
         val otp = if (board[king] > 0) -1 else 1 // "opponent to positive"
@@ -105,6 +191,7 @@ class ChessState : GameState {
                   p1: Int = at(x1, y1)): Boolean {
         if (x2 < 0 || x2 > 7 || y2 < 0 || y2 > 7) return false // off board
 
+        val porig = at(x1, y1)
         val p2 = at(x2, y2)
         if (p1.sign == p2.sign) return false // can't capture own piece
 
@@ -117,7 +204,7 @@ class ChessState : GameState {
 
         if (!inCheck(nextBoard, kkx, kky)) {
             val nextPlayer = if (p1.sign < 0) Player.WHITE else Player.BLACK
-            states.add(ChessState(gameSpec, nextBoard, nextPlayer, p1, x1, y1, x2, y2,
+            states.add(ChessState(gameSpec, nextBoard, nextPlayer, porig, x1, y1, x2, y2,
                                   (moveDepth + 1).toShort(), history.clone()))
         }
         return p2 == 0 // return true only if destination was empty
