@@ -2,10 +2,8 @@ package maximum.industries
 
 import org.deeplearning4j.nn.graph.ComputationGraph
 import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.factory.Nd4j
 import org.tensorflow.Graph
 import org.tensorflow.Session
-import org.tensorflow.Tensor
 import java.lang.Math.pow
 import java.nio.FloatBuffer
 import java.security.SecureRandom
@@ -328,7 +326,7 @@ open class AlphaZeroTensorFlowMctsStrategy(val model: Graph, params: SearchParam
     val session = Session(model)
     val reflections = intArrayOf(0,1,2,3)
 
-    public fun evalState(state: GameState): Pair<FloatBuffer, FloatBuffer> {
+    fun evalState(state: GameState): Pair<FloatBuffer, FloatBuffer> {
         val input = state.toTensorInput(reflections)
         val results =
                 session.runner()
@@ -360,7 +358,6 @@ open class AlphaZeroTensorFlowMctsStrategy(val model: Graph, params: SearchParam
             for (next in state.nextMoves) {
                 val nInfo = info(next)
                 nInfo.Q = next.initialSelfValue()
-                nInfo.P = policy_buf.get(next.toPolicyIndex())
                 var PSum = 0f
                 for (i in 0 until reflections.size) {
                     val flipLeftRight = reflections[i] % 2 > 0
@@ -376,6 +373,246 @@ open class AlphaZeroTensorFlowMctsStrategy(val model: Graph, params: SearchParam
         sInfo.expanded = true
     }
 }
+
+fun scoreToOdds(score: Double): Double {
+    val prob = (0.9999 * score + 1.0) / 2.0
+    return prob / (1.0 - prob)
+}
+
+fun oddsToScore(odds: Double): Double {
+    val prob = odds / (1.0 + odds)
+    return prob * 2.0 - 1.0
+}
+
+// A clean reimplementation based off of VanillaMctsStrategy that attempts to mirror what we
+// have on the python side.
+open class AlphaZeroTensorFlowMctsStrategy2(val model: Graph, params: SearchParameters) :
+        VanillaMctsStrategy(params) {
+    val session = Session(model)
+    val reflections = intArrayOf(0,1,2,3)
+
+    fun evalState(state: GameState): Pair<FloatBuffer, FloatBuffer> {
+        val input = state.toTensorInput(reflections)
+        val results =
+                session.runner()
+                        .feed("input", input)
+                        .fetch("value/Tanh")
+                        .fetch("policy/Softmax").run()
+        val output_value = results.get(0)
+        val output_policy = results.get(1)
+        val value_buf = FloatBuffer.allocate(output_value.numElements())
+        val policy_buf = FloatBuffer.allocate(output_policy.numElements())
+        output_value.writeTo(value_buf)
+        output_policy.writeTo(policy_buf)
+
+        input.close()
+        output_value.close()
+        output_policy.close()
+        return Pair(value_buf, policy_buf)
+    }
+
+    override fun expand(state: GameState) {
+        state.protectNextMoves()
+        val sInfo = info(state)
+        if (state.outcome != Outcome.UNDETERMINED) {
+            sInfo.N++
+            sInfo.Q = sInfo.N * state.initialSelfValue()
+        } else {
+            val (value_buf, policy_buf) = evalState(state)
+            sInfo.expanded = true
+            sInfo.N = 1
+            sInfo.Q = value_buf.array().average().toFloat()
+
+            val policySize = state.gameSpec.policySize()
+            for (next in state.nextMoves) {
+                val nInfo = info(next)
+                var PSum = 0f
+                for (i in 0 until reflections.size) {
+                    val flipLeftRight = reflections[i] % 2 > 0
+                    val reverseSides = reflections[i] / 2 > 0
+                    val policyIndex = state.gameSpec.flipPolicyIndex(
+                            next.toPolicyIndex(), flipLeftRight, reverseSides)
+                    PSum += policy_buf.get(i * policySize + policyIndex)
+                }
+                nInfo.P = PSum / reflections.size
+            }
+        }
+    }
+
+    override fun backprop(stack: List<GameState>, expanded: GameState) {
+        val eInfo = info(expanded)
+        val value = eInfo.Q / eInfo.N
+        if (params.backprop_win_loss && value == 1.0f) {
+            backpropWin(stack, stack.size)
+        } else if (params.backprop_win_loss && value == -1.0f) {
+            backpropLoss(stack, stack.size)
+        } else {
+            backpropNorm(stack, stack.size, value)
+        }
+    }
+
+    fun backpropWin(stack: List<GameState>, winLevel: Int) {
+        val parentLevel = winLevel - 1
+        val pInfo = info(stack[parentLevel])
+        pInfo.N += 1
+        var allWon = true
+        for (next in stack[parentLevel].nextMoves) {
+            val nInfo = info(next)
+            if (nInfo.N == 0 || nInfo.N.toFloat() != nInfo.Q) {
+                allWon = false
+                break
+            }
+        }
+        if (allWon) {
+            pInfo.Q = -pInfo.N.toFloat()
+            if (parentLevel > 0) backpropLoss(stack, parentLevel)
+        } else {
+            pInfo.Q -= 1.0f
+            if (parentLevel > 0) backpropNorm(stack, parentLevel, -1.0f)
+        }
+    }
+
+    fun backpropLoss(stack: List<GameState>, lossLevel: Int) {
+        val parentLevel = lossLevel - 1
+        val pInfo = info(stack[parentLevel])
+        pInfo.N += 1
+        pInfo.Q = pInfo.N.toFloat()
+        if (parentLevel > 0) backpropWin(stack, parentLevel)
+    }
+
+    fun backpropNorm(stack: List<GameState>, resultLevel: Int, value: Float) {
+        var i = resultLevel
+        while (i-- > 0) {
+            val sInfo = info(stack[i])
+            if (sInfo.N.toFloat() == sInfo.Q) {
+                backpropLoss(stack, i + 1)
+                return
+            }
+            sInfo.Q += value * (Math.pow(-1.0, (resultLevel - i).toDouble())).toFloat()
+            sInfo.N += 1
+        }
+    }
+
+    override fun searchPriority(s1: GameState, s2: GameState): Double {
+        val s1Info = info(s1)
+        val s2Info = info(s2)
+        var moveValue = if (s2Info.N > 0) {
+            sign(s1, s2) * s2Info.Q / s2Info.N
+        } else if (params.parent_prior_odds_mult > 0) {
+            val s1Value = s1Info.Q.toDouble() / s1Info.N
+            oddsToScore(scoreToOdds(s1Value) * params.parent_prior_odds_mult).toFloat()
+        } else {
+            rand.nextFloat() * 0.0001f
+        }
+        if (params.value_in_log_odds > 0.0) {
+            val multiplier = Math.min(0.999, Math.max(0.001, params.value_in_log_odds))
+            moveValue = (Math.log(scoreToOdds(moveValue * multiplier)) / 2.0 / multiplier).toFloat()
+        }
+        val infoValue = params.exploration / 2 *
+                        pow(sqrt(s1Info.N.toDouble()) / (1.0 + s2Info.N), params.priority_exponent) *
+                        (params.priority_uniform / s1.nextMoves.size + s2Info.P)
+        return moveValue + infoValue
+    }
+
+    override fun pickMove(state: GameState): Pair<GameState, SlimState> {
+        if (params.move_choice_value_quantile > 0.0) {
+            return pickMoveByValue(state)
+        } else {
+            return pickMoveByCount(state)
+        }
+    }
+
+    fun normalize(array: DoubleArray) {
+        val sum = array.sum()
+        for (i in 0 until array.size) {
+            array[i] /= sum
+        }
+    }
+
+    fun pickMoveByCount(state: GameState): Pair<GameState, SlimState> {
+        val policy = DoubleArray(state.nextMoves.size) {
+            info(state.nextMoves[it]).N.toDouble()
+        }
+        val values = DoubleArray(state.nextMoves.size) {
+            val mInfo = info(state.nextMoves[it])
+            -mInfo.Q.toDouble() / max(1.0, mInfo.N.toDouble())
+        }
+        normalize(policy)
+
+        // record non-exponentiated normalized policy in slim state. we don't want
+        // model inputs to depend on temperature, or have most values driven to zero.
+        val slim = state.toSlimState { i, tsr -> tsr.prob = policy[i].toFloat() }
+
+        // now apply toak and exponentiate to get weights for picking actual move
+        val inverseTemp = 1 / temperature(state.moveDepth)
+        for (i in 0 until policy.size) {
+            if (params.take_or_avoid_knowns) {
+                if (values[i] == 1.0) policy[i] = 1000.0
+                if (values[i] == -1.0) policy[i] = 0.0001
+            }
+            policy[i] = pow(policy[i], inverseTemp)
+        }
+        normalize(policy)
+
+        if (!params.quiet) {
+            println("Value: ${info(state).Q}")
+            for (i in state.nextMoves.indices) {
+                val next = state.nextMoves[i]
+                val nInfo = info(next)
+                println("$next:\t${policy[i].toFloat().f3()}\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
+            }
+        }
+        val next = pickChildByProbs(state, policy)
+        allInfo.remove(state.moveDepth) // won't be needing these anymore
+        allInfo.remove((state.moveDepth - 1).toShort()) // or these, which might exist if there are two algos
+        return Pair(next, slim)
+    }
+
+    fun pickMoveByValue(state: GameState): Pair<GameState, SlimState> {
+        val counts = DoubleArray(state.nextMoves.size) {
+            info(state.nextMoves[it]).N.toDouble()
+        }
+        val policy = counts.clone()
+        normalize(policy)
+        // record non-exponentiated normalized policy in slim state. we don't want
+        // model inputs to depend on temperature, or have most values driven to zero.
+        val slim = state.toSlimState { i, tsr -> tsr.prob = policy[i].toFloat() }
+
+        val values = DoubleArray(state.nextMoves.size) {
+            val mInfo = info(state.nextMoves[it])
+            -mInfo.Q.toDouble() / max(1.0, mInfo.N.toDouble())
+        }
+        val probs = DoubleArray(state.nextMoves.size) {
+            (values[it] * 0.9999 + 1.0) / 2.0
+        }
+        if (params.take_or_avoid_knowns) {
+            for (i in 0 until state.nextMoves.size) {
+                if (Math.abs(values[i]) == 1.0) {
+                    counts[i] = counts[i] + 1000
+                }
+            }
+        }
+        val alpha = DoubleArray(state.nextMoves.size) {
+            probs[it] * (counts[it] + 0.001)
+        }
+        val beta = DoubleArray(state.nextMoves.size) {
+            (1.0 - probs[it]) * (counts[it] + 1.0)
+        }
+        val quantiles = DoubleArray(state.nextMoves.size) {
+            jsat.math.SpecialMath.invBetaIncReg(params.move_choice_value_quantile,
+                    alpha[it], beta[it])
+        }
+        val temp = temperature(state.moveDepth)
+        val randoms = DoubleArray(state.nextMoves.size) {
+            jsat.distributions.Beta(alpha[it], beta[it]).sample(1, rand)[0] * temp
+        }
+        val which = (0 until state.nextMoves.size).maxBy { quantiles[it] + randoms[it] }
+        allInfo.remove(state.moveDepth) // won't be needing these anymore
+        allInfo.remove((state.moveDepth - 1).toShort()) // or these, which might exist if there are two algos
+        return Pair(state.nextMoves[which!!], slim)
+    }
+}
+
 
 open class AlphaZeroMctsStrategy1(model: ComputationGraph, params: SearchParameters) :
         AlphaZeroMctsStrategy(model, params) {

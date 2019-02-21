@@ -209,7 +209,7 @@ fun getAlgo(algo: String, params: SearchParameters): GameSearchAlgo {
                     .withTags("serve")
                     .withConfigProto(config.toByteArray()).load()
             val bundle = SavedModelBundle.load(modelName, "serve")
-            MonteCarloTreeSearch(AlphaZeroTensorFlowMctsStrategy(bundle.graph(), params), params)
+            MonteCarloTreeSearch(AlphaZeroTensorFlowMctsStrategy2(bundle.graph(), params), params)
         }
         "human" -> HumanInput()
         "gui" -> GuiInput()
@@ -251,16 +251,16 @@ fun appUsage() {
         |        [-white <model>]    Model for the white player. Default is mcts.
         |        [-black <model>]    Model for the black player. Default is mcts.
         |        [-n <n>]            The number of games to play. Default=100.
-        |        [-witer <iter>]     The number of rollouts/evals to perform for white.
-        |        [-biter <iter>]     The number of rollouts/evals to perform for black.
-        |        [-wexpl <e>         Governs exploration in tree search for white. Default=0.3
-        |        [-bexpl <e>         Governs exploration in tree search for black. Default=0.3
-        |        [-wtemp <t>         Governs move selection exponent for white. Default=0.1
-        |        [-btemp <t>         Governs move selection exponent for black. Default=0.1
-        |        [-wpexp <e>         White priority exponent. Default = 2.0.
-        |        [-bpexp <e>         Black priority exponent. Default = 2.0.
-        |        [-wunif <u>         White priority uniform mixture weight. Default = 1.0.
-        |        [-bunif <u>         Black priority uniform mixture weight. Default = 1.0.
+        |        [-[wb]iter <iter>]  The number of rollouts/evals to perform for white|black.
+        |        [-[wb]expl <e>]     Governs exploration in tree search. Default=0.3
+        |        [-[wb]temp <t>]     Governs move selection exponent. Default=0.1
+        |        [-[wb]pexp <e>]     Priority exponent. Default = 2.0.
+        |        [-[wb]unif <u>]     Priority uniform mixture weight. Default = 1.0.
+        |        [-[wb]ppom <m>]     Parent prior odds mult. Default = 0.0 (disabled)
+        |        [-[wb]bpwl <b>]     Backprop win/loss. Default = false.
+        |        [-[wb]toak <b>]     Take or avoid knowns. Default = false.
+        |        [-[wb]vilo <v>]     Value in log odds. Default = 0.0 (disabled)
+        |        [-[wb]mcvq <q>]     Move choice value quantile. Default = 0.0 (disabled)
         |        [-ramp <n>]         The number of turns to ramp down to the given temperature. Default=10
         |        [-saveas <name>]    A name pattern for saved games. Default is <game>
         |<model> may be 'mcts' to run with Monte Carlo tree search only,
@@ -287,6 +287,11 @@ data class SearchParameters(val iterations: Int = 100,
                             val rampBy: Int = 10,
                             val priority_uniform: Double = 1.0,
                             val priority_exponent: Double = 2.0,
+                            val parent_prior_odds_mult: Double = 0.0,
+                            val backprop_win_loss: Boolean = false,
+                            val take_or_avoid_knowns: Boolean = false,
+                            val value_in_log_odds: Double = 0.0,
+                            val move_choice_value_quantile: Double = 0.0,
                             val tf_device: Int = 0,
                             val quiet: Boolean = false)
 
@@ -297,9 +302,14 @@ fun getSearchParameters(args: Array<String>, color: String): SearchParameters {
     val ramp = getArg(args, "ramp")?.toInt() ?: 10
     val unif = getArg(args, "${color}unif")?.toDouble() ?: 1.0
     val pexp = getArg(args, "${color}pexp")?.toDouble() ?: 2.0
+    val ppom = getArg(args, "${color}ppom")?.toDouble() ?: 0.0
+    val bpwl = getArg(args, "${color}bpwl")?.toBoolean() ?: false
+    val toak = getArg(args, "${color}toak")?.toBoolean() ?: false
+    val vilo = getArg(args, "${color}vilo")?.toDouble() ?: 0.0
+    val mcvq = getArg(args, "${color}mcvq")?.toDouble() ?: 0.0
     val device = getArg(args, "device")?.toInt() ?: 0
     val quiet = getArg(args, "quiet")?.toBoolean() ?: false
-    return SearchParameters(iter, expl, temp, ramp, unif, pexp, device, quiet)
+    return SearchParameters(iter, expl, temp, ramp, unif, pexp, ppom, bpwl, toak, vilo, mcvq, device, quiet)
 }
 
 fun main(args: Array<String>) {

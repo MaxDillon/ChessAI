@@ -2,6 +2,7 @@ import chess
 import chess.pgn
 import getopt
 import sys
+import scipy.special
 import numpy as np
 import tensorflow as tf
 from ast import literal_eval
@@ -47,13 +48,13 @@ def policy_index(move, rotation):
 
 
 def score_to_odds(score):
-    prob = (score * 0.999 + 1) / 2
-    return prob / (1 - prob)
+    prob = (0.9999 * score + 1.0) / 2.0
+    return prob / (1.0 - prob)
 
 
 def odds_to_score(odds):
-    prob = odds / (odds + 1)
-    return prob * 2 - 1
+    prob = odds / (odds + 1.0)
+    return prob * 2.0 - 1.0
 
 
 class Engine(object):
@@ -78,11 +79,13 @@ class Engine(object):
         self.ramp = int(args['ramp']) if 'ramp' in args else 10
         self.priority_uniform = float(args['unif']) if 'unif' in args else 1.0
         self.priority_exponent = float(args['pexp']) if 'pexp' in args else 2.0
-        self.value_in_log_odds = int(args['vilo']) if 'vilo' in args else 0
+        self.value_in_log_odds = float(args['vilo']) if 'vilo' in args else 0.0
         self.parent_prior_odds_mult = float(args['ppom']) if 'ppom' in args else 0.0
+        self.parent_prior_value_diff = float(args['ppvd']) if 'ppvd' in args else 0.0
         self.backprop_win_loss = int(args['bpwl']) if 'bpwl' in args else 0
         self.policy_add_value_and_prior = int(args['pavp']) if 'pavp' in args else 0
         self.take_or_avoid_knowns = int(args['toak']) if 'toak' in args else 0
+        self.move_choice_value_quantile = float(args['mcvq']) if 'mcvq' in args else 0
 
         self.board = chess.Board(fen=chess.STARTING_FEN)
         self.root = [None, 0, 0.0, 0.0]
@@ -137,7 +140,10 @@ class Engine(object):
                 node = node[0][move]
             self.expand(state, node)
             self.backprop(stack, node)
-        move = self.pick_move()
+        if self.move_choice_value_quantile > 0:
+            move = self.pick_move_by_value()
+        else:
+            move = self.pick_move_by_count()
         self.make_move(move)
         return move
 
@@ -181,10 +187,17 @@ class Engine(object):
             # too low a branching factor when advantaged).
             if self.parent_prior_odds_mult > 0:
                 move_value = odds_to_score(score_to_odds(node[2] / node[1]) * self.parent_prior_odds_mult)
+            elif self.parent_prior_value_diff > 0:
+                move_value = score_to_odds(node[2] / node[1]) - self.parent_prior_value_diff
             else:
-                move_value = np.random.random() * 0.001
-        if self.value_in_log_odds:
-            move_value = np.log(score_to_odds(move_value)) / 2.0
+                move_value = np.random.random() * 0.0001
+        if self.value_in_log_odds > 0:
+            multiplier = min(0.999, max(0.001, self.value_in_log_odds))
+            # in the limit as the vilo multiplier approaches zero this transformation has no effect.
+            # conversely, as it approaches one it has very strong effect with move_value going to
+            # infinity. The multiplier must be capped to avoid this, and it should probably be in
+            # the vicinity of 0.9.
+            move_value = np.log(score_to_odds(move_value * multiplier)) / 2.0 / multiplier
         info_value = (self.exploration / 2.0 *
                       (((node[1] ** 0.5) / (1 + child_node[1])) ** self.priority_exponent) *
                       (self.priority_uniform / len(node[0]) + child_node[3]))
@@ -209,14 +222,12 @@ class Engine(object):
             if node[2] < 0 and self.check_repetition and state.can_claim_threefold_repetition():
                 # we are expanding a node with losing self-value, so the parent might be tempted
                 # to choose it. But if it does the opponent can claim a draw, so the true value
-                # of the node is zero.
+                # of the node is zero.  TODO: check logic
                 node[2] = 0.0
             for m in state.legal_moves:
-                state.push(m)
                 m_prior = np.mean([policy[i, policy_index(m, i)] for i in range(4)])
                 node[0][m] = [None, 0, 0.0, m_prior]
-                state.pop()
-                
+
     def backprop(self, stack, node):
         val = node[2] / node[1]
         if self.backprop_win_loss and val == 1.0:
@@ -269,7 +280,7 @@ class Engine(object):
         p = max(0.0, min(1.0, n / self.ramp))
         return p * self.temperature + (1.0 - p) * min(1.0, self.temperature * 10)
         
-    def pick_move(self):
+    def pick_move_by_count(self):
         nodes = self.root[0]
         moves = [move for move in nodes.keys()]
         counts = np.array([nodes[move][1] for move in moves])
@@ -290,7 +301,36 @@ class Engine(object):
                                                               nodes[moves[i]][1],
                                                               nodes[moves[i]][2]/max(1, nodes[moves[i]][1]),
                                                               nodes[moves[i]][3], priorities[i]))
-        return moves[np.random.choice(len(moves), p=evals)]
+        which = np.random.choice(len(moves), p=evals)
+        return moves[which]
+
+    def pick_move_by_value(self):
+        nodes = self.root[0]
+        moves = [move for move in nodes.keys()]
+        counts = np.array([nodes[move][1] for move in moves])
+        values = np.array([-nodes[move][2] for move in moves]) / np.maximum(1, counts)
+        # convert score to probability:  0 < p < 1
+        probs = (values * 0.9999 + 1.0) / 2.0
+        # for known values force very high precision
+        if self.take_or_avoid_knowns:
+            counts += (np.abs(values) == 1.0) * 10000
+        # add small constants to ensure nonzero alpha,beta when count is zero, and to create
+        # a negative bias when counts are low.
+        alpha = probs * (counts + 0.001)
+        beta = (1 - probs) * (counts + 1.0)
+        # base choice primarily on quantile of beta distribution
+        quantiles = scipy.special.betaincinv(alpha, beta, self.move_choice_value_quantile)
+        # add a random component based on temperature
+        randoms = np.random.beta(alpha, beta) * self.temperature
+        if not self.quiet:
+            priorities = [self.priority(self.root, move) for move in moves]
+            for i in range(len(moves)):
+                print('%s: %5.3f  (%4d %7.3f %6.3f) %8.5f' % (moves[i].uci(), quantiles[i],
+                                                              nodes[moves[i]][1],
+                                                              nodes[moves[i]][2]/max(1, nodes[moves[i]][1]),
+                                                              nodes[moves[i]][3], priorities[i]))
+        which = np.argmax(quantiles + randoms)
+        return moves[which]
 
 
 def argdict(argstr):
@@ -316,6 +356,9 @@ def uci_engine_loop(engine):
     def go(_):
         print('bestmove %s' % engine.search().uci())
 
+    def quit(_):
+        sys.exit(0)
+
     while True:
         line = input()
         tokens = line.split(' ')
@@ -325,12 +368,11 @@ def uci_engine_loop(engine):
 
 
 def main(argv):
-    opts, _ = getopt.getopt(argv, '', ['fen=', 'uci',
+    opts, _ = getopt.getopt(argv, '', ['fen=', 'uci', 'quiet=',
                                        'white=', 'wargs=',
                                        'black=', 'bargs=',
                                        'model=', 'uargs='])
     opts = dict(opts)
-
     uci = '--uci' in opts
     fen = opts['--fen'] if '--fen' in opts else chess.STARTING_FEN
     turn = 0 if 'w' in fen else 1
@@ -340,19 +382,20 @@ def main(argv):
     wargs = argdict(opts['--wargs']) if '--wargs' in opts else {}
     bargs = argdict(opts['--bargs']) if '--bargs' in opts else {}
     uargs = argdict(opts['--uargs']) if '--uargs' in opts else {}
-        
+    quiet = opts['--quiet'].lower() == 'true' if '--quiet' in opts else uci
+
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     K.set_session(tf.Session(config=config))
 
     if uci:
-        uci_engine_loop(Engine(umodel, uargs, quiet=True))
+        uci_engine_loop(Engine(umodel, uargs, quiet=quiet))
 
     print('%s\nfen:   %s\nwhite: %s\nblack: %s' % ('#' * 40, fen, wmodel, bmodel))
     print('wargs: %s\nbargs: %s\n%s\n' % (wargs, bargs, '#' * 40))
     
-    white = Engine(wmodel, wargs)
-    black = Engine(bmodel, bargs)
+    white = Engine(wmodel, wargs, quiet=quiet)
+    black = Engine(bmodel, bargs, quiet=quiet)
 
     while True:
         white.start(fen)
@@ -365,8 +408,7 @@ def main(argv):
         while not board.is_game_over():
             print("Turn: %s" % ['White', 'Black'][turn])
             move = engines[turn].search()
-            engines[0].make_move(move)
-            engines[1].make_move(move)
+            engines[1 - turn].make_move(move)
             turn = 1 - turn
 
             print("%s: %6.3f %6.3f" % (move, white.value(True), black.value(False)))

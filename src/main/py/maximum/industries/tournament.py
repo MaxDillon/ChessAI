@@ -55,7 +55,8 @@ def play(white, black):
         board.push(result.move)
         if need_restart:
             board = chess.Board(board.fen())
-        print('.', end='', flush=True)
+        if board.turn:
+            print('.', end='', flush=True)
     print('\033[2K\r', end='')
     return board.result()
 

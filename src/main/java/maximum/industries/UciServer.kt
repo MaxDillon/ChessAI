@@ -104,6 +104,7 @@ fun uciLoop(gameSpec: GameGrammar.GameSpec, algo: GameSearchAlgo) {
             "ucinewgame" -> ucinewgame()
             "position" -> position(toks)
             "go" -> go()
+            "quit" -> System.exit(0)
         }
     }
 }
