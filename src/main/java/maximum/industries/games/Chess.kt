@@ -1,6 +1,7 @@
 package maximum.industries.games
 
 import maximum.industries.*
+import java.lang.RuntimeException
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.sign
@@ -20,7 +21,7 @@ const val UKING = 8
 
 class ChessState : GameState {
 
-    constructor(gameSpec: GameGrammar.GameSpec) : super(gameSpec) {}
+    constructor(gameSpec: GameGrammar.GameSpec) : super(gameSpec)
 
     constructor(gameSpec: GameGrammar.GameSpec,
                 gameBoard: ByteArray, player: Player,
@@ -29,27 +30,25 @@ class ChessState : GameState {
                 x2: Int, y2: Int,
                 moveDepth: Short,
                 history: IntArray = IntArray(16) { 0 }) :
-            super(gameSpec, gameBoard, player, p1, x1, y1, x2, y2, moveDepth, history) {
-    }
+            super(gameSpec, gameBoard, player, p1, x1, y1, x2, y2, moveDepth, history)
 
     companion object {
-        val charToPiece = mapOf(
+        private val charToPiece = mapOf(
                 'P' to 1, 'N' to 2, 'B' to 3, 'R' to 4, 'Q' to 5, 'K' to 6,
                 'p' to -1, 'n' to -2, 'b' to- 3, 'r' to -4, 'q' to -5, 'k' to -6)
-        val pieceToChar = charToPiece.entries.associate { (k, v) -> v to k }
+        private val pieceToChar = charToPiece.entries.associate { (k, v) -> v to k }
                 .toMutableMap().also {
-                    it.put(-7, 'r')
-                    it.put(-8, 'k')
-                    it.put(7, 'R')
-                    it.put(8, 'K') }
+                    it[-7] = 'r'
+                    it[-8] = 'k'
+                    it[7] ='R'
+                    it[8] = 'K' }
 
         fun fromFen(gameSpec: GameGrammar.GameSpec, fen: String): ChessState {
             val fenToks = fen.split(' ')
             val player =  if (fenToks.contains("w")) Player.WHITE else Player.BLACK
             val depth = fenToks.last().toInt() * 2 - if (player == Player.WHITE) 2 else 1
             val gameBoard = ByteArray(64)
-            var row = 0
-            for (rowStr in fenToks[0].split("/").reversed()) {
+            for ((row, rowStr) in fenToks[0].split("/").reversed().withIndex()) {
                 var col = 0
                 for (c in rowStr) {
                     if (c.isDigit()) {
@@ -59,7 +58,6 @@ class ChessState : GameState {
                         col++
                     }
                 }
-                row++
             }
             val castling = fenToks[2]
             if ('K' in castling) {
@@ -110,7 +108,7 @@ class ChessState : GameState {
         if (at(0,7) == -7 && at(4, 7) == -8) castling += "q"
         if (castling == "") castling = "-"
         val fullMove = Math.max(1, (moveDepth + 1) / 2 + if(player == Player.WHITE) 1 else 0)
-        return "${rows.joinToString("/")} ${move} ${castling} - - ${fullMove}"
+        return "${rows.joinToString("/")} $move $castling - - $fullMove"
     }
 
     fun uci(): String {
@@ -118,34 +116,42 @@ class ChessState : GameState {
         return "${'a' + x1}${y1 + 1}${'a' + x2}${y2 + 1}${if (promoted) "q" else ""}"
     }
 
+    fun move(uci: String): ChessState {
+        for (next in nextMoves) {
+            val state = next as ChessState
+            if (state.uci() == uci) {
+                return state
+            }
+        }
+        throw RuntimeException("move not valid")
+    }
+
     // this is called *alot* needs to be efficient.
-    fun attacked(board: ByteArray, king: Int, offset: Int, maxMove: Int): Boolean {
+    private fun attacked(board: ByteArray, king: Int, offset: Int, maxMove: Int): Boolean {
         val otp = if (board[king] > 0) -1 else 1 // "opponent to positive"
         //val diagonal = (abs(offset) and (abs(offset) - 1)) > 0 // diag if 2+ bits set
         val diagonal = (offset == -9 || offset == -7 || offset == 7 || offset == 9) // faster
         for (i in 1..maxMove) {
             val piece = board[king + i * offset] * otp
             if (piece != 0) {
-                if (piece < 0) {
-                    return false // first piece is own piece
+                return if (piece < 0) {
+                    false // first piece is own piece
                 } else if (diagonal) {
-                    if (piece == QUEEN || piece == BISHOP) return true
+                    if (piece == QUEEN || piece == BISHOP) true
                     else if (i == 1) {
-                        if (piece == KING || piece == UKING) return true
-                        else if (offset.sign != otp.sign && piece == PAWN) return true
-                        else return false
-                    } else return false
+                        if (piece == KING || piece == UKING) true
+                        else offset.sign != otp.sign && piece == PAWN
+                    } else false
                 } else {
-                    if (piece == QUEEN || piece == ROOK || piece == UROOK) return true
-                    else if (i == 1 && (piece == KING || piece == UKING)) return true
-                    else return false
+                    if (piece == QUEEN || piece == ROOK || piece == UROOK) true
+                    else i == 1 && (piece == KING || piece == UKING)
                 }
             }
         }
         return false
     }
 
-    fun inCheck(board: ByteArray, kx: Int, ky: Int): Boolean {
+    private fun inCheck(board: ByteArray, kx: Int, ky: Int): Boolean {
         if (kx < 0 && ky < 0) return false // should happen in tests only
 
         val kpos = ky * 8 + kx
@@ -184,7 +190,7 @@ class ChessState : GameState {
 
     // adds a move if the move is legal
     // returns true if x2,y2 was an empty square
-    fun maybeMove(states: ArrayList<GameState>,
+    private fun maybeMove(states: ArrayList<GameState>,
                   x1: Int, y1: Int,
                   x2: Int, y2: Int,
                   kx: Int, ky: Int,
@@ -199,6 +205,24 @@ class ChessState : GameState {
         set(nextBoard, x2, y2, p1)
         set(nextBoard, x1, y1, 0)
 
+        // en passant
+        if (abs(porig) == PAWN && x1 != x2 && p2 == 0) {
+            set(nextBoard, x2, y1, 0)
+        }
+
+        // tidy up castling rights
+        if (y1 == 0 || y1 == 7) {
+            if (abs(porig) == UKING) {
+                if (abs(at(0, y1)) == UROOK) set(nextBoard, 0, y1, ROOK * porig.sign)
+                if (abs(at(7, y1)) == UROOK) set(nextBoard, 7, y1, ROOK * porig.sign)
+            }
+            if (abs(porig) == UROOK) {
+                if (abs(at(7 - x1, y1)) != UROOK && abs(at(4, y1)) == UKING) {
+                    set(nextBoard, 4, y1, KING * porig.sign)
+                }
+            }
+        }
+
         val kkx = if (kx == -1) x2 else kx
         val kky = if (ky == -1) y2 else ky
 
@@ -210,7 +234,7 @@ class ChessState : GameState {
         return p2 == 0 // return true only if destination was empty
     }
 
-    fun maybeCastle(states: ArrayList<GameState>, xk: Int, yk: Int) {
+    private fun maybeCastle(states: ArrayList<GameState>, xk: Int, yk: Int) {
         val sign = at(xk, yk).sign
         if (abs(at(0, yk)) == UROOK) {
             var clear = true
@@ -223,6 +247,7 @@ class ChessState : GameState {
                     set(nextBoard, xk - 1, yk, ROOK * sign)
                     set(nextBoard, xk - 2, yk, KING * sign)
                     set(nextBoard, 0, yk, 0)
+                    if (abs(at(7, yk)) == UROOK) set(nextBoard, 7, yk, ROOK * sign)
                     if (!inCheck(nextBoard, xk - 2, yk)) {
                         val nextPlayer = if (sign < 0) Player.WHITE else Player.BLACK
                         states.add(ChessState(gameSpec, nextBoard, nextPlayer,
@@ -243,6 +268,7 @@ class ChessState : GameState {
                     set(nextBoard, xk + 1, yk, ROOK * sign)
                     set(nextBoard, xk + 2, yk, KING * sign)
                     set(nextBoard, 7, yk, 0)
+                    if (abs(at(0, yk)) == UROOK) set(nextBoard, 0, yk, ROOK * sign)
                     if (!inCheck(nextBoard, xk + 2, yk)) {
                         val nextPlayer = if (sign < 0) Player.WHITE else Player.BLACK
                         states.add(ChessState(gameSpec, nextBoard, nextPlayer,
@@ -254,7 +280,7 @@ class ChessState : GameState {
         }
     }
 
-    fun addLinear(states: ArrayList<GameState>,
+    private fun addLinear(states: ArrayList<GameState>,
                   x1: Int, y1: Int, kx: Int, ky: Int,
                   rook: Boolean, bishop: Boolean,
                   dist: Int, piece: Int, stopAtOne: Boolean) {
@@ -279,7 +305,7 @@ class ChessState : GameState {
         }
     }
 
-    fun kingPos(): Pair<Int, Int> {
+    private fun kingPos(): Pair<Int, Int> {
         val sign = if (player.eq(Player.WHITE)) 1 else -1
         val board = gameBoard
         for (i in 0 until BOARD_SQUARES) {
@@ -295,7 +321,7 @@ class ChessState : GameState {
         return initNextMoves(false)
     }
 
-    fun initNextMoves(stopAtOne: Boolean): ArrayList<GameState> {
+    private fun initNextMoves(stopAtOne: Boolean): ArrayList<GameState> {
         val states = ArrayList<GameState>()
         val playerSign = if (player.eq(Player.WHITE)) 1 else -1
         val (kx, ky) = kingPos()
@@ -313,17 +339,25 @@ class ChessState : GameState {
                     } else {
                         PAWN * playerSign
                     }
+                    // push one or two
                     if (at(x, y + playerSign) == 0) {
                         if ((y - playerSign) % 7 == 0 && at(x, y + 2 * playerSign) == 0) {
                             maybeMove(states, x, y, x, y + 2 * playerSign, kx, ky)
                         }
                         maybeMove(states, x, y, x, y + playerSign, kx, ky, p1)
                     }
+                    // captures
                     if (x > 0 && at(x - 1, y + playerSign) != 0) {
                         maybeMove(states, x, y, x - 1, y + playerSign, kx, ky, p1)
                     }
                     if (x < 7 && at(x + 1, y + playerSign) != 0) {
                         maybeMove(states, x, y, x + 1, y + playerSign, kx, ky, p1)
+                    }
+                    // en passant
+                    if (((y1 == 1 && y2 == 3) || (y1 == 6 && y2 == 4)) && abs(at(x2, y2)) == PAWN) {
+                        if (y == y2 && abs(x - x2) == 1) {
+                            maybeMove(states, x, y, x2, y + playerSign, kx, ky, p1)
+                        }
                     }
                 }
                 KNIGHT -> {
@@ -363,22 +397,39 @@ class ChessState : GameState {
     }
 
     override fun gameOutcome(): Outcome {
+        // no legal moves
         if (initNextMoves(true).size == 0) {
-            if (inCheck()) {
-                return Outcome.LOSE
+            return if (inCheck()) {
+                Outcome.LOSE  // checkmate
             } else {
-                return Outcome.DRAW
+                Outcome.DRAW  // stalemate
             }
-        } else if (moveDepth >= 200) {
-            return Outcome.DRAW
-        } else {
-            var count = 0
-            var lastHash = history[moveDepth % 16]
-            for (hash in history) {
-                if (hash == lastHash) count++
-            }
-            if (count == 3) return Outcome.DRAW
         }
+        // insufficient material (kk, kkb, kkn)
+        var nb = 0
+        var prq = 0
+        for (p in gameBoard) {
+            val pa = abs(p.toInt())
+            when (pa) {
+                KNIGHT, BISHOP -> nb++
+                PAWN, ROOK, UROOK, QUEEN -> prq++
+            }
+        }
+        if (prq == 0 && nb <= 1) {
+            return Outcome.DRAW
+        }
+        // game length bound
+        if (moveDepth >= 200) {
+            return Outcome.DRAW
+        }
+        // threefold repetition
+        var count = 0
+        val lastHash = history[moveDepth % 16]
+        for (hash in history) {
+            if (hash == lastHash) count++
+        }
+        if (count == 3) return Outcome.DRAW
+
         return Outcome.UNDETERMINED
     }
 }

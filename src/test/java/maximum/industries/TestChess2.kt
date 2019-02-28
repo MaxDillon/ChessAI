@@ -1,12 +1,14 @@
 package maximum.industries
 
 import maximum.industries.games.ChessState
+import maximum.industries.games.PAWN
+import maximum.industries.games.ROOK
 import org.amshove.kluent.shouldBeGreaterThan
 import org.amshove.kluent.shouldEqual
 import org.deeplearning4j.util.ModelSerializer
 import org.junit.Test
 
-class TestChess2() {
+class TestChess2 {
     val gameSpec = loadSpec("chess2")
 
     data class Placement(
@@ -15,12 +17,13 @@ class TestChess2() {
             val ur: String = "", val uk: String = "")
 
     fun initBoard(white: Placement, black: Placement,
-                  whiteMove: Boolean = true, depth: Short = 0): ChessState {
+                  whiteMove: Boolean = true, depth: Short = 0,
+                  p1: Int = 0, x1: Int = 0, y1: Int = 0, x2: Int = 0, y2: Int = 0): ChessState {
         val gameBoard = ByteArray(gameSpec.boardSize * gameSpec.boardSize) { 0 }
         fun place(placement: Placement, sign: Int) {
             val (p, n, b, r, q, k, ur, uk) = placement
             arrayListOf(p, n, b, r, q, k, ur, uk).forEachIndexed { i, pstr ->
-                if (pstr.length > 0) {
+                if (pstr.isNotEmpty()) {
                     for (j in pstr.split(",")) {
                         val x = j.first() - 'a'
                         val y = j.substring(1).toInt() - 1
@@ -32,14 +35,13 @@ class TestChess2() {
         place(white, 1)
         place(black, -1)
         val player = if (whiteMove) Player.WHITE else Player.BLACK
-        return ChessState(gameSpec, gameBoard, player,
-                          0, 0, 0, 0, 0, depth)
+        return ChessState(gameSpec, gameBoard, player, p1, x1, y1, x2, y2, depth)
     }
 
     @Test
     fun fenChecks() {
         val state = initBoard(white = Placement(k = "a2", p = "c4,b2,d3", n = "h1", b = "f3"),
-                black = Placement(k = "b7", b = "c6,h4", p = "c5,h2,f7", r = "f8"), whiteMove = false)
+                              black = Placement(k = "b7", b = "c6,h4", p = "c5,h2,f7", r = "f8"), whiteMove = false)
         state.printBoard()
         println(state.fen())
 
@@ -70,28 +72,28 @@ class TestChess2() {
         //   for white values tight
         // but for old mcts models black values make sense.
         // wtf.
-        val state_b0 = initBoard(white = Placement(k = "a2", p = "c4,b2,d3", n = "h1", b = "f3"),
-                                 black = Placement(k = "b7", b = "c6,h4", p = "c5,h2,f7", r = "f8"), whiteMove = false)
-        val state_w0 = initBoard(black = Placement(k = "a7", p = "c5,b7,d6", n = "h8", b = "f6"),
-                                 white = Placement(k = "b2", b = "c3,h5", p = "c4,h7,f2", r = "f1"), whiteMove = true)
+        val stateBlack0 = initBoard(white = Placement(k = "a2", p = "c4,b2,d3", n = "h1", b = "f3"),
+                                    black = Placement(k = "b7", b = "c6,h4", p = "c5,h2,f7", r = "f8"), whiteMove = false)
+        val stateWhite0 = initBoard(black = Placement(k = "a7", p = "c5,b7,d6", n = "h8", b = "f6"),
+                                    white = Placement(k = "b2", b = "c3,h5", p = "c4,h7,f2", r = "f1"), whiteMove = true)
 
         val model = ModelSerializer.restoreComputationGraph("prod_model.chess2")
         val params = SearchParameters(exploration = 1.0, temperature = 0.1, iterations = 2500)
         val search = MonteCarloTreeSearch(AlphaZeroMctsStrategy1(model, params), params)
 
-        val (state_b1, _) = search.next(state_b0)
-        state_b0.printBoard()
-        state_b1.printBoard()
+        val (stateBlack1, _) = search.next(stateBlack0)
+        stateBlack0.printBoard()
+        stateBlack1.printBoard()
 
-        val (state_w1, _) = search.next(state_w0)
-        state_w0.printBoard()
-        state_w1.printBoard()
+        val (stateWhite1, _) = search.next(stateWhite0)
+        stateWhite0.printBoard()
+        stateWhite1.printBoard()
     }
 
     @Test
     fun wtfEval() {
-        val state = initBoard(white = Placement(k = "a2", p = "a3,b2,c2,d3", r="b7,h7", q="e4"),
-                              black = Placement(k = "b8", r = "g8,h6", n="g4", p="a6,e5", q="b6"), whiteMove = false)
+        val state = initBoard(white = Placement(k = "a2", p = "a3,b2,c2,d3", r = "b7,h7", q = "e4"),
+                              black = Placement(k = "b8", r = "g8,h6", n = "g4", p = "a6,e5", q = "b6"), whiteMove = false)
 
         val model = ModelSerializer.restoreComputationGraph("prod_model.chess2")
         val params = SearchParameters(exploration = 0.1, temperature = 0.3, iterations = 200)
@@ -107,10 +109,10 @@ class TestChess2() {
         val state = initBoard(white = Placement(k = "a2", p = "c4,b2,d3", n = "h1", b = "f3"),
                               black = Placement(k = "b7", b = "c6,h4", p = "c5,h2,f7", r = "f8"),
                               whiteMove = false)
-        val state_0 = state.gameSpec.fromModelInput(state.toModelInput(intArrayOf(0)))
-        val state_1 = state.gameSpec.fromModelInput(state.toModelInput(intArrayOf(1)))
-        val state_2 = state.gameSpec.fromModelInput(state.toModelInput(intArrayOf(2)))
-        val state_3 = state.gameSpec.fromModelInput(state.toModelInput(intArrayOf(3)))
+        val state0 = state.gameSpec.fromModelInput(state.toModelInput(intArrayOf(0)))
+        val state1 = state.gameSpec.fromModelInput(state.toModelInput(intArrayOf(1)))
+        val state2 = state.gameSpec.fromModelInput(state.toModelInput(intArrayOf(2)))
+        val state3 = state.gameSpec.fromModelInput(state.toModelInput(intArrayOf(3)))
 
         val model = ModelSerializer.restoreComputationGraph("prod_model.chess2")
         val params = SearchParameters(exploration = 1.0, temperature = 0.1, iterations = 1)
@@ -118,10 +120,10 @@ class TestChess2() {
         val search1 = MonteCarloTreeSearch(AlphaZeroMctsStrategy1(model, params), params)
         val search2 = MonteCarloTreeSearch(AlphaZeroMctsStrategy2(model, params), params)
 
-        search1.next(state_0)
-        search1.next(state_1)
-        search1.next(state_2)
-        search1.next(state_3)
+        search1.next(state0)
+        search1.next(state1)
+        search1.next(state2)
+        search1.next(state3)
         search2.next(state)
     }
 
@@ -186,6 +188,34 @@ class TestChess2() {
                   whiteMove = false)
                 .nextMoves.map { it.desc() }.sorted()
                 .shouldEqual(listOf("b2 -> b1"))
+
+        // en passant black turn
+        initBoard(white = Placement(p = "a4"),
+                  black = Placement(p = "b4"),
+                  whiteMove = false, depth = 10, p1 = PAWN, x1 = 0, y1 = 1, x2 = 0, y2 = 3)
+                .nextMoves.map { it.desc() }.sorted()
+                .shouldEqual(listOf("b4 -> a3", "b4 -> b3"))
+
+        // en passant white turn
+        initBoard(white = Placement(p = "a5"),
+                  black = Placement(p = "b5"),
+                  whiteMove = true, depth = 10, p1 = PAWN, x1 = 1, y1 = 6, x2 = 1, y2 = 4)
+                .nextMoves.map { it.desc() }.sorted()
+                .shouldEqual(listOf("a5 -> a6", "a5 -> b6"))
+
+        // no en passant: not double pushed
+        initBoard(white = Placement(p = "a4"),
+                  black = Placement(p = "b4"),
+                  whiteMove = false, depth = 10, p1 = PAWN, x1 = 0, y1 = 2, x2 = 0, y2 = 3)
+                .nextMoves.map { it.desc() }.sorted()
+                .shouldEqual(listOf("b4 -> b3"))
+
+        // no en passant: not a pawn
+        initBoard(white = Placement(r = "a4"),
+                  black = Placement(p = "b4"),
+                  whiteMove = false, depth = 10, p1 = ROOK, x1 = 0, y1 = 1, x2 = 0, y2 = 3)
+                .nextMoves.map { it.desc() }.sorted()
+                .shouldEqual(listOf("b4 -> b3"))
     }
 
     @Test
@@ -278,12 +308,14 @@ class TestChess2() {
                   black = Placement(r = "d8"))
                 .nextMoves.map { it.printBoard(); it.desc() }.sorted()
                 .shouldEqual(listOf("d1 -> c1", "d1 -> c2", "d1 -> e1", "d1 -> e2"))
+
         // through check not allowed
         initBoard(white = Placement(ur = "a1", uk = "d1", p = "a2"),
                   black = Placement(r = "c8"))
                 .nextMoves.map { it.printBoard(); it.desc() }.sorted()
                 .shouldEqual(listOf("a1 -> b1", "a1 -> c1", "a2 -> a3", "a2 -> a4",
                                     "d1 -> d2", "d1 -> e1", "d1 -> e2"))
+
         // to check not allowed
         initBoard(white = Placement(ur = "a1", uk = "d1", p = "a2"),
                   black = Placement(r = "b8"))
@@ -308,15 +340,15 @@ class TestChess2() {
 
         // GameState => Slim => Instance => BatchInput => GameState
         val slim = state1a.toSlimState { _, tsr -> tsr.prob = 0.5f }
-        val white_win = initBoard(white = Placement(k = "a6", q = "b7"), black = Placement(k = "a8"),
-                                  whiteMove = false, depth = 10)
-        val white_loss = initBoard(black = Placement(k = "a6", q = "b7"), white = Placement(k = "a8"),
-                                   whiteMove = true, depth = 20)
-        val instance_win = slim.toTrainingInstance(white_win)
-        val instance_loss = slim.toTrainingInstance(white_loss)
+        val whiteWin = initBoard(white = Placement(k = "a6", q = "b7"), black = Placement(k = "a8"),
+                                 whiteMove = false, depth = 10)
+        val whiteLoss = initBoard(black = Placement(k = "a6", q = "b7"), white = Placement(k = "a8"),
+                                  whiteMove = true, depth = 20)
+        val instanceWin = slim.toTrainingInstance(whiteWin)
+        val instanceLoss = slim.toTrainingInstance(whiteLoss)
         val (input, value, policy, legal) = initTrainingData(gameSpec, 2)
-        instance_win.toBatchTrainingInput(gameSpec, 0, 0, input, value, policy, legal)
-        instance_loss.toBatchTrainingInput(gameSpec, 1, 0, input, value, policy, legal)
+        instanceWin.toBatchTrainingInput(gameSpec, 0, 0, input, value, policy, legal)
+        instanceLoss.toBatchTrainingInput(gameSpec, 1, 0, input, value, policy, legal)
         val state1c = gameSpec.fromModelInput(input, 0)
         val state1d = gameSpec.fromModelInput(input, 1)
 
@@ -327,20 +359,20 @@ class TestChess2() {
         // check transport of win/loss info
         state1a.player.shouldEqual(Player.WHITE)
         slim.player.shouldEqual(Instance.Player.WHITE)
-        white_win.player.shouldEqual(Player.BLACK)
-        white_loss.player.shouldEqual(Player.WHITE)
-        white_win.outcome.shouldEqual(Outcome.LOSE)
-        white_loss.outcome.shouldEqual(Outcome.LOSE)
+        whiteWin.player.shouldEqual(Player.BLACK)
+        whiteLoss.player.shouldEqual(Player.WHITE)
+        whiteWin.outcome.shouldEqual(Outcome.LOSE)
+        whiteLoss.outcome.shouldEqual(Outcome.LOSE)
         state1c.player.shouldEqual(Player.WHITE)
         state1d.player.shouldEqual(Player.WHITE)
-        instance_win.player.shouldEqual(Instance.Player.WHITE)
-        instance_loss.player.shouldEqual(Instance.Player.WHITE)
+        instanceWin.player.shouldEqual(Instance.Player.WHITE)
+        instanceLoss.player.shouldEqual(Instance.Player.WHITE)
         value.getFloat(0).shouldEqual(1f)
         value.getFloat(1).shouldEqual(-1f)
 
         // check transport of game length
-        instance_win.gameLength.shouldEqual(white_win.moveDepth.toInt())
-        instance_loss.gameLength.shouldEqual(white_loss.moveDepth.toInt())
+        instanceWin.gameLength.shouldEqual(whiteWin.moveDepth.toInt())
+        instanceLoss.gameLength.shouldEqual(whiteLoss.moveDepth.toInt())
     }
 
     @Test
@@ -348,24 +380,24 @@ class TestChess2() {
         // white move to/from model input
         val state1 = initBoard(white = Placement(k = "d1", n = "b3"),
                                black = Placement(k = "g7"), whiteMove = true)
-        val refl_1 = initBoard(white = Placement(k = "e1", n = "g3"),
-                               black = Placement(k = "b7"), whiteMove = true)
-        val refl_2 = initBoard(black = Placement(k = "d8", n = "b6"),
-                               white = Placement(k = "g2"), whiteMove = false)
-        val refl_3 = initBoard(black = Placement(k = "e8", n = "g6"),
-                               white = Placement(k = "b2"), whiteMove = false)
+        val refl1 = initBoard(white = Placement(k = "e1", n = "g3"),
+                              black = Placement(k = "b7"), whiteMove = true)
+        val refl2 = initBoard(black = Placement(k = "d8", n = "b6"),
+                              white = Placement(k = "g2"), whiteMove = false)
+        val refl3 = initBoard(black = Placement(k = "e8", n = "g6"),
+                              white = Placement(k = "b2"), whiteMove = false)
 
         // set up slim / instance / batch test
         val (input, value, policy, legal) = initTrainingData(gameSpec, 100)
 
-        val white_win = initBoard(white = Placement(k = "a1"), black = Placement(), whiteMove = false)
+        val whiteWin = initBoard(white = Placement(k = "a1"), black = Placement(), whiteMove = false)
         val slim = state1.toSlimState { _, tsr -> tsr.prob = 0.5f }
-        val instance_win = slim.toTrainingInstance(white_win)
+        val instanceWin = slim.toTrainingInstance(whiteWin)
 
-        instance_win.toBatchTrainingInput(gameSpec, 0, 0, input, value, policy, legal)
-        instance_win.toBatchTrainingInput(gameSpec, 1, 1, input, value, policy, legal)
-        instance_win.toBatchTrainingInput(gameSpec, 2, 2, input, value, policy, legal)
-        instance_win.toBatchTrainingInput(gameSpec, 3, 3, input, value, policy, legal)
+        instanceWin.toBatchTrainingInput(gameSpec, 0, 0, input, value, policy, legal)
+        instanceWin.toBatchTrainingInput(gameSpec, 1, 1, input, value, policy, legal)
+        instanceWin.toBatchTrainingInput(gameSpec, 2, 2, input, value, policy, legal)
+        instanceWin.toBatchTrainingInput(gameSpec, 3, 3, input, value, policy, legal)
 
         val state2 = gameSpec.fromModelInput(input, 0)
         val state3 = gameSpec.fromModelInput(input, 1)
@@ -373,9 +405,9 @@ class TestChess2() {
         val state5 = gameSpec.fromModelInput(input, 3)
 
         checkStatesEqual(state2, state1)
-        checkStatesEqual(state3, refl_1)
-        checkStatesEqual(state4, refl_2)
-        checkStatesEqual(state5, refl_3)
+        checkStatesEqual(state3, refl1)
+        checkStatesEqual(state4, refl2)
+        checkStatesEqual(state5, refl3)
     }
 
     @Test
@@ -392,6 +424,42 @@ class TestChess2() {
                               black = Placement(k = "h8", q = "c2"), whiteMove = true)
         final.nextMoves.size.shouldEqual(0)
         final.outcome.shouldEqual(Outcome.DRAW)
+    }
+
+    @Test
+    fun testMaterial() {
+        initBoard(white = Placement(k = "a1"),
+                  black = Placement(k = "h8"),
+                  whiteMove = true)
+                .outcome.shouldEqual(Outcome.DRAW)
+        initBoard(white = Placement(k = "a1", n = "d4"),
+                  black = Placement(k = "h8"),
+                  whiteMove = true)
+                .outcome.shouldEqual(Outcome.DRAW)
+        initBoard(white = Placement(k = "a1", b = "d4"),
+                  black = Placement(k = "h8"),
+                  whiteMove = true)
+                .outcome.shouldEqual(Outcome.DRAW)
+        initBoard(white = Placement(k = "a1", b = "d4,d3"),
+                  black = Placement(k = "h8"),
+                  whiteMove = true)
+                .outcome.shouldEqual(Outcome.UNDETERMINED)
+        initBoard(white = Placement(k = "a1", n = "d4,d3"),
+                  black = Placement(k = "h8"),
+                  whiteMove = true)
+                .outcome.shouldEqual(Outcome.UNDETERMINED)
+        initBoard(white = Placement(k = "a1", n = "d4", b = "d3"),
+                  black = Placement(k = "h8"),
+                  whiteMove = true)
+                .outcome.shouldEqual(Outcome.UNDETERMINED)
+        initBoard(white = Placement(k = "a1", q = "c7"),
+                  black = Placement(k = "h8"),
+                  whiteMove = true)
+                .outcome.shouldEqual(Outcome.UNDETERMINED)
+        initBoard(white = Placement(k = "a1", p = "c2"),
+                  black = Placement(k = "h8"),
+                  whiteMove = true)
+                .outcome.shouldEqual(Outcome.UNDETERMINED)
     }
 
     @Test
@@ -443,15 +511,9 @@ class TestChess2() {
 
     @Test
     fun testThreefoldRepetition() {
-        var state: GameState = ChessState(gameSpec)
-        state = state.nextMoves.filter { it.desc() == "b1 -> a3" }.first()
-        state = state.nextMoves.filter { it.desc() == "b8 -> a6" }.first()
-        state = state.nextMoves.filter { it.desc() == "a3 -> b1" }.first()
-        state = state.nextMoves.filter { it.desc() == "a6 -> b8" }.first()
-        state = state.nextMoves.filter { it.desc() == "b1 -> a3" }.first()
-        state = state.nextMoves.filter { it.desc() == "b8 -> a6" }.first()
-        state = state.nextMoves.filter { it.desc() == "a3 -> b1" }.first()
-        state = state.nextMoves.filter { it.desc() == "a6 -> b8" }.first()
+        var state = ChessState(gameSpec)
+        state = state.move("b1a3").move("b8a6").move("a3b1").move("a6b8")
+        state = state.move("b1a3").move("b8a6").move("a3b1").move("a6b8")
         state.outcome.shouldEqual(Outcome.DRAW)
     }
 }

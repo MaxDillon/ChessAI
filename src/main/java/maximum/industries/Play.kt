@@ -273,7 +273,7 @@ fun appUsage() {
 
 fun getArg(args: Array<String>, arg: String): String? {
     for (i in args.indices) {
-        if (args[i] == "-$arg" || args[i] == "--$arg") {
+        if (args[i] == arg || args[i] == "-$arg" || args[i] == "--$arg") {
             println("Using: -$arg = ${args[i + 1]}")
             return args[i + 1]
         }
@@ -295,20 +295,26 @@ data class SearchParameters(val iterations: Int = 100,
                             val tf_device: Int = 0,
                             val quiet: Boolean = false)
 
-fun getSearchParameters(args: Array<String>, color: String): SearchParameters {
-    val iter = getArg(args, "${color}iter")?.toInt() ?: 200
-    val expl = getArg(args, "${color}expl")?.toDouble() ?: 0.3
-    val temp = getArg(args, "${color}temp")?.toDouble() ?: 0.1
+fun getSearchParameters(argstr: String): SearchParameters {
+    val arglist = ArrayList<String>()
+    argstr.split(',').forEach { arglist.addAll(it.split('=')) }
+    val args = arglist.toTypedArray()
+
+    for (arg in args) println(arg)
+
+    val iter = getArg(args, "iter")?.toInt() ?: 200
+    val expl = getArg(args, "expl")?.toDouble() ?: 0.3
+    val temp = getArg(args, "temp")?.toDouble() ?: 0.1
     val ramp = getArg(args, "ramp")?.toInt() ?: 10
-    val unif = getArg(args, "${color}unif")?.toDouble() ?: 1.0
-    val pexp = getArg(args, "${color}pexp")?.toDouble() ?: 2.0
-    val ppom = getArg(args, "${color}ppom")?.toDouble() ?: 0.0
-    val bpwl = getArg(args, "${color}bpwl")?.toBoolean() ?: false
-    val toak = getArg(args, "${color}toak")?.toBoolean() ?: false
-    val vilo = getArg(args, "${color}vilo")?.toDouble() ?: 0.0
-    val mcvq = getArg(args, "${color}mcvq")?.toDouble() ?: 0.0
+    val unif = getArg(args, "unif")?.toDouble() ?: 1.0
+    val pexp = getArg(args, "pexp")?.toDouble() ?: 2.0
+    val ppom = getArg(args, "ppom")?.toDouble() ?: 0.0
+    val bpwl = getArg(args, "bpwl")?.toBoolean() ?: false
+    val toak = getArg(args, "toak")?.toBoolean() ?: false
+    val vilo = getArg(args, "vilo")?.toDouble() ?: 0.0
+    val mcvq = getArg(args, "mcvq")?.toDouble() ?: 0.0
     val device = getArg(args, "device")?.toInt() ?: 0
-    val quiet = getArg(args, "quiet")?.toBoolean() ?: false
+    val quiet = (getArg(args, "quiet") ?: "false") in arrayOf("true", "1")
     return SearchParameters(iter, expl, temp, ramp, unif, pexp, ppom, bpwl, toak, vilo, mcvq, device, quiet)
 }
 
@@ -320,6 +326,8 @@ fun main(args: Array<String>) {
     val n = getArg(args, "n")?.toInt() ?: 100
     val white = getArg(args, "white") ?: "mcts"
     val black = getArg(args, "black") ?: "mcts"
+    val wParams = getSearchParameters(getArg(args,"wargs") ?: "")
+    val bParams = getSearchParameters(getArg(args,"bargs") ?: "")
     val saveas = getArg(args, "saveas") ?: game
     val one = getArg(args, "one")?.toBoolean() ?: false
     val fast = getArg(args, "fast")?.toBoolean() ?: false
@@ -338,8 +346,6 @@ fun main(args: Array<String>) {
     val outputStream = FileOutputStream(workFile)
 
     val gameSpec = loadSpec(game)
-    val wParams = getSearchParameters(args, "w")
-    val bParams = getSearchParameters(args, "b")
 
     val whiteAlgo = getAlgo(white, wParams)
     val blackAlgo = if (one && white == black) whiteAlgo else getAlgo(black, bParams)

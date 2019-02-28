@@ -1,5 +1,6 @@
 package maximum.industries
 
+import maximum.industries.games.ChessState
 import org.deeplearning4j.nn.graph.ComputationGraph
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.tensorflow.Graph
@@ -26,7 +27,7 @@ class MonteCarloTreeSearch(val strategy: MctsStrategy,
         assert(state.outcome == Outcome.UNDETERMINED)
         val stack = ArrayList<GameState>()
 
-        for (i in 0..params.iterations) {
+        for (i in 0 until params.iterations) {
             var node = state
             while (strategy.expanded(node) && node.outcome == Outcome.UNDETERMINED) {
                 stack.add(node)
@@ -422,6 +423,7 @@ open class AlphaZeroTensorFlowMctsStrategy2(val model: Graph, params: SearchPara
             sInfo.expanded = true
             sInfo.N = 1
             sInfo.Q = value_buf.array().average().toFloat()
+            println("${"%8.5f".format(value_buf.array().average())}  ${(state as ChessState).fen()}")
 
             val policySize = state.gameSpec.policySize()
             for (next in state.nextMoves) {
@@ -497,16 +499,16 @@ open class AlphaZeroTensorFlowMctsStrategy2(val model: Graph, params: SearchPara
         val s1Info = info(s1)
         val s2Info = info(s2)
         var moveValue = if (s2Info.N > 0) {
-            sign(s1, s2) * s2Info.Q / s2Info.N
+            sign(s1, s2) * s2Info.Q.toDouble() / s2Info.N
         } else if (params.parent_prior_odds_mult > 0) {
             val s1Value = s1Info.Q.toDouble() / s1Info.N
-            oddsToScore(scoreToOdds(s1Value) * params.parent_prior_odds_mult).toFloat()
+            oddsToScore(scoreToOdds(s1Value) * params.parent_prior_odds_mult)
         } else {
-            rand.nextFloat() * 0.0001f
+            rand.nextDouble() * 0.0
         }
         if (params.value_in_log_odds > 0.0) {
             val multiplier = Math.min(0.999, Math.max(0.001, params.value_in_log_odds))
-            moveValue = (Math.log(scoreToOdds(moveValue * multiplier)) / 2.0 / multiplier).toFloat()
+            moveValue = (Math.log(scoreToOdds(moveValue * multiplier)) / 2.0 / multiplier)
         }
         val infoValue = params.exploration / 2 *
                         pow(sqrt(s1Info.N.toDouble()) / (1.0 + s2Info.N), params.priority_exponent) *
@@ -555,11 +557,12 @@ open class AlphaZeroTensorFlowMctsStrategy2(val model: Graph, params: SearchPara
         normalize(policy)
 
         if (!params.quiet) {
-            println("Value: ${info(state).Q}")
-            for (i in state.nextMoves.indices) {
+            println("Value: %8.5f".format(info(state).Q / info(state).N))
+            for (i in (0 until state.nextMoves.size).sortedBy { state.nextMoves[it].toString() }) {
                 val next = state.nextMoves[i]
                 val nInfo = info(next)
-                println("$next:\t${policy[i].toFloat().f3()}\t${nInfo.N}\t${nInfo.Q.f3()}\t${nInfo.P.f3()}")
+                println("$next:\t${"%5.3f  (%4d %8.4f %7.4f) %8.5f".format(
+                        policy[i], nInfo.N, nInfo.Q/max(1,nInfo.N), nInfo.P, searchPriority(state, next))}")
             }
         }
         val next = pickChildByProbs(state, policy)
@@ -606,6 +609,17 @@ open class AlphaZeroTensorFlowMctsStrategy2(val model: Graph, params: SearchPara
         val randoms = DoubleArray(state.nextMoves.size) {
             jsat.distributions.Beta(alpha[it], beta[it]).sample(1, rand)[0] * temp
         }
+
+        if (!params.quiet) {
+            println("Value: %8.5f".format(info(state).Q / info(state).N))
+            for (i in (0 until state.nextMoves.size).sortedBy { state.nextMoves[it].toString() }) {
+                val next = state.nextMoves[i]
+                val nInfo = info(next)
+                println("$next:\t${"%5.3f  (%4d %8.4f %7.4f) %8.5f".format(
+                        quantiles[i], nInfo.N, nInfo.Q/max(1,nInfo.N), nInfo.P, searchPriority(state, next))}")
+            }
+        }
+
         val which = (0 until state.nextMoves.size).maxBy { quantiles[it] + randoms[it] }
         allInfo.remove(state.moveDepth) // won't be needing these anymore
         allInfo.remove((state.moveDepth - 1).toShort()) // or these, which might exist if there are two algos

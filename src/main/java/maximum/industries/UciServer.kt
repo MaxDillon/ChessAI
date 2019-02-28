@@ -64,7 +64,10 @@ fun uciLoop(gameSpec: GameGrammar.GameSpec, algo: GameSearchAlgo) {
                             break
                         }
                     }
-                    if (!found) throw RuntimeException("Cannot apply position")
+                    if (!found) {
+                        println(toks)
+                        throw RuntimeException("Cannot apply position")
+                    }
                 }
                 return // position successfully applied
             }
@@ -83,6 +86,7 @@ fun uciLoop(gameSpec: GameGrammar.GameSpec, algo: GameSearchAlgo) {
         // after an underpromotion. In the latter cases we'll only succeed in resyncing if
         // the client restarts with a fresh board from the given fen instead of sending a
         // move sequence.
+        algo.gameOver()
         stack.clear()
         stack.add(ChessState.fromFen(gameSpec, fen))
         position(toks)  // should be safe. we are guaranteed to find the fen
@@ -111,6 +115,7 @@ fun uciLoop(gameSpec: GameGrammar.GameSpec, algo: GameSearchAlgo) {
 
 fun main(args: Array<String>) {
     val model = getArg(args, "model") ?: "model2:prod_model.chess2"
+    val params = getSearchParameters(getArg(args, "args") ?: "")
     val device = getArg(args, "device")?.toInt() ?: 0
     val seed = getArg(args, "seed")?.toLong() ?: 0L
     if (seed != 0L) rand = Random(seed)
@@ -118,7 +123,6 @@ fun main(args: Array<String>) {
     Nd4j.getMemoryManager().autoGcWindow = 10000
 
     val gameSpec = loadSpec("chess2")
-    val uParams = getSearchParameters(args, "")
-    val uciAlgo = getAlgo(model, uParams)
+    val uciAlgo = getAlgo(model, params)
     uciLoop(gameSpec, uciAlgo)
 }

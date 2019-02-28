@@ -1,15 +1,22 @@
 import chess
 import chess.pgn
 import getopt
+import os
 import sys
 import scipy.special
 import numpy as np
 import tensorflow as tf
+import time
 from ast import literal_eval
 from tensorflow.keras import backend as K
+from google.protobuf.internal import encoder
+
+sys.path.append('.')
+sys.path.append('src/main/py')
+import maximum.industries.instance_pb2 as instance_pb2
 
 
-def to_model_input(board):
+def to_channel_array(board):
     # 8x8 array of channel IDs
     x = np.array([0 if p is None else p.piece_type + (0 if p.color else 8)
                   for p in [board.piece_at(i) for i in range(64)]]).reshape(8, 8)
@@ -26,6 +33,11 @@ def to_model_input(board):
     if board.castling_rights & chess.BB_H8:
         x[7, 4] = 16
         x[7, 7] = 15
+    return x
+
+
+def to_model_input(board):
+    x = to_channel_array(board)
     # broadcast convert to 17x8x8 input
     y = 1 * (np.arange(17).reshape((17, 1, 1)) == x)
     # augment by including all 4 reflections
@@ -55,6 +67,10 @@ def score_to_odds(score):
 def odds_to_score(odds):
     prob = odds / (odds + 1.0)
     return prob * 2.0 - 1.0
+
+
+def draw_claimed(state):
+    return len(state.move_stack) > 0 and state.move_stack[-1].uci() == '0000'
 
 
 class Engine(object):
@@ -89,16 +105,14 @@ class Engine(object):
 
         self.board = chess.Board(fen=chess.STARTING_FEN)
         self.root = [None, 0, 0.0, 0.0]
-        self.past_fens = set()
-        self.check_repetition = False
+        self.training_data = []
         self.quiet = quiet
 
     # start a new game, optionally from a given position
     def start(self, fen=chess.STARTING_FEN):
         self.board = chess.Board(fen=fen)
         self.root = [None, 0, 0.0, 0.0]
-        self.past_fens = set()
-        self.check_repetition = False
+        self.training_data = []
 
     def position(self, toks):
         fen = chess.STARTING_FEN
@@ -122,15 +136,46 @@ class Engine(object):
             if target_fen == next_fen:
                 self.make_move(move)
                 return
-        self.start(target_fen)
-        
+        self.board = sync
+        self.root = [None, 0, 0.0, 0.0]
+
+    # return a training instance with everything set but the outcome and game length
+    def get_training_instance(self):
+        inst = instance_pb2.TrainingInstance()
+        inst.player = instance_pb2.WHITE if self.board.turn else instance_pb2.BLACK
+        channel_arr = to_channel_array(self.board).reshape(64)
+        board_state = bytearray(64)
+        for i in range(64):
+            board_state[i] = channel_arr[i] if channel_arr[i] <= 8 else 256 - (channel_arr[i] - 8)
+        inst.board_state = bytes(board_state)
+        policy_sum = 0 if not self.root[0] else sum([self.root[0][m][1] for m in self.root[0]])
+        for move in self.root[0]:
+            if move.uci() != '0000':
+                tsr = inst.tree_search_result.add()
+                tsr.index = policy_index(move, 0)
+                tsr.type = instance_pb2.MOVE_PROB
+                tsr.prob = self.root[0][move][1] / policy_sum if policy_sum > 0 else 0.0
+        return inst
+
+    def save_training_data(self, f, outcome, game_length):
+        for inst in self.training_data:
+            if outcome == '1-0':
+                inst.outcome = 1 if inst.player == instance_pb2.WHITE else -1
+            elif outcome == '0-1':
+                inst.outcome = 1 if inst.player == instance_pb2.BLACK else -1
+            else:
+                inst.outcome = 0
+            inst.game_length = game_length
+            f.write(encoder._VarintBytes(inst.ByteSize()))
+            f.write(inst.SerializeToString())
+
     # search for the best move to make from the current position
     def search(self):
         for _ in range(self.iterations):
             state = self.board.copy()
             stack = []
             node = self.root
-            while node[0] is not None and not state.is_game_over():
+            while node[0] is not None and not (state.is_game_over() or draw_claimed(state)):
                 stack.append(node)
                 # Node is previously expanded so we've already computed legal moves.
                 moves = [m for m in node[0].keys()]
@@ -140,6 +185,7 @@ class Engine(object):
                 node = node[0][move]
             self.expand(state, node)
             self.backprop(stack, node)
+        self.training_data.append(self.get_training_instance())
         if self.move_choice_value_quantile > 0:
             move = self.pick_move_by_value()
         else:
@@ -149,17 +195,7 @@ class Engine(object):
 
     # make a chosen move
     def make_move(self, move):
-        if self.board.is_irreversible(move):
-            self.past_fens = set()
-            self.check_repetition = False
-
         self.board.push(move)
-
-        short_fen = ' '.join(self.board.fen().split(' ')[0:2])
-        if short_fen in self.past_fens:
-            self.check_repetition = True
-        self.past_fens.add(short_fen)
-
         if self.root[0] is not None:
             self.root = self.root[0][move]
         else:
@@ -190,7 +226,7 @@ class Engine(object):
             elif self.parent_prior_value_diff > 0:
                 move_value = score_to_odds(node[2] / node[1]) - self.parent_prior_value_diff
             else:
-                move_value = np.random.random() * 0.0001
+                move_value = np.random.random() * 0.0
         if self.value_in_log_odds > 0:
             multiplier = min(0.999, max(0.001, self.value_in_log_odds))
             # in the limit as the vilo multiplier approaches zero this transformation has no effect.
@@ -204,7 +240,7 @@ class Engine(object):
         return move_value + info_value
         
     def expand(self, state, node):
-        if state.is_game_over():
+        if state.is_game_over() or draw_claimed(state):
             result = state.result()
             if result == '1-0':
                 value = 1.0 if state.turn else -1.0
@@ -219,14 +255,11 @@ class Engine(object):
             node[0] = {}
             node[1] = 1
             node[2] = value.mean()
-            if node[2] < 0 and self.check_repetition and state.can_claim_threefold_repetition():
-                # we are expanding a node with losing self-value, so the parent might be tempted
-                # to choose it. But if it does the opponent can claim a draw, so the true value
-                # of the node is zero.  TODO: check logic
-                node[2] = 0.0
             for m in state.legal_moves:
                 m_prior = np.mean([policy[i, policy_index(m, i)] for i in range(4)])
                 node[0][m] = [None, 0, 0.0, m_prior]
+            if state.halfmove_clock >= 8 and state.can_claim_draw():
+                node[0][chess.Move.null()] = [None, 1, 0.0, 0.10]
 
     def backprop(self, stack, node):
         val = node[2] / node[1]
@@ -244,10 +277,6 @@ class Engine(object):
                 # if we were searching non-winning moves below an already known won state,
                 # treat it during backprop like it's won.
                 return self.backprop_loss(stack, j + 1)
-            if stack[j][2] == 0.0 and stack[j][1] == 1:
-                # this only happens if the node is a loser with choice of a draw. In this
-                # case switch to backpropping zero.
-                val = 0.0
             stack[j][2] += val * ((-1) ** (result_level - j))
             stack[j][1] += 1
 
@@ -282,7 +311,7 @@ class Engine(object):
         
     def pick_move_by_count(self):
         nodes = self.root[0]
-        moves = [move for move in nodes.keys()]
+        moves = [move for move in sorted(nodes.keys(), key=lambda x: x.uci())]
         counts = np.array([nodes[move][1] for move in moves])
         values = np.array([-nodes[move][2] for move in moves]) / np.maximum(1, counts)
         priors = np.array([nodes[move][3] for move in moves])
@@ -295,18 +324,19 @@ class Engine(object):
         evals = evals ** (1 / self.effective_temperature())
         evals = evals / evals.sum()
         if not self.quiet:
-            priorities = [self.priority(self.root, move) for move in moves]
+            print('Value: %8.5f' % (self.root[2] / self.root[1]))
             for i in range(len(moves)):
-                print('%s: %5.3f  (%4d %7.3f %6.3f) %8.5f' % (moves[i].uci(), evals[i],
-                                                              nodes[moves[i]][1],
-                                                              nodes[moves[i]][2]/max(1, nodes[moves[i]][1]),
-                                                              nodes[moves[i]][3], priorities[i]))
+                print('%s:\t%5.3f  (%4d %8.4f %7.4f) %8.5f' % (moves[i].uci(), evals[i],
+                                                               nodes[moves[i]][1],
+                                                               nodes[moves[i]][2]/max(1, nodes[moves[i]][1]),
+                                                               nodes[moves[i]][3],
+                                                               self.priority(self.root, moves[i])))
         which = np.random.choice(len(moves), p=evals)
         return moves[which]
 
     def pick_move_by_value(self):
         nodes = self.root[0]
-        moves = [move for move in nodes.keys()]
+        moves = [move for move in sorted(nodes.keys(), key=lambda x: x.uci())]
         counts = np.array([nodes[move][1] for move in moves])
         values = np.array([-nodes[move][2] for move in moves]) / np.maximum(1, counts)
         # convert score to probability:  0 < p < 1
@@ -325,10 +355,10 @@ class Engine(object):
         if not self.quiet:
             priorities = [self.priority(self.root, move) for move in moves]
             for i in range(len(moves)):
-                print('%s: %5.3f  (%4d %7.3f %6.3f) %8.5f' % (moves[i].uci(), quantiles[i],
-                                                              nodes[moves[i]][1],
-                                                              nodes[moves[i]][2]/max(1, nodes[moves[i]][1]),
-                                                              nodes[moves[i]][3], priorities[i]))
+                print('%s:\t%5.3f  (%4d %8.4f %7.4f) %8.5f' % (moves[i].uci(), quantiles[i],
+                                                               nodes[moves[i]][1],
+                                                               nodes[moves[i]][2]/max(1, nodes[moves[i]][1]),
+                                                               nodes[moves[i]][3], priorities[i]))
         which = np.argmax(quantiles + randoms)
         return moves[which]
 
@@ -368,62 +398,57 @@ def uci_engine_loop(engine):
 
 
 def main(argv):
-    opts, _ = getopt.getopt(argv, '', ['fen=', 'uci', 'quiet=',
-                                       'white=', 'wargs=',
-                                       'black=', 'bargs=',
-                                       'model=', 'uargs='])
+    opts, _ = getopt.getopt(argv, 'a:m:n:uq', [])
     opts = dict(opts)
-    uci = '--uci' in opts
-    fen = opts['--fen'] if '--fen' in opts else chess.STARTING_FEN
-    turn = 0 if 'w' in fen else 1
-    wmodel = opts['--white'] if '--white' in opts else ''
-    bmodel = opts['--black'] if '--black' in opts else ''
-    umodel = opts['--model'] if '--model' in opts else ''
-    wargs = argdict(opts['--wargs']) if '--wargs' in opts else {}
-    bargs = argdict(opts['--bargs']) if '--bargs' in opts else {}
-    uargs = argdict(opts['--uargs']) if '--uargs' in opts else {}
-    quiet = opts['--quiet'].lower() == 'true' if '--quiet' in opts else uci
+
+    print(opts)
+
+    args = argdict(opts['-a']) if '-a' in opts else {}
+    model = opts['-m'] if '-m' in opts else ''
+    num_games = int(opts['-n']) if '-n' in opts else 10
+    uci = '-u' in opts
+    quiet = opts['-q'].lower() in ['true', '1'] if '-q' in opts else uci
 
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     K.set_session(tf.Session(config=config))
 
     if uci:
-        uci_engine_loop(Engine(umodel, uargs, quiet=quiet))
+        uci_engine_loop(Engine(model, args, quiet=quiet))
 
-    print('%s\nfen:   %s\nwhite: %s\nblack: %s' % ('#' * 40, fen, wmodel, bmodel))
-    print('wargs: %s\nbargs: %s\n%s\n' % (wargs, bargs, '#' * 40))
+    print('%s\nmodel: %s' % ('#' * 40, model))
+    print('args: %s\n%s\n' % (args, '#' * 40))
     
-    white = Engine(wmodel, wargs, quiet=quiet)
-    black = Engine(bmodel, bargs, quiet=quiet)
+    engine = Engine(model, args, quiet=quiet)
 
-    while True:
-        white.start(fen)
-        black.start(fen)
-        engines = [white, black]
+    logfile = 'data.chess2.%d' % int(time.time() * 1000)
+    with open('%s.work' % logfile, 'wb') as f:
+        for _ in range(num_games):
+            engine.start()
+            board = engine.board
+            if not quiet:
+                print(board.unicode())
 
-        board = white.board
-        print(board)
-        
-        while not board.is_game_over():
-            print("Turn: %s" % ['White', 'Black'][turn])
-            move = engines[turn].search()
-            engines[1 - turn].make_move(move)
-            turn = 1 - turn
+            while not board.is_game_over() and not draw_claimed(board):
+                print('Turn: %s' % ['Black', 'White'][board.turn])
+                move = engine.search()
 
-            print("%s: %6.3f %6.3f" % (move, white.value(True), black.value(False)))
-            print(board)
-            print(board.fen())
+                if not quiet:
+                    print('%s: %6.3f' % (move, engine.value(board.turn)))
+                    print(board.unicode())
+                    print(board.fen())
 
-            if '--fen' not in opts:
-                game = chess.pgn.Game().without_tag_roster()
-                node = game.add_variation(board.move_stack[0])
-                for m in board.move_stack[1:]:
-                    node = node.add_variation(m)
-                print(game)
+                    game = chess.pgn.Game().without_tag_roster()
+                    node = game.add_variation(board.move_stack[0])
+                    for m in board.move_stack[1:]:
+                        node = node.add_variation(m)
+                    print(game)
 
-        print('Outcome: %s' % board.result())
+            result = '1/2-1/2' if draw_claimed(board) else board.result()
+            print('Outcome: %s' % result)
+            engine.save_training_data(f, result, len(board.move_stack))
 
+    os.rename('%s.work' % logfile, '%s.done' % logfile)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
